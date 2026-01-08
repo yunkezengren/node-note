@@ -115,29 +115,6 @@ def init_props():
     bpy.types.Node.na_img_offset = bpy.props.FloatVectorProperty(name="图偏移", size=2, default=(0.0, 0.0), update=tag_redraw, subtype='XYZ')
     bpy.types.Node.na_is_initialized = bpy.props.BoolProperty(default=False)
 
-    bpy.types.Scene.na_show_annotations = bpy.props.BoolProperty(name="显示所有", default=True, update=tag_redraw)
-    bpy.types.Scene.na_show_global_sequence = bpy.props.BoolProperty(name="显示序号",
-                                                                     default=True,
-                                                                     update=tag_redraw,
-                                                                     description="全局显示或隐藏所有序号")
-    bpy.types.Scene.na_show_sequence_lines = bpy.props.BoolProperty(name="显示逻辑连线", default=False, update=tag_redraw)
-
-    # 注意：这个属性现在只作为一个状态标记，不通过 update 回调触发逻辑
-    bpy.types.Scene.na_is_interactive_mode = bpy.props.BoolProperty(name="交互模式",
-                                                                    default=False,
-                                                                    update=update_interactive_mode,
-                                                                    description="点击节点即可编号，右键或ESC退出")
-
-    bpy.types.Scene.na_sort_by_sequence = bpy.props.BoolProperty(name="按序号排序",
-                                                                 default=False,
-                                                                 update=tag_redraw,
-                                                                 description="勾选后，有序号的节点将优先显示在列表顶部")
-    bpy.types.Scene.na_use_occlusion = bpy.props.BoolProperty(name="自动遮挡", default=False, update=tag_redraw)
-    bpy.types.Scene.na_tag_mode_prepend = bpy.props.BoolProperty(name="前缀模式", default=True)
-    bpy.types.Scene.na_navigator_search = bpy.props.StringProperty(name="搜索", default="")
-    for color in ['red', 'green', 'blue', 'orange', 'purple', 'other']:
-        setattr(bpy.types.Scene, f"na_filter_{color}", bpy.props.BoolProperty(default=True, update=tag_redraw))
-
 def clear_props():
     props = [
         "na_text", "na_font_size", "na_bg_color", "na_text_color", "na_auto_width", "na_bg_width", "na_swap_content_order", "na_image",
@@ -162,26 +139,26 @@ class NODE_PT_annotator_gpu_panel(Panel):
         return context.space_data.type == 'NODE_EDITOR'
 
     def draw(self, context):
+        prefs = pref()
         layout = self.layout
-        scene = context.scene
         box = layout.box()
         row = box.row()
         row.label(text="全局控制", icon='WORLD_DATA')
         row = box.row(align=True)
-        row.prop(scene, "na_show_annotations", text="总开关", icon='HIDE_OFF', toggle=True)
+        row.prop(prefs, "show_annotations", text="总开关", icon='HIDE_OFF', toggle=True)
         row.operator("node.na_clear_all_scene_notes", text="全清", icon='TRASH')
-        if scene.na_show_annotations:
+        if prefs.show_annotations:
             box.label(text="通道过滤:", icon='FILTER')
             row = box.row(align=True)
-            row.prop(scene, "na_filter_red", text="红", toggle=True)
-            row.prop(scene, "na_filter_green", text="绿", toggle=True)
-            row.prop(scene, "na_filter_blue", text="蓝", toggle=True)
-            row.prop(scene, "na_filter_orange", text="橙", toggle=True)
-            row.prop(scene, "na_filter_purple", text="紫", toggle=True)
-            row.prop(scene, "na_filter_other", text="杂", toggle=True)
+            row.prop(prefs, "filter_red", text="红", toggle=True)
+            row.prop(prefs, "filter_green", text="绿", toggle=True)
+            row.prop(prefs, "filter_blue", text="蓝", toggle=True)
+            row.prop(prefs, "filter_orange", text="橙", toggle=True)
+            row.prop(prefs, "filter_purple", text="紫", toggle=True)
+            row.prop(prefs, "filter_other", text="杂", toggle=True)
 
         row = layout.row(align=True)
-        row.prop(scene, "na_use_occlusion", text="被遮挡时自动隐藏")
+        row.prop(prefs, "use_occlusion", text="被遮挡时自动隐藏")
 
         layout.separator()
 
@@ -231,13 +208,13 @@ class NODE_OT_interactive_seq(Operator):
 
     def modal(self, context, event):
         # 检查标记，如果被外部关闭则退出
-        if not context.scene.na_is_interactive_mode:
+        if not pref().is_interactive_mode:
             context.window.cursor_modal_restore()
             context.area.header_text_set(None)
             return {'FINISHED'}
 
         if event.type in {'RIGHTMOUSE', 'ESC'}:
-            context.scene.na_is_interactive_mode = False
+            pref().is_interactive_mode = False
             context.window.cursor_modal_restore()
             context.area.header_text_set(None)
             return {'FINISHED'}
@@ -273,13 +250,13 @@ class NODE_OT_interactive_seq(Operator):
 
     def invoke(self, context, event):
         # 如果已经是交互模式，再次点击则关闭（自开关逻辑）
-        if context.scene.na_is_interactive_mode:
-            context.scene.na_is_interactive_mode = False
+        if pref().is_interactive_mode:
+            pref().is_interactive_mode = False
             return {'FINISHED'}
 
         if context.area.type == 'NODE_EDITOR':
             # 开启模式
-            context.scene.na_is_interactive_mode = True
+            pref().is_interactive_mode = True
 
             max_idx = 0
             tree = context.space_data.edit_tree
@@ -297,7 +274,7 @@ class NODE_OT_interactive_seq(Operator):
             return {'RUNNING_MODAL'}
         else:
             self.report({'WARNING'}, "未找到节点编辑器")
-            context.scene.na_is_interactive_mode = False
+            pref().is_interactive_mode = False
             return {'CANCELLED'}
 
 class NODE_OT_clear_global_sequence(Operator):

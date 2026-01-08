@@ -212,10 +212,11 @@ def check_color_visibility(scene, bg_color):
         'orange': prefs.col_preset_4,
         'purple': prefs.col_preset_5,
     }
+    prefs = pref()
     for name, col_vec in preset_cols.items():
         if abs(r - col_vec[0]) + abs(g - col_vec[1]) + abs(b - col_vec[2]) < 0.05:
-            return getattr(scene, f"na_filter_{name}", True)
-    return scene.na_filter_other
+            return getattr(prefs, f"filter_{name}", True)
+    return prefs.filter_other
 
 def get_node_screen_rect(context, node):
     loc_x, loc_y = node.location.x, node.location.y
@@ -250,7 +251,8 @@ def draw_callback_px():
     try:
         context = bpy.context
         if not context.space_data or context.space_data.type != 'NODE_EDITOR': return
-        if not getattr(context.scene, "na_show_annotations", True): return
+        prefs = pref()
+        if not prefs.show_annotations: return
 
         tree = context.space_data.edit_tree
         if not tree: return
@@ -264,13 +266,13 @@ def draw_callback_px():
         dpi_factor = get_dpi_factor(context)
 
         # 遮挡检测
-        is_occlusion_enabled = getattr(scene, "na_use_occlusion", False)
+        is_occlusion_enabled = prefs.use_occlusion
         occluders = []
         if is_occlusion_enabled and context.selected_nodes:
             occluders = [get_node_screen_rect(context, n) for n in context.selected_nodes]
 
         sequence_coords = {}
-        show_seq_global = getattr(scene, "na_show_global_sequence", True)
+        show_seq_global = prefs.show_global_sequence
 
         for node in tree.nodes:
             text = getattr(node, "na_text", "").strip()
@@ -460,7 +462,7 @@ def draw_callback_px():
                 blf.position(font_id, int(badge_x - dims[0] / 2), int(badge_y - dims[1] / 2.5), 0)
                 blf.draw(font_id, num_str)
 
-        if getattr(scene, "na_show_sequence_lines", True) and show_seq_global and len(sequence_coords) > 1:
+        if prefs.show_sequence_lines and show_seq_global and len(sequence_coords) > 1:
             sorted_indices = sorted(sequence_coords.keys())
             line_points = []
             line_col = (1.0, 0.8, 0.2, 0.8)

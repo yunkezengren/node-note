@@ -13,24 +13,38 @@ class NodeMemoAddonPreferences(AddonPreferences):
     bl_idname = __package__
 
     # 1. 全局设置
+    show_annotations: bpy.props.BoolProperty(name="显示所有", default=True, update=tag_redraw)
+    show_global_sequence: bpy.props.BoolProperty(name="显示序号", default=True, update=tag_redraw, description="全局显示或隐藏所有序号")
+    show_sequence_lines: bpy.props.BoolProperty(name="显示逻辑连线", default=False, update=tag_redraw)
+    is_interactive_mode: bpy.props.BoolProperty(name="交互模式", default=False, update=tag_redraw, description="点击节点即可编号，右键或ESC退出")
+    sort_by_sequence: bpy.props.BoolProperty(name="按序号排序", default=False, update=tag_redraw, description="勾选后，有序号的节点将优先显示在列表顶部")
+    use_occlusion: bpy.props.BoolProperty(name="自动遮挡", default=False, update=tag_redraw)
+    tag_mode_prepend: bpy.props.BoolProperty(name="前缀模式", default=True)
+    navigator_search: bpy.props.StringProperty(name="搜索", default="")
+    filter_red: bpy.props.BoolProperty(name="过滤红", default=True, update=tag_redraw)
+    filter_green: bpy.props.BoolProperty(name="过滤绿", default=True, update=tag_redraw)
+    filter_blue: bpy.props.BoolProperty(name="过滤蓝", default=True, update=tag_redraw)
+    filter_orange: bpy.props.BoolProperty(name="过滤橙", default=True, update=tag_redraw)
+    filter_purple: bpy.props.BoolProperty(name="过滤紫", default=True, update=tag_redraw)
+    filter_other: bpy.props.BoolProperty(name="过滤杂", default=True, update=tag_redraw)
 
     # 2. 序号设置区
     seq_radius: bpy.props.FloatProperty(name="序号圆半径", default=7.0, min=1.0, max=50.0, update=tag_redraw)
     seq_bg_color: bpy.props.FloatVectorProperty(name="圆背景色",
-                                                     subtype='COLOR',
-                                                     size=4,
-                                                     default=(0.8, 0.1, 0.1, 1.0),
-                                                     min=0,
-                                                     max=1,
-                                                     update=tag_redraw)
+                                                subtype='COLOR',
+                                                size=4,
+                                                default=(0.8, 0.1, 0.1, 1.0),
+                                                min=0,
+                                                max=1,
+                                                update=tag_redraw)
     seq_font_size: bpy.props.IntProperty(name="数字字号", default=8, min=4, max=100, update=tag_redraw)
     seq_font_color: bpy.props.FloatVectorProperty(name="数字颜色",
-                                                       subtype='COLOR',
-                                                       size=4,
-                                                       default=(1.0, 1.0, 1.0, 1.0),
-                                                       min=0,
-                                                       max=1,
-                                                       update=tag_redraw)
+                                                  subtype='COLOR',
+                                                  size=4,
+                                                  default=(1.0, 1.0, 1.0, 1.0),
+                                                  min=0,
+                                                  max=1,
+                                                  update=tag_redraw)
 
     # 3. 文本设置区
     text_default_size: bpy.props.IntProperty(name="默认字号", default=8, min=4, max=100)
@@ -39,9 +53,8 @@ class NodeMemoAddonPreferences(AddonPreferences):
 
     text_default_fit: bpy.props.BoolProperty(name="默认适应文本", default=False)
     text_default_align: bpy.props.EnumProperty(name="默认对齐",
-                                                    items=[('TOP', "顶部", ""), ('BOTTOM', "底部", ""), ('LEFT', "左侧", ""),
-                                                           ('RIGHT', "右侧", "")],
-                                                    default='TOP')
+                                               items=[('TOP', "顶部", ""), ('BOTTOM', "底部", ""), ('LEFT', "左侧", ""), ('RIGHT', "右侧", "")],
+                                               default='TOP')
 
     # 预设颜色
     col_preset_1: bpy.props.FloatVectorProperty(name="预设红", subtype='COLOR', size=4, default=(0.6, 0.1, 0.1, 0.9), min=0, max=1)
@@ -61,23 +74,21 @@ class NodeMemoAddonPreferences(AddonPreferences):
 
     # 4. 图像设置区
     img_default_align: bpy.props.EnumProperty(name="默认对齐",
-                                                   items=[('TOP', "顶部", ""), ('BOTTOM', "底部", ""), ('LEFT', "左侧", ""), ('RIGHT', "右侧", "")],
-                                                   default='TOP')
+                                              items=[('TOP', "顶部", ""), ('BOTTOM', "底部", ""), ('LEFT', "左侧", ""), ('RIGHT', "右侧", "")],
+                                              default='TOP')
     img_max_res: bpy.props.EnumProperty(name="纹理分辨率限制",
-                                             description="限制显示的纹理最大尺寸以提升性能",
-                                             items=[
-                                                 ('0', "原图 (最清晰)", ""),
-                                                 ('2048', "2048 px", ""),
-                                                 ('1024', "1024 px (推荐)", ""),
-                                                 ('512', "512 px (极速)", ""),
-                                             ],
-                                             default='1024',
-                                             update=tag_redraw)
+                                        description="限制显示的纹理最大尺寸以提升性能",
+                                        items=[
+                                            ('0', "原图 (最清晰)", ""),
+                                            ('2048', "2048 px", ""),
+                                            ('1024', "1024 px (推荐)", ""),
+                                            ('512', "512 px (极速)", ""),
+                                        ],
+                                        default='1024',
+                                        update=tag_redraw)
 
     def draw(self, context):
         layout = self.layout
-
-        # 1. 全局设置
         box = layout.box()
         row = box.row()
         row.label(text="全局设置", icon='WORLD_DATA')
@@ -99,8 +110,12 @@ class NodeMemoAddonPreferences(AddonPreferences):
                 col.label(text="快捷键未注册", icon='ERROR')
 
         col.separator()
-        if context.scene:
-            col.prop(context.scene, "na_use_occlusion", text="默认开启自动遮挡")
+        col.prop(self, "use_occlusion", text="默认开启自动遮挡")
+
+        col.separator()
+        col.prop(self, "show_annotations", text="默认显示所有")
+        col.prop(self, "show_global_sequence", text="默认显示序号")
+        col.prop(self, "show_sequence_lines", text="默认显示逻辑连线")
 
         # 2. 序号设置
         box = layout.box()
@@ -158,5 +173,3 @@ class NodeMemoAddonPreferences(AddonPreferences):
 def pref() -> NodeMemoAddonPreferences:
     assert __package__ is not None
     return bpy.context.preferences.addons[__package__].preferences
-
-

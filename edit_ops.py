@@ -186,7 +186,7 @@ class NODE_OT_add_quick_tag(Operator):
 
     def execute(self, context):
         for n in (context.selected_nodes or [context.active_node]):
-            n.na_text = (self.tag_text + " " + n.na_text) if context.scene.na_tag_mode_prepend else (n.na_text + " " + self.tag_text)
+            n.na_text = (self.tag_text + " " + n.na_text) if pref().tag_mode_prepend else (n.na_text + " " + self.tag_text)
         return {'FINISHED'}
 
 class NODE_OT_copy_node_label(Operator):
@@ -210,10 +210,10 @@ def draw_ui_layout(layout, context, draw_footer=True, draw_sequence=True):
 
     row = col.row(align=True)
     row.scale_y = 0.8
-    row.prop(context.scene,
-             "na_tag_mode_prepend",
+    row.prop(pref(),
+             "tag_mode_prepend",
              text="",
-             icon='ALIGN_LEFT' if context.scene.na_tag_mode_prepend else 'ALIGN_RIGHT',
+             icon='ALIGN_LEFT' if pref().tag_mode_prepend else 'ALIGN_RIGHT',
              toggle=True)
     for t in ["★", "⚠", "?", "!"]:
         op = row.operator("node.na_add_quick_tag", text=t)
@@ -227,10 +227,10 @@ def draw_ui_layout(layout, context, draw_footer=True, draw_sequence=True):
     row.prop(node, "na_sequence_color", text="")
 
     # [修复] 改为 operator 按钮，并根据 boolean 属性显示是否按下状态
-    row.operator("node.na_interactive_seq", text="", icon='BRUSH_DATA', depress=context.scene.na_is_interactive_mode)
+    row.operator("node.na_interactive_seq", text="", icon='BRUSH_DATA', depress=pref().is_interactive_mode)
 
-    row.prop(context.scene, "na_show_sequence_lines", text="", icon='GRAPH')
-    row.prop(context.scene, "na_show_global_sequence", text="", icon='HIDE_OFF' if context.scene.na_show_global_sequence else 'HIDE_ON')
+    row.prop(pref(), "show_sequence_lines", text="", icon='GRAPH')
+    row.prop(pref(), "show_global_sequence", text="", icon='HIDE_OFF' if pref().show_global_sequence else 'HIDE_ON')
     row.operator("node.na_clear_global_sequence", text="", icon='TRASH')
 
     layout.separator(factor=0.5)

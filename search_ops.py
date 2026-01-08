@@ -1,4 +1,5 @@
 import bpy
+from .preference import pref
 
 class NODE_OT_clear_search(bpy.types.Operator):
     """清除搜索内容"""
@@ -7,8 +8,7 @@ class NODE_OT_clear_search(bpy.types.Operator):
     bl_options = {'INTERNAL'}
 
     def execute(self, context):
-        if hasattr(context.scene, "na_navigator_search"):
-            context.scene.na_navigator_search = ""
+        pref().navigator_search = ""
         return {'FINISHED'}
 
 class NODE_OT_jump_to_note(bpy.types.Operator):
@@ -57,7 +57,7 @@ class NODE_PT_note_navigator(bpy.types.Panel):
         # 左侧：手动绘制标题
         row.label(text="文本导航列表")
         # 右侧：绘制复选框
-        row.prop(context.scene, "na_sort_by_sequence", text="按序号排列")
+        row.prop(pref(), "sort_by_sequence", text="按序号排列")
 
     def draw(self, context):
         layout = self.layout
@@ -67,14 +67,10 @@ class NODE_PT_note_navigator(bpy.types.Panel):
             
             row = layout.row(align=True)
             
-            if hasattr(context.scene, "na_navigator_search"):
-                row.prop(context.scene, "na_navigator_search", text="", icon='VIEWZOOM')
-                search_key = context.scene.na_navigator_search.strip().lower()
-                if search_key:
-                    row.operator("node.na_clear_search", text="", icon='X')
-            else:
-                row.label(text="请重启 Blender 以加载搜索功能", icon='ERROR')
-                search_key = ""
+            row.prop(pref(), "navigator_search", text="", icon='VIEWZOOM')
+            search_key = pref().navigator_search.strip().lower()
+            if search_key:
+                row.operator("node.na_clear_search", text="", icon='X')
 
             annotated_nodes = []
             all_notes_count = 0
@@ -90,7 +86,7 @@ class NODE_PT_note_navigator(bpy.types.Panel):
                     annotated_nodes.append(node)
             
             # 排序逻辑
-            if getattr(context.scene, "na_sort_by_sequence", False):
+            if pref().sort_by_sequence:
                 annotated_nodes.sort(key=lambda n: (
                     0 if getattr(n, "na_sequence_index", 0) > 0 else 1,
                     getattr(n, "na_sequence_index", 0),
@@ -110,7 +106,7 @@ class NODE_PT_note_navigator(bpy.types.Panel):
                 layout.label(text="暂无注记", icon='INFO')
                 return
             
-            sort_icon = 'SORT_ASC' if getattr(context.scene, "na_sort_by_sequence", False) else 'GRID'
+            sort_icon = 'SORT_ASC' if pref().sort_by_sequence else 'GRID'
             if search_key: sort_icon = 'FILTER'
             
             layout.label(text=f"列表 ({len(annotated_nodes)}):", icon=sort_icon)
