@@ -3,31 +3,29 @@ import blf
 import gpu
 from gpu_extras.batch import batch_for_shader
 import array
-import math 
+import math
+from . import pref
 
-PADDING_X = 2      
-PADDING_Y = 2      
-MARGIN_BOTTOM = 2 
+PADDING_X = 2
+PADDING_Y = 2
+MARGIN_BOTTOM = 2
 MIN_AUTO_WIDTH = 101
-CORNER_RADIUS = 2.0 
+CORNER_RADIUS = 2.0
 CORNER_SCALE_Y = 1.1
 DEFAULT_BG = (0.2, 0.3, 0.5, 0.9)
 
-def get_prefs():
-    try:
-        return bpy.context.preferences.addons[__package__].preferences
-    except:
-        return None
-
 _shader_cache = {}
+
 def get_shader(name):
     if name not in _shader_cache:
         try:
             _shader_cache[name] = gpu.shader.from_builtin(name)
         except Exception as e:
             if name == '2D_IMAGE':
-                try: _shader_cache[name] = gpu.shader.from_builtin('IMAGE')
-                except: pass
+                try:
+                    _shader_cache[name] = gpu.shader.from_builtin('IMAGE')
+                except:
+                    pass
             return None
     return _shader_cache.get(name)
 
@@ -36,14 +34,17 @@ def get_gpu_texture(image):
     if image.size[0] == 0 or image.size[1] == 0: return None
     try:
         if hasattr(image, "gpu_texture") and image.gpu_texture: return image.gpu_texture
-    except: pass
+    except:
+        pass
     try:
         texture = gpu.texture.from_image(image)
         if texture: return texture
-    except: pass
+    except:
+        pass
     return create_texture_from_pixels(image)
 
 _manual_texture_cache = {}
+
 def create_texture_from_pixels(image):
     global _manual_texture_cache
     cache_key = image.name
@@ -56,14 +57,15 @@ def create_texture_from_pixels(image):
         texture = gpu.types.GPUTexture((w, h), format='RGBA32F', data=pixel_data)
         _manual_texture_cache[cache_key] = texture
         return texture
-    except: return None
+    except:
+        return None
 
 def get_region_zoom(context):
     region = context.region
     view2d = region.view2d
     x0, y0 = view2d.view_to_region(0, 0, clip=False)
     x1, y1 = view2d.view_to_region(1000, 1000, clip=False)
-    return 1.0 if x1==x0 else math.sqrt((x1-x0)**2 + (y1-y0)**2)/1000
+    return 1.0 if x1 == x0 else math.sqrt((x1 - x0)**2 + (y1 - y0)**2) / 1000
 
 def get_dpi_factor(context):
     return context.preferences.system.ui_scale
@@ -76,31 +78,40 @@ def view_to_region_scaled(context, x, y):
 def draw_rounded_rect_batch(x, y, width, height, color, radius=3.0):
     shader = get_shader('UNIFORM_COLOR')
     if not shader: return
-    r_base = min(radius, width/2, height/2)
-    r_x = r_base; r_y = r_base * CORNER_SCALE_Y; r_y = min(r_y, height/2)
+    r_base = min(radius, width / 2, height / 2)
+    r_x = r_base
+    r_y = r_base * CORNER_SCALE_Y
+    r_y = min(r_y, height / 2)
     vertices = []
     indices = []
     idx_cursor = 0
+
     def add_quad(x1, y1, x2, y2):
         nonlocal idx_cursor
         vertices.extend([(x1, y1), (x2, y1), (x2, y2), (x1, y2)])
-        indices.extend([(idx_cursor, idx_cursor+1, idx_cursor+2), (idx_cursor, idx_cursor+2, idx_cursor+3)])
+        indices.extend([(idx_cursor, idx_cursor + 1, idx_cursor + 2), (idx_cursor, idx_cursor + 2, idx_cursor + 3)])
         idx_cursor += 4
+
     if r_base < 0.5:
-        add_quad(x, y, x+width, y+height)
+        add_quad(x, y, x + width, y + height)
     else:
-        add_quad(x, y+r_y, x+width, y+height-r_y)
-        add_quad(x+r_x, y, x+width-r_x, y+r_y)
-        add_quad(x+r_x, y+height-r_y, x+width-r_x, y+height)
-        corners = [(x+width-r_x, y+height-r_y, 0.0, math.pi/2), (x+r_x, y+height-r_y, math.pi/2, math.pi), (x+r_x, y+r_y, math.pi, 3*math.pi/2), (x+width-r_x, y+r_y, 3*math.pi/2, 2*math.pi)]
+        add_quad(x, y + r_y, x + width, y + height - r_y)
+        add_quad(x + r_x, y, x + width - r_x, y + r_y)
+        add_quad(x + r_x, y + height - r_y, x + width - r_x, y + height)
+        corners = [(x + width - r_x, y + height - r_y, 0.0, math.pi / 2), (x + r_x, y + height - r_y, math.pi / 2, math.pi),
+                   (x + r_x, y + r_y, math.pi, 3 * math.pi / 2), (x + width - r_x, y + r_y, 3 * math.pi / 2, 2 * math.pi)]
         for cx, cy, sa, ea in corners:
-            center_idx = idx_cursor; vertices.append((cx, cy)); idx_cursor += 1
-            theta_step = (ea - sa) / 12
+            center_idx = idx_cursor
+            vertices.append((cx, cy))
+            idx_cursor += 1
+            theta_step = (ea-sa) / 12
             for k in range(13):
                 px = cx + math.cos(sa + k*theta_step) * r_x
                 py = cy + math.sin(sa + k*theta_step) * r_y
-                vertices.append((px, py)); idx_cursor += 1
-            for k in range(12): indices.append((center_idx, center_idx+1+k, center_idx+2+k))
+                vertices.append((px, py))
+                idx_cursor += 1
+            for k in range(12):
+                indices.append((center_idx, center_idx + 1 + k, center_idx + 2 + k))
     batch = batch_for_shader(shader, 'TRIS', {"pos": vertices}, indices=indices)
     shader.bind()
     shader.uniform_float("color", color)
@@ -118,7 +129,7 @@ def draw_circle_batch(x, y, radius, color):
         py = y + math.sin(i * theta_step) * radius
         vertices.append((px, py))
     for i in range(16):
-        indices.append((0, i+1, i+2))
+        indices.append((0, i + 1, i + 2))
     batch = batch_for_shader(shader, 'TRIS', {"pos": vertices}, indices=indices)
     shader.bind()
     shader.uniform_float("color", color)
@@ -139,26 +150,26 @@ def draw_texture_batch(texture, x, y, width, height):
     if not texture: return
     shader = get_shader('2D_IMAGE')
     if not shader: return
-    vertices = ( (x, y), (x + width, y), (x + width, y + height), (x, y + height) )
-    uvs = ( (0, 0), (1, 0), (1, 1), (0, 1) ) 
+    vertices = ((x, y), (x + width, y), (x + width, y + height), (x, y + height))
+    uvs = ((0, 0), (1, 0), (1, 1), (0, 1))
     indices = ((0, 1, 2), (2, 3, 0))
     batch = batch_for_shader(shader, 'TRIS', {"pos": vertices, "texCoord": uvs}, indices=indices)
     shader.bind()
     shader.uniform_sampler("image", texture)
-    gpu.state.blend_set('ALPHA') 
+    gpu.state.blend_set('ALPHA')
     batch.draw(shader)
     gpu.state.blend_set('NONE')
 
 def draw_missing_placeholder(x, y, width, height):
     shader = get_shader('UNIFORM_COLOR')
     if not shader: return
-    vertices = ( (x, y), (x+width, y), (x+width, y+height), (x, y+height) )
+    vertices = ((x, y), (x + width, y), (x + width, y + height), (x, y + height))
     batch_box = batch_for_shader(shader, 'LINE_LOOP', {"pos": vertices})
     shader.bind()
-    shader.uniform_float("color", (1.0, 0.0, 0.0, 1.0)) 
+    shader.uniform_float("color", (1.0, 0.0, 0.0, 1.0))
     gpu.state.blend_set('ALPHA')
     batch_box.draw(shader)
-    vertices_x = ( (x, y), (x+width, y+height), (x, y+height), (x+width, y) )
+    vertices_x = ((x, y), (x + width, y + height), (x, y + height), (x + width, y))
     batch_x = batch_for_shader(shader, 'LINES', {"pos": vertices_x})
     batch_x.draw(shader)
 
@@ -173,16 +184,16 @@ def draw_arrow_head(start_point, end_point, color, size=10.0, retreat=8.0):
     if length < 0.001: return
     ux = dx / length
     uy = dy / length
-    tip_x = x2 - ux * retreat
-    tip_y = y2 - uy * retreat
-    base_x = tip_x - ux * size
-    base_y = tip_y - uy * size
+    tip_x = x2 - ux*retreat
+    tip_y = y2 - uy*retreat
+    base_x = tip_x - ux*size
+    base_y = tip_y - uy*size
     perp_x = -uy
     perp_y = ux
     half_w = size * 0.5
     v1 = (tip_x, tip_y)
-    v2 = (base_x + perp_x * half_w, base_y + perp_y * half_w)
-    v3 = (base_x - perp_x * half_w, base_y - perp_y * half_w)
+    v2 = (base_x + perp_x*half_w, base_y + perp_y*half_w)
+    v3 = (base_x - perp_x*half_w, base_y - perp_y*half_w)
     vertices = [v1, v2, v3]
     batch = batch_for_shader(shader, 'TRIS', {"pos": vertices})
     shader.bind()
@@ -191,9 +202,9 @@ def draw_arrow_head(start_point, end_point, color, size=10.0, retreat=8.0):
     batch.draw(shader)
 
 def check_color_visibility(scene, bg_color):
-    prefs = get_prefs()
+    prefs = pref()
     if not prefs: return True
-    r,g,b = bg_color[:3]
+    r, g, b = bg_color[:3]
     preset_cols = {
         'red': prefs.pref_col_preset_1,
         'green': prefs.pref_col_preset_2,
@@ -202,7 +213,7 @@ def check_color_visibility(scene, bg_color):
         'purple': prefs.pref_col_preset_5,
     }
     for name, col_vec in preset_cols.items():
-        if abs(r-col_vec[0])+abs(g-col_vec[1])+abs(b-col_vec[2]) < 0.05:
+        if abs(r - col_vec[0]) + abs(g - col_vec[1]) + abs(b - col_vec[2]) < 0.05:
             return getattr(scene, f"na_filter_{name}", True)
     return scene.na_filter_other
 
@@ -210,35 +221,42 @@ def get_node_screen_rect(context, node):
     loc_x, loc_y = node.location.x, node.location.y
     w, h = node.width, node.dimensions.y
     x1, y1 = view_to_region_scaled(context, loc_x, loc_y)
-    x2, y2 = view_to_region_scaled(context, loc_x+w, loc_y-h)
-    return (min(x1,x2), min(y1,y2), max(x1,x2), max(y1,y2))
+    x2, y2 = view_to_region_scaled(context, loc_x + w, loc_y - h)
+    return (min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2))
 
-def is_rect_overlap(r1, r2): return not (r1[2]<r2[0] or r1[0]>r2[2] or r1[3]<r2[1] or r1[1]>r2[3])
+def is_rect_overlap(r1, r2):
+    return not (r1[2] < r2[0] or r1[0] > r2[2] or r1[3] < r2[1] or r1[1] > r2[3])
 
 def wrap_text_pure(font_id, text, max_width):
     lines = []
     for para in text.replace(";", "\n").replace("；", "\n").splitlines():
         curr_line, curr_w = "", 0
-        if not para: lines.append(""); continue
+        if not para:
+            lines.append("")
+            continue
         for char in para:
             cw = blf.dimensions(font_id, char)[0]
             if curr_w + cw > max_width and curr_line:
-                lines.append(curr_line); curr_line = char; curr_w = cw
-            else: curr_line += char; curr_w += cw
+                lines.append(curr_line)
+                curr_line = char
+                curr_w = cw
+            else:
+                curr_line += char
+                curr_w += cw
         if curr_line: lines.append(curr_line)
     return lines
 
 def draw_callback_px():
     try:
         context = bpy.context
-        if not context.space_data or context.space_data.type!='NODE_EDITOR': return
+        if not context.space_data or context.space_data.type != 'NODE_EDITOR': return
         if not getattr(context.scene, "na_show_annotations", True): return
 
         tree = context.space_data.edit_tree
         if not tree: return
         scene = context.scene
-        prefs = get_prefs()
-        
+        prefs = pref()
+
         sys_ui_scale = context.preferences.system.ui_scale
         zoom = get_region_zoom(context)
         prefs_ui_scale = context.preferences.view.ui_scale
@@ -250,63 +268,63 @@ def draw_callback_px():
         occluders = []
         if is_occlusion_enabled and context.selected_nodes:
             occluders = [get_node_screen_rect(context, n) for n in context.selected_nodes]
-        
+
         sequence_coords = {}
         show_seq_global = getattr(scene, "na_show_global_sequence", True)
-        
+
         for node in tree.nodes:
             text = getattr(node, "na_text", "").strip()
             img = getattr(node, "na_image", None)
             show_img = getattr(node, "na_show_image", True)
             seq_idx = getattr(node, "na_sequence_index", 0)
             show_text_bg = getattr(node, "na_show_text", True)
-            
+
             # 如果什么都没有，直接跳过
             if not text and not (img and show_img) and seq_idx == 0: continue
-            
+
             # [修复 1] 颜色检查只控制文本/图片的“显示状态”，不再跳过循环（以免连坐序号）
             col = getattr(node, "na_bg_color", DEFAULT_BG)
             is_visible_by_color = check_color_visibility(scene, col)
-            
+
             # 性能优化：如果颜色不可见 且 没有序号要画，那确实可以跳过
             if (not is_visible_by_color) and (seq_idx == 0 or not show_seq_global):
                 continue
 
             fs = max(1, int(getattr(node, "na_font_size", 8) * scaled_zoom))
             pad = PADDING_X * scaled_zoom
-            
-            align = getattr(node, "na_align_pos", 'TOP') 
-            off = getattr(node, "na_offset", (0,0))      
-            img_align = getattr(node, "na_img_align_pos", 'TOP') if hasattr(node, "na_img_align_pos") else 'TOP' 
-            img_off = getattr(node, "na_img_offset", (0,0)) if hasattr(node, "na_img_offset") else (0,0)          
+
+            align = getattr(node, "na_align_pos", 'TOP')
+            off = getattr(node, "na_offset", (0, 0))
+            img_align = getattr(node, "na_img_align_pos", 'TOP') if hasattr(node, "na_img_align_pos") else 'TOP'
+            img_off = getattr(node, "na_img_offset", (0, 0)) if hasattr(node, "na_img_offset") else (0, 0)
             swap = getattr(node, "na_swap_content_order", False)
 
             loc = node.location
             h_logical = node.dimensions.y / sys_ui_scale
-            logical_top_y = max(loc.y - (h_logical/2+9), loc.y+(h_logical/2-9)) if node.hide else loc.y
-            logical_bottom_y = min(loc.y - (h_logical/2+9), loc.y+(h_logical/2-9)) if node.hide else (loc.y - h_logical)
+            logical_top_y = max(loc.y - (h_logical/2 + 9), loc.y + (h_logical/2 - 9)) if node.hide else loc.y
+            logical_bottom_y = min(loc.y - (h_logical/2 + 9), loc.y + (h_logical/2 - 9)) if node.hide else (loc.y - h_logical)
 
             sx, sy = view_to_region_scaled(context, loc.x, logical_top_y)
             _, sy_b = view_to_region_scaled(context, loc.x, logical_bottom_y)
             sx_r, _ = view_to_region_scaled(context, loc.x + node.width + 1.0, loc.y)
-            
+
             node_w_px = sx_r - sx
-            node_h_px = sy - sy_b 
+            node_h_px = sy - sy_b
 
             font_id = 0
             blf.size(font_id, fs)
-            
+
             fit_content = getattr(node, "na_text_fit_content", False)
             auto_width = getattr(node, "na_auto_width", True)
             target_width_px = 0
-            
+
             if fit_content:
                 max_line_w = 0
                 if text:
                     for line in text.replace(";", "\n").replace("；", "\n").splitlines():
                         w = blf.dimensions(font_id, line)[0]
                         if w > max_line_w: max_line_w = w
-                target_width_px = max_line_w + (pad * 2) 
+                target_width_px = max_line_w + (pad*2)
             elif auto_width:
                 min_w = view_to_region_scaled(context, loc.x + MIN_AUTO_WIDTH, loc.y)[0] - sx
                 target_width_px = max(node_w_px, min_w)
@@ -320,36 +338,40 @@ def draw_callback_px():
                     lines = text.replace(";", "\n").replace("；", "\n").splitlines()
                 else:
                     lines = wrap_text_pure(font_id, text, max(1, target_width_px - pad*2))
-            
-            text_layer_height = (len(lines)*fs*1.3) + pad*2 if lines else 0
-            
+
+            text_layer_height = (len(lines) * fs * 1.3) + pad*2 if lines else 0
+
             img_draw_w, img_draw_h, texture = 0, 0, None
             if img and show_img:
                 ref_w = max(node_w_px, (view_to_region_scaled(context, loc.x + MIN_AUTO_WIDTH, loc.y)[0] - sx))
                 base_w = ref_w if getattr(node, "na_img_width_auto", True) else (getattr(node, "na_img_width", 150) * scaled_zoom)
-                if img.size[0]>0:
+                if img.size[0] > 0:
                     img_draw_w = base_w
-                    img_draw_h = base_w * (img.size[1]/img.size[0])
+                    img_draw_h = base_w * (img.size[1] / img.size[0])
                     texture = get_gpu_texture(img)
 
             def get_base_pos(alignment, offset_vec, self_w, self_h):
-                bx, by = sx, sy 
+                bx, by = sx, sy
                 ox = offset_vec[0] * scaled_zoom
                 oy = offset_vec[1] * scaled_zoom
                 if alignment == 'TOP':
-                    bx = sx; by = sy + MARGIN_BOTTOM*scaled_zoom
+                    bx = sx
+                    by = sy + MARGIN_BOTTOM*scaled_zoom
                 elif alignment == 'BOTTOM':
-                    bx = sx; by = sy_b - MARGIN_BOTTOM*scaled_zoom - self_h
+                    bx = sx
+                    by = sy_b - MARGIN_BOTTOM*scaled_zoom - self_h
                 elif alignment == 'LEFT':
-                    bx = sx - MARGIN_BOTTOM*scaled_zoom - self_w; by = sy - self_h
+                    bx = sx - MARGIN_BOTTOM*scaled_zoom - self_w
+                    by = sy - self_h
                 elif alignment == 'RIGHT':
-                    bx = sx_r + MARGIN_BOTTOM*scaled_zoom; by = sy - self_h
+                    bx = sx_r + MARGIN_BOTTOM*scaled_zoom
+                    by = sy - self_h
                 return bx + ox, by + oy
 
             txt_x, txt_y = 0, 0
             img_x, img_y = 0, 0
             is_stacked = (align == img_align)
-            
+
             if not is_stacked:
                 txt_x, txt_y = get_base_pos(align, off, target_width_px, text_layer_height)
                 img_x, img_y = get_base_pos(img_align, img_off, img_draw_w, img_draw_h)
@@ -359,11 +381,11 @@ def draw_callback_px():
                 inner_x, inner_y = get_base_pos(align, inner_off, inner_w, inner_h)
                 outer_x, outer_y = inner_x, inner_y
                 gap = 0
-                ox_scaled = outer_off[0] * scaled_zoom 
+                ox_scaled = outer_off[0] * scaled_zoom
                 oy_scaled = outer_off[1] * scaled_zoom
                 if align == 'TOP':
                     outer_y = inner_y + inner_h + gap + oy_scaled
-                    outer_x = inner_x + ox_scaled 
+                    outer_x = inner_x + ox_scaled
                 elif align == 'BOTTOM':
                     outer_y = inner_y - outer_h - gap + oy_scaled
                     outer_x = inner_x + ox_scaled
@@ -380,7 +402,7 @@ def draw_callback_px():
                     img_x, img_y = inner_x, inner_y
                     txt_x, txt_y = outer_x, outer_y
 
-            seq_anchor_x, seq_anchor_y = sx, sy 
+            seq_anchor_x, seq_anchor_y = sx, sy
             if seq_idx > 0 and show_seq_global:
                 sequence_coords[seq_idx] = (seq_anchor_x, seq_anchor_y)
 
@@ -391,24 +413,26 @@ def draw_callback_px():
                 min_y = min(txt_y, img_y)
                 max_y = max(txt_y + text_layer_height, img_y + img_draw_h)
                 bbox = (min_x, min_y, max_x, max_y)
-                if any(not(bbox[2]<o[0] or bbox[0]>o[2] or bbox[3]<o[1] or bbox[1]>o[3]) for o in occluders): 
+                if any(not (bbox[2] < o[0] or bbox[0] > o[2] or bbox[3] < o[1] or bbox[1] > o[3]) for o in occluders):
                     is_occluded = True
 
             # [修复 2] 只有当 (没有被遮挡) 且 (颜色可见) 时，才绘制内容
             if not is_occluded and is_visible_by_color:
                 if text and show_text_bg:
-                    draw_rounded_rect_batch(txt_x, txt_y, target_width_px, text_layer_height, col, CORNER_RADIUS*scaled_zoom)
-                    blf.color(font_id, *node.na_text_color); blf.disable(font_id, blf.SHADOW)
-                    blf.size(font_id, fs) 
+                    draw_rounded_rect_batch(txt_x, txt_y, target_width_px, text_layer_height, col, CORNER_RADIUS * scaled_zoom)
+                    blf.color(font_id, *node.na_text_color)
+                    blf.disable(font_id, blf.SHADOW)
+                    blf.size(font_id, fs)
                     py = txt_y + pad
-                    lh = fs*1.3
+                    lh = fs * 1.3
                     for i, l in enumerate(reversed(lines)):
-                        blf.position(font_id, int(txt_x+pad), int(py + i*lh + fs*0.25), 0); blf.draw(font_id, l)
+                        blf.position(font_id, int(txt_x + pad), int(py + i*lh + fs*0.25), 0)
+                        blf.draw(font_id, l)
 
                 if img and show_img:
                     final_img_x = img_x
                     if (is_stacked and align in {'TOP', 'BOTTOM'}) or (not is_stacked and img_align in {'TOP', 'BOTTOM'}):
-                        center_correction = (node_w_px - img_draw_w) / 2
+                        center_correction = (node_w_px-img_draw_w) / 2
                         final_img_x += center_correction
                     if texture: draw_texture_batch(texture, final_img_x, img_y, img_draw_w, img_draw_h)
                     else: draw_missing_placeholder(final_img_x, img_y, img_draw_w, img_draw_h)
@@ -417,23 +441,23 @@ def draw_callback_px():
             if seq_idx > 0 and show_seq_global:
                 gpu.state.depth_test_set('NONE')
                 # 序号圆半径和字体相关属性属于全局风格
-                badge_radius = (prefs.pref_seq_radius if prefs else 7.0) * scaled_zoom 
+                badge_radius = (prefs.pref_seq_radius if prefs else 7.0) * scaled_zoom
                 badge_x = seq_anchor_x
                 badge_y = seq_anchor_y
-                
+
                 # 序号颜色
                 seq_col = getattr(node, "na_sequence_color", (0.8, 0.1, 0.1, 1.0))
                 draw_circle_batch(badge_x, badge_y, badge_radius, seq_col)
-                
+
                 # 序号字号和颜色
                 seq_fs = prefs.pref_seq_font_size if prefs else 8
                 seq_font_col = list(prefs.pref_seq_font_color) if prefs else (1.0, 1.0, 1.0, 1.0)
-                
-                blf.size(font_id, int(seq_fs * scaled_zoom)) 
+
+                blf.size(font_id, int(seq_fs * scaled_zoom))
                 blf.color(font_id, *seq_font_col)
                 num_str = str(seq_idx)
                 dims = blf.dimensions(font_id, num_str)
-                blf.position(font_id, int(badge_x - dims[0]/2), int(badge_y - dims[1]/2.5), 0)
+                blf.position(font_id, int(badge_x - dims[0] / 2), int(badge_y - dims[1] / 2.5), 0)
                 blf.draw(font_id, num_str)
 
         if getattr(scene, "na_show_sequence_lines", True) and show_seq_global and len(sequence_coords) > 1:
@@ -442,13 +466,13 @@ def draw_callback_px():
             line_col = (1.0, 0.8, 0.2, 0.8)
             for i in range(len(sorted_indices) - 1):
                 idx_a = sorted_indices[i]
-                idx_b = sorted_indices[i+1]
+                idx_b = sorted_indices[i + 1]
                 p1 = sequence_coords[idx_a]
                 p2 = sequence_coords[idx_b]
                 line_points.append(p1)
                 line_points.append(p2)
                 arrow_sz = 8.0 * scaled_zoom
-                retreat_dist = 6.0 * scaled_zoom 
+                retreat_dist = 6.0 * scaled_zoom
                 draw_arrow_head(p1, p2, line_col, size=arrow_sz, retreat=retreat_dist)
             draw_lines_batch(line_points, line_col, thickness=2.0)
 
@@ -456,9 +480,14 @@ def draw_callback_px():
         print(f"DRAW ERROR: {e}")
 
 h = None
-def register_draw_handler(): 
-    global h; 
-    if not h: h = bpy.types.SpaceNodeEditor.draw_handler_add(draw_callback_px, (), 'WINDOW', 'POST_PIXEL')
-def unregister_draw_handler(): 
-    global h; 
-    if h: bpy.types.SpaceNodeEditor.draw_handler_remove(h, 'WINDOW'); h = None
+
+def register_draw_handler():
+    global h
+    if not h: 
+        h = bpy.types.SpaceNodeEditor.draw_handler_add(draw_callback_px, (), 'WINDOW', 'POST_PIXEL')
+
+def unregister_draw_handler():
+    global h
+    if h:
+        bpy.types.SpaceNodeEditor.draw_handler_remove(h, 'WINDOW')
+        h = None
