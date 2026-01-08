@@ -4,7 +4,8 @@ import os
 import subprocess
 import tempfile
 import time
-from . import pref
+from .preference import pref
+
 
 # [核心逻辑] 初始化注入
 def inject_defaults_if_needed(node, prefs):

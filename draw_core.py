@@ -4,7 +4,7 @@ import gpu
 from gpu_extras.batch import batch_for_shader
 import array
 import math
-from . import pref
+from .preference import pref
 
 PADDING_X = 2
 PADDING_Y = 2
