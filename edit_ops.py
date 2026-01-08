@@ -5,6 +5,7 @@ import subprocess
 import tempfile
 import time
 from .preference import pref
+from .search_ops import draw_search_list
 
 # [核心逻辑] 初始化注入
 def inject_defaults_if_needed(node, prefs):
@@ -13,11 +14,11 @@ def inject_defaults_if_needed(node, prefs):
         # 1. 注入文本相关默认值
         node.na_font_size = prefs.text_default_size
         node.na_text_color = prefs.text_default_color
-        node.na_bg_color = prefs.bg_default_color
+        node.na_txt_bg_color = prefs.bg_default_color
 
         # 2. 注入逻辑开关
         node.na_text_fit_content = prefs.text_default_fit
-        node.na_align_pos = prefs.text_default_align
+        node.na_txt_pos = prefs.text_default_align
 
         # 3. 注入序号颜色默认值
         node.na_sequence_color = prefs.seq_bg_color
@@ -54,7 +55,7 @@ class NODE_OT_reset_offset(Operator):
     def execute(self, context):
         node = context.active_node
         if hasattr(node, "na_txt_offset"): node.na_txt_offset = (0, 0)
-        if hasattr(node, "na_align_pos"): node.na_align_pos = 'TOP'
+        if hasattr(node, "na_txt_pos"): node.na_txt_pos = 'TOP'
         context.area.tag_redraw()
         return {'FINISHED'}
 
@@ -66,11 +67,11 @@ class NODE_OT_reset_img_offset(Operator):
     def execute(self, context):
         node = context.active_node
         if hasattr(node, "na_img_offset"): node.na_img_offset = (0, 0)
-        if hasattr(node, "na_img_align_pos"): node.na_img_align_pos = 'TOP'
+        if hasattr(node, "na_img_pos"): node.na_img_pos = 'TOP'
         context.area.tag_redraw()
         return {'FINISHED'}
 
-# 有点多余, 不确定 context.active_node.na_img_align_pos = prefs.img_default_align
+# 有点多余, 不确定 context.active_node.na_img_pos = prefs.img_default_align
 class NODE_OT_open_image(Operator):
     bl_idname = "node.na_open_image"
     bl_label = "打开"
@@ -89,7 +90,7 @@ class NODE_OT_open_image(Operator):
             # [注入] 图片默认对齐
             prefs = pref()
             if prefs:
-                context.active_node.na_img_align_pos = prefs.img_default_align
+                context.active_node.na_img_pos = prefs.img_default_align
 
             context.area.tag_redraw()
         except Exception as e:
@@ -119,7 +120,7 @@ class NODE_OT_paste_image(Operator):
             # [注入] 图片默认对齐
             prefs = pref()
             if prefs:
-                context.active_node.na_img_align_pos = prefs.img_default_align
+                context.active_node.na_img_pos = prefs.img_default_align
 
             self.report({'INFO'}, f"成功导入图片: {img.name}")
             return {'FINISHED'}
@@ -135,7 +136,7 @@ class NODE_OT_apply_preset(Operator):
 
     def execute(self, context):
         for n in (context.selected_nodes or [context.active_node]):
-            n.na_bg_color = self.bg_color
+            n.na_txt_bg_color = self.bg_color
             n.na_text_color = self.text_color
         return {'FINISHED'}
 
@@ -147,7 +148,7 @@ class NODE_OT_copy_active_to_selected(Operator):
     def execute(self, context):
         act = context.active_node
         if not act: return {'CANCELLED'}
-        strict_sync_props = ["na_font_size", "na_text_color", "na_bg_color", "na_sequence_color", "na_text_fit_content", "na_auto_txt_width"]
+        strict_sync_props = ["na_font_size", "na_text_color", "na_txt_bg_color", "na_sequence_color", "na_text_fit_content", "na_auto_txt_width"]
         count = 0
         for n in context.selected_nodes:
             if n == act: continue
@@ -185,35 +186,54 @@ def draw_ui_layout(layout: UILayout, context: Context):
     header: UILayout
     body: UILayout
     prefs = pref()
+    col_vals = []
+    def_labels = ["红", "绿", "蓝", "橙", "紫", "无"]
+    for i in range(len(def_labels)):
+        col_vals.append(getattr(prefs, f"col_preset_{i+1}"))
+        custom_lbl = getattr(prefs, f"label_preset_{i+1}", "")
+        if custom_lbl:
+            def_labels[i] = custom_lbl
 
     header, body = layout.panel("setting", default_closed=True)
     header.label(text="全局设置", icon='TOOL_SETTINGS')
     if body:
-        row = body.row()
-        row.operator("preferences.addon_show", text="", icon='PREFERENCES').module = __package__
-        row.prop(prefs, "show_annotations", text="是否显示", icon='HIDE_OFF', toggle=True)
-        row.operator("node.na_clear_all_scene_notes", text="全部删除", icon='TRASH')
+        row_pos = body.row()
+        row_pos.operator("preferences.addon_show", text="偏好", icon='PREFERENCES').module = __package__
+        row_pos.prop(prefs, "show_annotations", text="显示", icon='HIDE_OFF', toggle=True)
+        row_pos.operator("node.na_clear_all_scene_notes", text="全删", icon='TRASH')
         # 还很不完善
         # body.column().prop(prefs, "use_occlusion", text="被遮挡时自动隐藏")
+        
+        row_del = body.row(align=True)
+        row_del.operator("node.na_clear_select_all", text="笔记", icon='TRASH')
+        row_del.operator("node.na_clear_select_txt", text="文本", icon='TRASH')
+        row_del.operator("node.na_clear_select_img", text="图片", icon='TRASH')
+        row_del.operator("node.na_clear_select_seq", text="序号", icon='TRASH')
+        if len(context.selected_nodes) > 1:
+            body.row().operator("node.na_copy_to_selected", text="同步活动", icon='DUPLICATE')
+
+        
         if prefs.show_annotations:
             body.label(text="按颜色显示笔记:", icon='FILTER')
             split = body.split(factor=0.1, align=True)
             split.label(text="    ")
-            split.prop(prefs, "filter_red", text="红", toggle=True)
-            split.prop(prefs, "filter_green", text="绿", toggle=True)
-            split.prop(prefs, "filter_blue", text="蓝", toggle=True)
-            split.prop(prefs, "filter_orange", text="橙", toggle=True)
-            split.prop(prefs, "filter_purple", text="紫", toggle=True)
-            split.prop(prefs, "filter_other", text="杂", toggle=True)
+            split.prop(prefs, "filter_red", text=def_labels[0], toggle=True)
+            split.prop(prefs, "filter_green", text=def_labels[1], toggle=True)
+            split.prop(prefs, "filter_blue", text=def_labels[2], toggle=True)
+            split.prop(prefs, "filter_orange", text=def_labels[3], toggle=True)
+            split.prop(prefs, "filter_purple", text=def_labels[4], toggle=True)
+            split.prop(prefs, "filter_other", text=def_labels[5], toggle=True)
 
     node = context.active_node
-    if not node: 
+    if not node:
         layout.label(text="需要选中节点", icon='INFO')
         return
-    
-    header, body = layout.panel("setting1", default_closed=True)
+
+    header, body = layout.panel("setting1", default_closed=False)
     header.prop(node, "na_show_text", text="")
     header.label(text="文字笔记", icon='FILE_TEXT')
+    if node.na_show_text and node.na_text and node.na_show_image and node.na_image:
+        header.operator("node.na_swap_order", text="⇅ 交换")
     if body:
         body.active = node.na_show_text
         txt_box = body.box()
@@ -221,50 +241,46 @@ def draw_ui_layout(layout: UILayout, context: Context):
         col.label(text="分号换行:", icon='TEXT')
         col.prop(node, "na_text", text="描述: ")
 
-        row = txt_box.column()
-        row_tag = row.row(align=True)
+        row_pos = txt_box.column()
+        row_tag = row_pos.row(align=True)
         row_tag.prop(pref(), "tag_mode_prepend", text="", icon='ALIGN_LEFT' if pref().tag_mode_prepend else 'ALIGN_RIGHT', toggle=True)
         for tag in ["★", "⚠", "?", "!"]:
             op = row_tag.operator("node.na_add_quick_tag", text=tag)
             op.tag_text = tag
 
         txt_box.separator(factor=0.05)
-        txt_box.prop(node, "na_font_size", text="字号")
-        txt_box.row().prop(node, "na_text_color", text="文本颜色")
-        txt_box.row().prop(node, "na_bg_color", text="背景颜色")
+        split_txt = txt_box.split(factor=0.5)
+        split_txt.prop(node, "na_font_size", text="字号")
+        split_txt.row().prop(node, "na_text_color", text="颜色")
+        
+        split_color = txt_box.split(factor=0.5)
+        split_color.row().prop(node, "na_txt_bg_color", text="背景")
+        split_color.label(text="预设颜色:")
 
-        txt_box.label(text="背景颜色预设:")
-        row = txt_box.row(align=True)
+        row_pos = txt_box.row()
         def_labels = ["红", "绿", "蓝", "橙", "紫", "无"]
-        for i in range(6):
-            label_text = def_labels[i]
-
-            if prefs:
-                col_val = getattr(prefs, f"col_preset_{i+1}")
-                custom_lbl = getattr(prefs, f"label_preset_{i+1}", "")
-                if custom_lbl:
-                    label_text = custom_lbl
-
-            op = row.operator("node.na_apply_preset", text=label_text)
-            op.bg_color = col_val
+        for i in range(len(def_labels)):
+            split_color = row_pos.split(factor=0.2, align=True)
+            split_color.prop(pref(), f"col_preset_{i+1}", text="")
+            op = split_color.operator("node.na_apply_preset", text=def_labels[i])
+            op.bg_color = col_vals[i]
 
         txt_box.prop(node, "na_text_fit_content", text="匹配文本宽度", icon='UNLINKED')
         if not node.na_text_fit_content:
-            row = txt_box.row(align=True)
-            row.prop(node, "na_auto_txt_width", text="跟随节点", icon='LINKED')
-            sub = row.row()
+            row_pos = txt_box.row(align=True)
+            row_pos.prop(node, "na_auto_txt_width", text="跟随节点", icon='LINKED')
+            sub = row_pos.row()
             sub.active = not node.na_auto_txt_width
             sub.prop(node, "na_txt_bg_width", text="宽度")
 
-        row = txt_box.row()
-        row.prop(node, "na_align_pos", text="位置")
-        sub = txt_box.row(align=True)
-        sub.prop(node, "na_txt_offset", text="")
-        sub.operator("node.na_reset_offset", text="", icon='LOOP_BACK')
+        row_pos = txt_box.row(align=True)
+        row_pos.prop(node, "na_txt_pos", text="")
+        row_pos.prop(node, "na_txt_offset", text="")
+        row_pos.operator("node.na_reset_offset", text="", icon='LOOP_BACK')
 
     header, body = layout.panel("setting2", default_closed=True)
     header.prop(node, "na_show_image", text="")
-    header.label(text="图像笔记", icon='IMAGE_DATA')
+    header.label(text="图片笔记", icon='IMAGE_DATA')
     if body:
         body.active = node.na_show_image
         img_box = body.box()
@@ -272,41 +288,39 @@ def draw_ui_layout(layout: UILayout, context: Context):
         split.template_ID(node, "na_image", open="image.open")
         split.operator("node.na_paste_image", text="粘贴", icon='PASTEDOWN')
 
-        row = img_box.row(align=True)
-        row.prop(node, "na_auto_img_width", text="跟随节点", icon='LINKED')
-        sub = row.row()
+        row_pos = img_box.row(align=True)
+        row_pos.prop(node, "na_auto_img_width", text="跟随节点", icon='LINKED')
+        sub = row_pos.row()
         sub.active = not node.na_auto_img_width
         sub.prop(node, "na_img_width", text="宽度")
 
-        row = img_box.row(align=True)
-        row.prop(node, "na_img_align_pos", text="位置")
-        sub = img_box.row(align=True)
-        sub.prop(node, "na_img_offset", text="")
-        sub.operator("node.na_reset_img_offset", text="", icon='LOOP_BACK')
-
-    if node.na_show_text and node.na_text and node.na_show_image:
-        layout.operator("node.na_swap_order", text="⇅ 文本和图像交换顺序")
+        row_pos = img_box.row(align=True)
+        row_pos.prop(node, "na_img_pos", text="")
+        row_pos.prop(node, "na_img_offset", text="")
+        row_pos.operator("node.na_reset_img_offset", text="", icon='LOOP_BACK')
 
     # todo 序号笔记是全局控制的,要改
-    header, body = layout.panel("setting0", default_closed=True)
+    header, body = layout.panel("setting3", default_closed=True)
     header.prop(pref(), "show_global_sequence", text="")
     header.label(text="序号笔记", icon='EVENT_NDOF_BUTTON_1')
     if body:
         body.active = pref().show_global_sequence
-        seq_box = body.box().column()
-        seq_box.prop(node, "na_sequence_index", text="序号")
-        seq_box.row().prop(node, "na_sequence_color", text="背景色")
-        
-        row = seq_box.column(align=True)
-        row.operator("node.na_interactive_seq", text="点击节点自动编号", icon='BRUSH_DATA', depress=pref().is_interactive_mode)
+        seq_box = body.box()
+        split = seq_box.split(factor=0.5)
+        split.prop(node, "na_sequence_index", text="序号")
+        split.row().prop(node, "na_sequence_color", text="背景色")
 
-        row.prop(pref(), "show_sequence_lines", text="显示序号连线", icon='EMPTY_ARROWS')
-        row.operator("node.na_clear_global_sequence", text="删除全部序号", icon='TRASH')
+        row_pos = seq_box.column(align=True)
+        row_pos.operator("node.na_interactive_seq", text="点击节点自动编号", icon='BRUSH_DATA', depress=pref().is_interactive_mode)
 
-    row = layout.row(align=True)
-    row.operator("node.na_clear_text", text="清除选中", icon='TRASH')
-    if len(context.selected_nodes) > 1:
-        row.operator("node.na_copy_to_selected", text="同步活动", icon='DUPLICATE')
+        row_pos.prop(pref(), "show_sequence_lines", text="显示序号连线", icon='EMPTY_ARROWS')
+        row_pos.operator("node.na_clear_global_sequence", text="删除全部序号", icon='TRASH')
+
+    header, body = layout.panel("setting4", default_closed=True)
+    header.label(text="文本导航列表")
+    header.prop(pref(), "sort_by_sequence", text="按序号排列")
+    if body:
+        draw_search_list(body, context)
 
 class NODE_OT_na_quick_edit(Operator):
     bl_idname = "node.na_quick_edit"
@@ -330,7 +344,13 @@ class NODE_OT_na_quick_edit(Operator):
         return context.window_manager.invoke_popup(self, width=220)
 
     def draw(self, context):
-        draw_ui_layout(self.layout, context)
+        layout = self.layout
+        row = layout.row()
+        row.label(icon="TOOL_SETTINGS")
+        row.label(icon="FILE_TEXT")
+        row.label(icon="IMAGE_DATA")
+        row.label(icon="EVENT_NDOF_BUTTON_1")
+        draw_ui_layout(layout, context)
 
 def draw_menu_func(self, context):
     layout = self.layout

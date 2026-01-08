@@ -1,5 +1,6 @@
 import bpy
-from bpy.types import Operator, Panel, UILayout
+from bpy.types import Operator, Panel, UILayout, Node
+from bpy.props import StringProperty, IntProperty, FloatVectorProperty, BoolProperty, PointerProperty, FloatProperty, EnumProperty, IntVectorProperty
 from . import draw_core
 from . import edit_ops
 from . import search_ops
@@ -49,7 +50,7 @@ class NODE_OT_reset_prefs(Operator):
     bl_label = "重置为默认"
     bl_options = {'INTERNAL'}
 
-    target_section: bpy.props.StringProperty()
+    target_section: StringProperty()
 
     def execute(self, context):
         prefs = pref()
@@ -57,10 +58,7 @@ class NODE_OT_reset_prefs(Operator):
             for p in ["seq_radius", "seq_bg_color", "seq_font_size", "seq_font_color"]:
                 prefs.property_unset(p)
         elif self.target_section == 'TEXT':
-            for p in [
-                    "text_default_size", "text_default_color", "bg_default_color", "text_default_fit",
-                    "text_default_align"
-            ]:
+            for p in ["text_default_size", "text_default_color", "bg_default_color", "text_default_fit", "text_default_align"]:
                 prefs.property_unset(p)
             for i in range(1, 7):
                 prefs.property_unset(f"col_preset_{i}")
@@ -73,56 +71,55 @@ class NODE_OT_reset_prefs(Operator):
 # --- 属性初始化 ---
 
 def init_props():
-    bpy.types.Node.na_text = bpy.props.StringProperty(name="内容", default="", update=tag_redraw, options={'TEXTEDIT_UPDATE'})
-
-    bpy.types.Node.na_font_size = bpy.props.IntProperty(name="字号", default=8, min=4, max=500, update=tag_redraw)
-    bpy.types.Node.na_bg_color = bpy.props.FloatVectorProperty(name="背景",
-                                                               subtype='COLOR',
-                                                               size=4,
-                                                               default=(0.2, 0.3, 0.5, 0.9),
-                                                               min=0.0,
-                                                               max=1.0,
-                                                               update=tag_redraw)
-    bpy.types.Node.na_text_color = bpy.props.FloatVectorProperty(name="文字",
-                                                                 subtype='COLOR',
-                                                                 size=4,
-                                                                 default=(1.0, 1.0, 1.0, 1.0),
-                                                                 min=0.0,
-                                                                 max=1.0,
-                                                                 update=tag_redraw)
-    bpy.types.Node.na_text_fit_content = bpy.props.BoolProperty(name="适应文本", default=False, update=tag_redraw, description="背景宽度自动适应文本内容")
-    bpy.types.Node.na_show_text = bpy.props.BoolProperty(name="显示文本", default=True, update=tag_redraw)
-    bpy.types.Node.na_auto_txt_width = bpy.props.BoolProperty(name="跟随节点", default=True, update=tag_redraw, description="宽度自动跟随节点宽度")
-    bpy.types.Node.na_txt_bg_width = bpy.props.IntProperty(name="背景宽", default=200, min=1, max=2000, update=update_manual_text_width)
-    bpy.types.Node.na_swap_content_order = bpy.props.BoolProperty(name="互换位置", default=False, update=tag_redraw)
-    bpy.types.Node.na_z_order_switch = bpy.props.BoolProperty(name="层级切换", description="交换图片与文字的前后层级", default=False, update=tag_redraw)
-    bpy.types.Node.na_sequence_index = bpy.props.IntProperty(name="序号", default=0, min=0, update=tag_redraw, description="逻辑序号 (0为不显示)")
-    bpy.types.Node.na_sequence_color = bpy.props.FloatVectorProperty(name="序号颜色",
-                                                                     subtype='COLOR',
-                                                                     size=4,
-                                                                     default=(0.8, 0.1, 0.1, 1.0),
-                                                                     min=0.0,
-                                                                     max=1.0,
-                                                                     update=tag_redraw)
-    bpy.types.Node.na_image = bpy.props.PointerProperty(name="图像", type=bpy.types.Image, update=update_na_image)
-    bpy.types.Node.na_auto_img_width = bpy.props.BoolProperty(name="自动图宽", default=True, update=tag_redraw)
-    bpy.types.Node.na_img_width = bpy.props.FloatProperty(name="图宽", default=150.0, min=10.0, max=2000.0, update=update_manual_img_width)
-    bpy.types.Node.na_show_image = bpy.props.BoolProperty(name="显图", default=True, update=tag_redraw)
+    Node.na_text = StringProperty(name="内容", default="", update=tag_redraw, options={'TEXTEDIT_UPDATE'})
+    Node.na_font_size = IntProperty(name="字号", default=8, min=4, max=500, update=tag_redraw)
+    Node.na_txt_bg_color = FloatVectorProperty(name="背景",
+                                               subtype='COLOR',
+                                               size=4,
+                                               default=(0.2, 0.3, 0.5, 0.9),
+                                               min=0.0,
+                                               max=1.0,
+                                               update=tag_redraw)
+    Node.na_text_color = FloatVectorProperty(name="文字",
+                                             subtype='COLOR',
+                                             size=4,
+                                             default=(1.0, 1.0, 1.0, 1.0),
+                                             min=0.0,
+                                             max=1.0,
+                                             update=tag_redraw)
+    Node.na_text_fit_content = BoolProperty(name="适应文本", default=False, update=tag_redraw, description="背景宽度自动适应文本内容")
+    Node.na_show_text = BoolProperty(name="显示文本", default=True, update=tag_redraw)
+    Node.na_auto_txt_width = BoolProperty(name="跟随节点", default=True, update=tag_redraw, description="宽度自动跟随节点宽度")
+    Node.na_txt_bg_width = IntProperty(name="背景宽", default=200, min=1, max=2000, update=update_manual_text_width)
+    Node.na_swap_content_order = BoolProperty(name="互换位置", default=False, update=tag_redraw)
+    Node.na_z_order_switch = BoolProperty(name="层级切换", description="交换图片与文字的前后层级", default=False, update=tag_redraw)
+    Node.na_sequence_index = IntProperty(name="序号", default=0, min=0, update=tag_redraw, description="逻辑序号 (0为不显示)")
+    Node.na_sequence_color = FloatVectorProperty(name="序号颜色",
+                                                 subtype='COLOR',
+                                                 size=4,
+                                                 default=(0.8, 0.1, 0.1, 1.0),
+                                                 min=0.0,
+                                                 max=1.0,
+                                                 update=tag_redraw)
+    Node.na_image = PointerProperty(name="图像", type=bpy.types.Image, update=update_na_image)
+    Node.na_auto_img_width = BoolProperty(name="自动图宽", default=True, update=tag_redraw)
+    Node.na_img_width = IntProperty(name="图宽", default=140, min=10, max=2000, update=update_manual_img_width)
+    Node.na_show_image = BoolProperty(name="显图", default=True, update=tag_redraw)
     align_items = [('TOP', "顶部", ""), ('BOTTOM', "底部", ""), ('LEFT', "左侧", ""), ('RIGHT', "右侧", "")]
-    bpy.types.Node.na_align_pos = bpy.props.EnumProperty(name="对齐", items=align_items, default='TOP', update=tag_redraw)
-    bpy.types.Node.na_txt_offset = bpy.props.FloatVectorProperty(name="文本偏移", size=2, default=(0.0, 0.0), update=tag_redraw, subtype='XYZ', description="文本偏移")
-    bpy.types.Node.na_img_align_pos = bpy.props.EnumProperty(name="图对齐", items=align_items, default='TOP', update=tag_redraw)
-    bpy.types.Node.na_img_offset = bpy.props.FloatVectorProperty(name="图像偏移", size=2, default=(0.0, 0.0), update=tag_redraw, subtype='XYZ', description="图像偏移")
-    bpy.types.Node.na_is_initialized = bpy.props.BoolProperty(default=False)
+    Node.na_txt_pos = EnumProperty(name="对齐", items=align_items, default='TOP', update=tag_redraw, description="文本位置")
+    Node.na_txt_offset = IntVectorProperty(name="文本偏移", size=2, default=(0, 0), update=tag_redraw, subtype='XYZ', description="文本偏移")
+    Node.na_img_pos = EnumProperty(name="图对齐", items=align_items, default='TOP', update=tag_redraw, description="图像位置")
+    Node.na_img_offset = IntVectorProperty(name="图像偏移", size=2, default=(0, 0), update=tag_redraw, subtype='XYZ', description="图像偏移")
+    Node.na_is_initialized = BoolProperty(default=False)
 
 def clear_props():
     props = [
-        "na_text", "na_font_size", "na_bg_color", "na_text_color", "na_auto_txt_width", "na_txt_bg_width", "na_swap_content_order", "na_image",
-        "na_img_width", "na_show_image", "na_auto_img_width", "na_align_pos", "na_txt_offset", "na_z_order_switch", "na_sequence_index",
-        "na_sequence_color", "na_img_align_pos", "na_img_offset", "na_text_fit_content", "na_show_text", "na_is_initialized"
+        "na_text", "na_font_size", "na_txt_bg_color", "na_text_color", "na_auto_txt_width", "na_txt_bg_width", "na_swap_content_order",
+        "na_image", "na_img_width", "na_show_image", "na_auto_img_width", "na_txt_pos", "na_txt_offset", "na_z_order_switch",
+        "na_sequence_index", "na_sequence_color", "na_img_pos", "na_img_offset", "na_text_fit_content", "na_show_text", "na_is_initialized"
     ]
     for p in props:
-        if hasattr(bpy.types.Node, p): delattr(bpy.types.Node, p)
+        if hasattr(Node, p): delattr(Node, p)
     for p in dir(bpy.types.Scene):
         if p.startswith("na_"): delattr(bpy.types.Scene, p)
 
@@ -145,17 +142,18 @@ class NODE_PT_annotator_gpu_panel(Panel):
 class NODE_OT_na_swap_order(Operator):
     bl_idname = "node.na_swap_order"
     bl_label = "交换图文位置"
+    bl_description = "文本笔记和图像笔记交换顺序"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         node = context.active_node
         if not node: return {'CANCELLED'}
-        if hasattr(node, "na_align_pos") and hasattr(node, "na_img_align_pos"):
-            align_txt = node.na_align_pos
-            align_img = node.na_img_align_pos
+        if hasattr(node, "na_txt_pos") and hasattr(node, "na_img_pos"):
+            align_txt = node.na_txt_pos
+            align_img = node.na_img_pos
             if align_txt != align_img:
-                node.na_align_pos = align_img
-                node.na_img_align_pos = align_txt
+                node.na_txt_pos = align_img
+                node.na_img_pos = align_txt
             else:
                 if hasattr(node, "na_swap_content_order"):
                     node.na_swap_content_order = not node.na_swap_content_order
@@ -241,7 +239,7 @@ class NODE_OT_interactive_seq(Operator):
 
 class NODE_OT_clear_global_sequence(Operator):
     bl_idname = "node.na_clear_global_sequence"
-    bl_label = "清除全局序号"
+    bl_label = "删除全局序号"
     bl_options = {'UNDO'}
 
     def invoke(self, context, event):
@@ -254,13 +252,14 @@ class NODE_OT_clear_global_sequence(Operator):
                 if hasattr(node, "na_sequence_index") and node.na_sequence_index > 0:
                     node.na_sequence_index = 0
                     count += 1
-            self.report({'INFO'}, f"已清除 {count} 个节点的序号")
+            self.report({'INFO'}, f"已删除 {count} 个节点的序号")
             context.area.tag_redraw()
         return {'FINISHED'}
 
-class NODE_OT_clear_text(Operator):
-    bl_idname = "node.na_clear_text"
-    bl_label = "清除"
+class NODE_OT_clear_select_all(Operator):
+    bl_idname = "node.na_clear_select_all"
+    bl_label = "删除全部"
+    bl_description = "删除选中节点的所有笔记"
     bl_options = {'UNDO'}
 
     def execute(self, context):
@@ -272,22 +271,66 @@ class NODE_OT_clear_text(Operator):
             node.na_is_initialized = False
         return {'FINISHED'}
 
+class NODE_OT_clear_select_txt(Operator):
+    bl_idname = "node.na_clear_select_txt"
+    bl_label = "删除文本"
+    bl_description = "删除选中节点的文字笔记"
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+        nodes = context.selected_nodes if context.selected_nodes else [context.active_node]
+        for node in nodes:
+            node.na_text = ""
+            if not node.na_image and not node.na_sequence_index:
+                node.na_is_initialized = False
+        return {'FINISHED'}
+
+class NODE_OT_clear_select_img(Operator):
+    bl_idname = "node.na_clear_select_img"
+    bl_label = "删除图片"
+    bl_description = "删除选中节点的图片笔记"
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+        nodes = context.selected_nodes if context.selected_nodes else [context.active_node]
+        for node in nodes:
+            node.na_image = None
+            if not node.na_text and not node.na_sequence_index:
+                node.na_is_initialized = False
+        return {'FINISHED'}
+
+class NODE_OT_clear_select_seq(Operator):
+    bl_idname = "node.na_clear_select_seq"
+    bl_label = "删除序号"
+    bl_description = "删除选中节点的序号笔记"
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+        nodes = context.selected_nodes if context.selected_nodes else [context.active_node]
+        for node in nodes:
+            node.na_sequence_index = 0
+            if not node.na_text and not node.na_image:
+                node.na_is_initialized = False
+        return {'FINISHED'}
+
 class NODE_OT_clear_all_scene_notes(Operator):
     bl_idname = "node.na_clear_all_scene_notes"
-    bl_label = "清除所有"
+    bl_label = "删除所有笔记"
+    bl_description = "删除节点树中所有笔记"
     bl_options = {'UNDO'}
 
     def invoke(self, context, event):
         return context.window_manager.invoke_confirm(self, event)
 
+    # todo: 是否递归节点组内
     def execute(self, context):
-        if context.space_data.edit_tree:
-            for node in context.space_data.edit_tree.nodes:
-                if hasattr(node, "na_text"):
-                    node.na_text = ""
-                    node.na_image = None
-                    node.na_sequence_index = 0
-                    node.na_is_initialized = False
+        edit_tree = context.space_data.edit_tree
+        if edit_tree:
+            for node in edit_tree.nodes:
+                node.na_text = ""
+                node.na_image = None
+                node.na_sequence_index = 0
+                node.na_is_initialized = False
         return {'FINISHED'}
 
 class NODE_OT_fix_prop(Operator):
@@ -299,8 +342,18 @@ class NODE_OT_fix_prop(Operator):
         return {'FINISHED'}
 
 classes = [
-    NODE_PT_annotator_gpu_panel, NODE_OT_clear_text, NODE_OT_fix_prop, NODE_OT_clear_all_scene_notes, NODE_OT_na_swap_order,
-    NODE_OT_interactive_seq, NODE_OT_clear_global_sequence, NODE_OT_reset_prefs, NodeMemoAddonPreferences
+    NODE_PT_annotator_gpu_panel,
+    NODE_OT_clear_select_all,
+    NODE_OT_clear_select_txt,
+    NODE_OT_clear_select_img,
+    NODE_OT_clear_select_seq,
+    NODE_OT_fix_prop,
+    NODE_OT_clear_all_scene_notes,
+    NODE_OT_na_swap_order,
+    NODE_OT_interactive_seq,
+    NODE_OT_clear_global_sequence,
+    NODE_OT_reset_prefs,
+    NodeMemoAddonPreferences,
 ]
 
 def register():

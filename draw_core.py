@@ -285,7 +285,7 @@ def draw_callback_px():
             if not text and not (img and show_img) and seq_idx == 0: continue
 
             # [修复 1] 颜色检查只控制文本/图片的“显示状态”，不再跳过循环（以免连坐序号）
-            col = getattr(node, "na_bg_color", DEFAULT_BG)
+            col = getattr(node, "na_txt_bg_color", DEFAULT_BG)
             is_visible_by_color = check_color_visibility(scene, col)
 
             # 性能优化：如果颜色不可见 且 没有序号要画，那确实可以跳过
@@ -295,9 +295,9 @@ def draw_callback_px():
             fs = max(1, int(getattr(node, "na_font_size", 8) * scaled_zoom))
             pad = PADDING_X * scaled_zoom
 
-            align = getattr(node, "na_align_pos", 'TOP')
+            align = getattr(node, "na_txt_pos", 'TOP')
             off = getattr(node, "na_txt_offset", (0, 0))
-            img_align = getattr(node, "na_img_align_pos", 'TOP') if hasattr(node, "na_img_align_pos") else 'TOP'
+            img_align = getattr(node, "na_img_pos", 'TOP') if hasattr(node, "na_img_pos") else 'TOP'
             img_off = getattr(node, "na_img_offset", (0, 0)) if hasattr(node, "na_img_offset") else (0, 0)
             swap = getattr(node, "na_swap_content_order", False)
 
