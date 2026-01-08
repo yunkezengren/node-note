@@ -19,7 +19,7 @@ class NodeMemoAddonPreferences(AddonPreferences):
     is_interactive_mode: bpy.props.BoolProperty(name="交互模式", default=False, update=tag_redraw, description="点击节点即可编号，右键或ESC退出")
     sort_by_sequence: bpy.props.BoolProperty(name="按序号排序", default=False, update=tag_redraw, description="勾选后，有序号的节点将优先显示在列表顶部")
     use_occlusion: bpy.props.BoolProperty(name="自动遮挡", default=False, update=tag_redraw)
-    tag_mode_prepend: bpy.props.BoolProperty(name="前缀模式", default=True)
+    tag_mode_prepend: bpy.props.BoolProperty(name="前缀模式", default=True, description="特殊字符添加到已有文本前")
     navigator_search: bpy.props.StringProperty(name="搜索", default="")
     filter_red: bpy.props.BoolProperty(name="过滤红", default=True, update=tag_redraw)
     filter_green: bpy.props.BoolProperty(name="过滤绿", default=True, update=tag_redraw)

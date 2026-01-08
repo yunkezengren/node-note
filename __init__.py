@@ -1,5 +1,5 @@
 import bpy
-from bpy.types import Operator, Panel
+from bpy.types import Operator, Panel, UILayout
 from . import draw_core
 from . import edit_ops
 from . import search_ops
@@ -14,12 +14,12 @@ def update_interactive_mode(self, context):
     context.area.tag_redraw()
 
 def update_manual_text_width(self, context):
-    if self.na_auto_width: self.na_auto_width = False
+    if self.na_auto_txt_width: self.na_auto_txt_width = False
     if self.na_text_fit_content: self.na_text_fit_content = False
     tag_redraw(self, context)
 
 def update_manual_img_width(self, context):
-    if self.na_img_width_auto: self.na_img_width_auto = False
+    if self.na_auto_img_width: self.na_auto_img_width = False
     tag_redraw(self, context)
 
 def update_na_image(self, context):
@@ -90,10 +90,10 @@ def init_props():
                                                                  min=0.0,
                                                                  max=1.0,
                                                                  update=tag_redraw)
-    bpy.types.Node.na_text_fit_content = bpy.props.BoolProperty(name="适应文本", default=False, update=tag_redraw)
+    bpy.types.Node.na_text_fit_content = bpy.props.BoolProperty(name="适应文本", default=False, update=tag_redraw, description="背景宽度自动适应文本内容")
     bpy.types.Node.na_show_text = bpy.props.BoolProperty(name="显示文本", default=True, update=tag_redraw)
-    bpy.types.Node.na_auto_width = bpy.props.BoolProperty(name="跟随节点", default=True, update=tag_redraw)
-    bpy.types.Node.na_bg_width = bpy.props.IntProperty(name="背景宽", default=200, min=1, max=2000, update=update_manual_text_width)
+    bpy.types.Node.na_auto_txt_width = bpy.props.BoolProperty(name="跟随节点", default=True, update=tag_redraw, description="宽度自动跟随节点宽度")
+    bpy.types.Node.na_txt_bg_width = bpy.props.IntProperty(name="背景宽", default=200, min=1, max=2000, update=update_manual_text_width)
     bpy.types.Node.na_swap_content_order = bpy.props.BoolProperty(name="互换位置", default=False, update=tag_redraw)
     bpy.types.Node.na_z_order_switch = bpy.props.BoolProperty(name="层级切换", description="交换图片与文字的前后层级", default=False, update=tag_redraw)
     bpy.types.Node.na_sequence_index = bpy.props.IntProperty(name="序号", default=0, min=0, update=tag_redraw, description="逻辑序号 (0为不显示)")
@@ -105,20 +105,20 @@ def init_props():
                                                                      max=1.0,
                                                                      update=tag_redraw)
     bpy.types.Node.na_image = bpy.props.PointerProperty(name="图像", type=bpy.types.Image, update=update_na_image)
-    bpy.types.Node.na_img_width_auto = bpy.props.BoolProperty(name="自动图宽", default=True, update=tag_redraw)
+    bpy.types.Node.na_auto_img_width = bpy.props.BoolProperty(name="自动图宽", default=True, update=tag_redraw)
     bpy.types.Node.na_img_width = bpy.props.FloatProperty(name="图宽", default=150.0, min=10.0, max=2000.0, update=update_manual_img_width)
     bpy.types.Node.na_show_image = bpy.props.BoolProperty(name="显图", default=True, update=tag_redraw)
     align_items = [('TOP', "顶部", ""), ('BOTTOM', "底部", ""), ('LEFT', "左侧", ""), ('RIGHT', "右侧", "")]
     bpy.types.Node.na_align_pos = bpy.props.EnumProperty(name="对齐", items=align_items, default='TOP', update=tag_redraw)
-    bpy.types.Node.na_offset = bpy.props.FloatVectorProperty(name="偏移", size=2, default=(0.0, 0.0), update=tag_redraw, subtype='XYZ')
+    bpy.types.Node.na_txt_offset = bpy.props.FloatVectorProperty(name="文本偏移", size=2, default=(0.0, 0.0), update=tag_redraw, subtype='XYZ', description="文本偏移")
     bpy.types.Node.na_img_align_pos = bpy.props.EnumProperty(name="图对齐", items=align_items, default='TOP', update=tag_redraw)
-    bpy.types.Node.na_img_offset = bpy.props.FloatVectorProperty(name="图偏移", size=2, default=(0.0, 0.0), update=tag_redraw, subtype='XYZ')
+    bpy.types.Node.na_img_offset = bpy.props.FloatVectorProperty(name="图像偏移", size=2, default=(0.0, 0.0), update=tag_redraw, subtype='XYZ', description="图像偏移")
     bpy.types.Node.na_is_initialized = bpy.props.BoolProperty(default=False)
 
 def clear_props():
     props = [
-        "na_text", "na_font_size", "na_bg_color", "na_text_color", "na_auto_width", "na_bg_width", "na_swap_content_order", "na_image",
-        "na_img_width", "na_show_image", "na_img_width_auto", "na_align_pos", "na_offset", "na_z_order_switch", "na_sequence_index",
+        "na_text", "na_font_size", "na_bg_color", "na_text_color", "na_auto_txt_width", "na_txt_bg_width", "na_swap_content_order", "na_image",
+        "na_img_width", "na_show_image", "na_auto_img_width", "na_align_pos", "na_txt_offset", "na_z_order_switch", "na_sequence_index",
         "na_sequence_color", "na_img_align_pos", "na_img_offset", "na_text_fit_content", "na_show_text", "na_is_initialized"
     ]
     for p in props:
@@ -139,46 +139,8 @@ class NODE_PT_annotator_gpu_panel(Panel):
         return context.space_data.type == 'NODE_EDITOR'
 
     def draw(self, context):
-        prefs = pref()
         layout = self.layout
-        box = layout.box()
-        row = box.row()
-        row.label(text="全局控制", icon='WORLD_DATA')
-        row = box.row(align=True)
-        row.prop(prefs, "show_annotations", text="总开关", icon='HIDE_OFF', toggle=True)
-        row.operator("node.na_clear_all_scene_notes", text="全清", icon='TRASH')
-        if prefs.show_annotations:
-            box.label(text="通道过滤:", icon='FILTER')
-            row = box.row(align=True)
-            row.prop(prefs, "filter_red", text="红", toggle=True)
-            row.prop(prefs, "filter_green", text="绿", toggle=True)
-            row.prop(prefs, "filter_blue", text="蓝", toggle=True)
-            row.prop(prefs, "filter_orange", text="橙", toggle=True)
-            row.prop(prefs, "filter_purple", text="紫", toggle=True)
-            row.prop(prefs, "filter_other", text="杂", toggle=True)
-
-        row = layout.row(align=True)
-        row.prop(prefs, "use_occlusion", text="被遮挡时自动隐藏")
-
-        layout.separator()
-
-        try:
-            edit_ops.draw_ui_layout(layout, context, draw_footer=False, draw_sequence=True)
-        except Exception as e:
-            layout.label(text=f"UI Error: {e}", icon="ERROR")
-
-        node = context.active_node
-        if node:
-            sel_count = len(context.selected_nodes)
-            layout.separator(factor=0.2)
-            if sel_count > 1:
-                row = layout.row(align=True)
-                row.operator("node.na_copy_to_selected", text="同步给选中", icon='DUPLICATE')
-                row.operator("node.na_clear_text", text="批量清除", icon='TRASH')
-            else:
-                row = layout.row(align=True)
-                row.operator("node.na_clear_text", text="清除单项", icon='TRASH')
-                row.operator("preferences.addon_show", text="偏好设置", icon='PREFERENCES').module = __package__
+        edit_ops.draw_ui_layout(layout, context)
 
 class NODE_OT_na_swap_order(Operator):
     bl_idname = "node.na_swap_order"

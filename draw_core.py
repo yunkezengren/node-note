@@ -296,7 +296,7 @@ def draw_callback_px():
             pad = PADDING_X * scaled_zoom
 
             align = getattr(node, "na_align_pos", 'TOP')
-            off = getattr(node, "na_offset", (0, 0))
+            off = getattr(node, "na_txt_offset", (0, 0))
             img_align = getattr(node, "na_img_align_pos", 'TOP') if hasattr(node, "na_img_align_pos") else 'TOP'
             img_off = getattr(node, "na_img_offset", (0, 0)) if hasattr(node, "na_img_offset") else (0, 0)
             swap = getattr(node, "na_swap_content_order", False)
@@ -317,7 +317,7 @@ def draw_callback_px():
             blf.size(font_id, fs)
 
             fit_content = getattr(node, "na_text_fit_content", False)
-            auto_width = getattr(node, "na_auto_width", True)
+            auto_width = getattr(node, "na_auto_txt_width", True)
             target_width_px = 0
 
             if fit_content:
@@ -331,7 +331,7 @@ def draw_callback_px():
                 min_w = view_to_region_scaled(context, loc.x + MIN_AUTO_WIDTH, loc.y)[0] - sx
                 target_width_px = max(node_w_px, min_w)
             else:
-                manual_w = getattr(node, "na_bg_width", 200)
+                manual_w = getattr(node, "na_txt_bg_width", 200)
                 target_width_px = (view_to_region_scaled(context, loc.x + manual_w, loc.y)[0] - sx)
 
             lines = []
@@ -346,7 +346,7 @@ def draw_callback_px():
             img_draw_w, img_draw_h, texture = 0, 0, None
             if img and show_img:
                 ref_w = max(node_w_px, (view_to_region_scaled(context, loc.x + MIN_AUTO_WIDTH, loc.y)[0] - sx))
-                base_w = ref_w if getattr(node, "na_img_width_auto", True) else (getattr(node, "na_img_width", 150) * scaled_zoom)
+                base_w = ref_w if getattr(node, "na_auto_img_width", True) else (getattr(node, "na_img_width", 150) * scaled_zoom)
                 if img.size[0] > 0:
                     img_draw_w = base_w
                     img_draw_h = base_w * (img.size[1] / img.size[0])
