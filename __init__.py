@@ -9,6 +9,7 @@ bl_info = {
 }
 
 import bpy
+from bpy.types import Operator, AddonPreferences, Panel
 from . import draw_core
 from . import edit_ops
 from . import search_ops
@@ -63,7 +64,7 @@ def update_na_image(self, context):
 
 # --- 偏好设置类 ---
 
-class NODE_OT_reset_prefs(bpy.types.Operator):
+class NODE_OT_reset_prefs(Operator):
     """重置当前页面的设置"""
     bl_idname = "node.na_reset_prefs"
     bl_label = "重置为默认"
@@ -90,7 +91,7 @@ class NODE_OT_reset_prefs(bpy.types.Operator):
                 prefs.property_unset(p)
         return {'FINISHED'}
 
-class NodeMemoAddonPreferences(bpy.types.AddonPreferences):
+class NodeMemoAddonPreferences(AddonPreferences):
     bl_idname = __package__
 
     # 1. 全局设置
@@ -315,7 +316,7 @@ def clear_props():
     for p in dir(bpy.types.Scene):
         if p.startswith("na_"): delattr(bpy.types.Scene, p)
 
-class NODE_PT_annotator_gpu_panel(bpy.types.Panel):
+class NODE_PT_annotator_gpu_panel(Panel):
     bl_label = "节点随记"
     bl_idname = "NODE_PT_annotator_gpu_panel"
     bl_space_type = 'NODE_EDITOR'
@@ -369,7 +370,7 @@ class NODE_PT_annotator_gpu_panel(bpy.types.Panel):
                 row.operator("node.na_clear_text", text="清除单项", icon='TRASH')
                 row.operator("preferences.addon_show", text="偏好设置", icon='PREFERENCES').module = __package__
 
-class NODE_OT_na_swap_order(bpy.types.Operator):
+class NODE_OT_na_swap_order(Operator):
     bl_idname = "node.na_swap_order"
     bl_label = "交换图文位置"
     bl_options = {'REGISTER', 'UNDO'}
@@ -389,7 +390,7 @@ class NODE_OT_na_swap_order(bpy.types.Operator):
             context.area.tag_redraw()
         return {'FINISHED'}
 
-class NODE_OT_interactive_seq(bpy.types.Operator):
+class NODE_OT_interactive_seq(Operator):
     """画笔点选编号 (右键/ESC退出)"""
     bl_idname = "node.na_interactive_seq"
     bl_label = "交互式编号"
@@ -466,7 +467,7 @@ class NODE_OT_interactive_seq(bpy.types.Operator):
             context.scene.na_is_interactive_mode = False
             return {'CANCELLED'}
 
-class NODE_OT_clear_global_sequence(bpy.types.Operator):
+class NODE_OT_clear_global_sequence(Operator):
     bl_idname = "node.na_clear_global_sequence"
     bl_label = "清除全局序号"
     bl_options = {'UNDO'}
@@ -485,7 +486,7 @@ class NODE_OT_clear_global_sequence(bpy.types.Operator):
             context.area.tag_redraw()
         return {'FINISHED'}
 
-class NODE_OT_clear_text(bpy.types.Operator):
+class NODE_OT_clear_text(Operator):
     bl_idname = "node.na_clear_text"
     bl_label = "清除"
     bl_options = {'UNDO'}
@@ -499,7 +500,7 @@ class NODE_OT_clear_text(bpy.types.Operator):
             node.na_is_initialized = False
         return {'FINISHED'}
 
-class NODE_OT_clear_all_scene_notes(bpy.types.Operator):
+class NODE_OT_clear_all_scene_notes(Operator):
     bl_idname = "node.na_clear_all_scene_notes"
     bl_label = "清除所有"
     bl_options = {'UNDO'}
@@ -517,7 +518,7 @@ class NODE_OT_clear_all_scene_notes(bpy.types.Operator):
                     node.na_is_initialized = False
         return {'FINISHED'}
 
-class NODE_OT_fix_prop(bpy.types.Operator):
+class NODE_OT_fix_prop(Operator):
     bl_idname = "node.na_fix_prop"
     bl_label = "修复属性"
 

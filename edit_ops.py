@@ -1,4 +1,5 @@
 import bpy
+from bpy.types import Operator
 import os
 import subprocess
 import tempfile
@@ -45,7 +46,7 @@ def paste_image_from_clipboard():
         pass
     return None
 
-class NODE_OT_reset_img_width(bpy.types.Operator):
+class NODE_OT_reset_img_width(Operator):
     bl_idname = "node.na_reset_img_width"
     bl_label = "复位宽"
     bl_options = {'UNDO'}
@@ -55,7 +56,7 @@ class NODE_OT_reset_img_width(bpy.types.Operator):
         context.area.tag_redraw()
         return {'FINISHED'}
 
-class NODE_OT_toggle_text_width_link(bpy.types.Operator):
+class NODE_OT_toggle_text_width_link(Operator):
     bl_idname = "node.na_toggle_text_width_link"
     bl_label = "跟随节点宽度"
     bl_options = {'UNDO'}
@@ -66,7 +67,7 @@ class NODE_OT_toggle_text_width_link(bpy.types.Operator):
         context.area.tag_redraw()
         return {'FINISHED'}
 
-class NODE_OT_reset_offset(bpy.types.Operator):
+class NODE_OT_reset_offset(Operator):
     bl_idname = "node.na_reset_offset"
     bl_label = "复位"
     bl_options = {'UNDO'}
@@ -78,7 +79,7 @@ class NODE_OT_reset_offset(bpy.types.Operator):
         context.area.tag_redraw()
         return {'FINISHED'}
 
-class NODE_OT_reset_img_offset(bpy.types.Operator):
+class NODE_OT_reset_img_offset(Operator):
     bl_idname = "node.na_reset_img_offset"
     bl_label = "复位图片偏移"
     bl_options = {'UNDO'}
@@ -90,7 +91,7 @@ class NODE_OT_reset_img_offset(bpy.types.Operator):
         context.area.tag_redraw()
         return {'FINISHED'}
 
-class NODE_OT_open_image(bpy.types.Operator):
+class NODE_OT_open_image(Operator):
     bl_idname = "node.na_open_image"
     bl_label = "打开"
     bl_options = {'REGISTER', 'UNDO'}
@@ -119,7 +120,7 @@ class NODE_OT_open_image(bpy.types.Operator):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
-class NODE_OT_paste_image(bpy.types.Operator):
+class NODE_OT_paste_image(Operator):
     bl_idname = "node.na_paste_image"
     bl_label = "粘贴"
     bl_options = {'UNDO'}
@@ -143,7 +144,7 @@ class NODE_OT_paste_image(bpy.types.Operator):
         self.report({'WARNING'}, "无图片")
         return {'CANCELLED'}
 
-class NODE_OT_apply_preset(bpy.types.Operator):
+class NODE_OT_apply_preset(Operator):
     bl_idname = "node.na_apply_preset"
     bl_label = "预设"
     bl_options = {'UNDO'}
@@ -156,7 +157,7 @@ class NODE_OT_apply_preset(bpy.types.Operator):
             n.na_text_color = self.text_color
         return {'FINISHED'}
 
-class NODE_OT_copy_active_to_selected(bpy.types.Operator):
+class NODE_OT_copy_active_to_selected(Operator):
     bl_idname = "node.na_copy_to_selected"
     bl_label = "同步给选中"
     bl_options = {'UNDO'}
@@ -176,7 +177,7 @@ class NODE_OT_copy_active_to_selected(bpy.types.Operator):
         context.area.tag_redraw()
         return {'FINISHED'}
 
-class NODE_OT_add_quick_tag(bpy.types.Operator):
+class NODE_OT_add_quick_tag(Operator):
     bl_idname = "node.na_add_quick_tag"
     bl_label = "标签"
     bl_options = {'UNDO'}
@@ -187,7 +188,7 @@ class NODE_OT_add_quick_tag(bpy.types.Operator):
             n.na_text = (self.tag_text + " " + n.na_text) if context.scene.na_tag_mode_prepend else (n.na_text + " " + self.tag_text)
         return {'FINISHED'}
 
-class NODE_OT_copy_node_label(bpy.types.Operator):
+class NODE_OT_copy_node_label(Operator):
     bl_idname = "node.na_copy_node_label"
     bl_label = "引用"
     bl_options = {'UNDO'}
@@ -320,7 +321,7 @@ def draw_ui_layout(layout, context, draw_footer=True, draw_sequence=True):
             row.operator("node.na_clear_text", text="清除单项", icon='TRASH')
 
 # [更新] 呼出菜单时触发注入
-class NODE_OT_na_quick_edit(bpy.types.Operator):
+class NODE_OT_na_quick_edit(Operator):
     bl_idname = "node.na_quick_edit"
     # [修改点] 右键菜单名称改为“节点随记”
     bl_label = "节点随记"
