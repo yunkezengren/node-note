@@ -12,16 +12,16 @@ def inject_defaults_if_needed(node, prefs):
     """如果节点未初始化，注入偏好设置的默认值"""
     if not node.na_is_initialized and prefs:
         # 1. 注入文本相关默认值
-        node.na_font_size = prefs.pref_text_default_size
-        node.na_text_color = prefs.pref_text_default_color
-        node.na_bg_color = prefs.pref_bg_default_color
+        node.na_font_size = prefs.text_default_size
+        node.na_text_color = prefs.text_default_color
+        node.na_bg_color = prefs.bg_default_color
 
         # 2. 注入逻辑开关
-        node.na_text_fit_content = prefs.pref_text_default_fit
-        node.na_align_pos = prefs.pref_text_default_align
+        node.na_text_fit_content = prefs.text_default_fit
+        node.na_align_pos = prefs.text_default_align
 
         # 3. 注入序号颜色默认值
-        node.na_sequence_color = prefs.pref_seq_bg_color
+        node.na_sequence_color = prefs.seq_bg_color
 
         # 标记已初始化，以后不再覆盖
         node.na_is_initialized = True
@@ -110,7 +110,7 @@ class NODE_OT_open_image(Operator):
             # [注入] 图片默认对齐
             prefs = pref()
             if prefs:
-                context.active_node.na_img_align_pos = prefs.pref_img_default_align
+                context.active_node.na_img_align_pos = prefs.img_default_align
 
             context.area.tag_redraw()
         except Exception as e:
@@ -138,7 +138,7 @@ class NODE_OT_paste_image(Operator):
             # [注入] 图片默认对齐
             prefs = pref()
             if prefs:
-                context.active_node.na_img_align_pos = prefs.pref_img_default_align
+                context.active_node.na_img_align_pos = prefs.img_default_align
 
             self.report({'INFO'}, f"成功导入图片: {img.name}")
             return {'FINISHED'}
@@ -250,8 +250,8 @@ def draw_ui_layout(layout, context, draw_footer=True, draw_sequence=True):
         label_text = def_labels[i]
 
         if prefs:
-            col_val = getattr(prefs, f"pref_col_preset_{i+1}")
-            custom_lbl = getattr(prefs, f"pref_label_preset_{i+1}", "")
+            col_val = getattr(prefs, f"col_preset_{i+1}")
+            custom_lbl = getattr(prefs, f"label_preset_{i+1}", "")
             if custom_lbl:
                 label_text = custom_lbl
 

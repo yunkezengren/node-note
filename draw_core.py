@@ -206,11 +206,11 @@ def check_color_visibility(scene, bg_color):
     if not prefs: return True
     r, g, b = bg_color[:3]
     preset_cols = {
-        'red': prefs.pref_col_preset_1,
-        'green': prefs.pref_col_preset_2,
-        'blue': prefs.pref_col_preset_3,
-        'orange': prefs.pref_col_preset_4,
-        'purple': prefs.pref_col_preset_5,
+        'red': prefs.col_preset_1,
+        'green': prefs.col_preset_2,
+        'blue': prefs.col_preset_3,
+        'orange': prefs.col_preset_4,
+        'purple': prefs.col_preset_5,
     }
     for name, col_vec in preset_cols.items():
         if abs(r - col_vec[0]) + abs(g - col_vec[1]) + abs(b - col_vec[2]) < 0.05:
@@ -441,7 +441,7 @@ def draw_callback_px():
             if seq_idx > 0 and show_seq_global:
                 gpu.state.depth_test_set('NONE')
                 # 序号圆半径和字体相关属性属于全局风格
-                badge_radius = (prefs.pref_seq_radius if prefs else 7.0) * scaled_zoom
+                badge_radius = (prefs.seq_radius if prefs else 7.0) * scaled_zoom
                 badge_x = seq_anchor_x
                 badge_y = seq_anchor_y
 
@@ -450,8 +450,8 @@ def draw_callback_px():
                 draw_circle_batch(badge_x, badge_y, badge_radius, seq_col)
 
                 # 序号字号和颜色
-                seq_fs = prefs.pref_seq_font_size if prefs else 8
-                seq_font_col = list(prefs.pref_seq_font_color) if prefs else (1.0, 1.0, 1.0, 1.0)
+                seq_fs = prefs.seq_font_size if prefs else 8
+                seq_font_col = list(prefs.seq_font_color) if prefs else (1.0, 1.0, 1.0, 1.0)
 
                 blf.size(font_id, int(seq_fs * scaled_zoom))
                 blf.color(font_id, *seq_font_col)

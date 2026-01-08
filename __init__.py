@@ -54,19 +54,19 @@ class NODE_OT_reset_prefs(Operator):
     def execute(self, context):
         prefs = pref()
         if self.target_section == 'SEQ':
-            for p in ["pref_seq_radius", "pref_seq_bg_color", "pref_seq_font_size", "pref_seq_font_color"]:
+            for p in ["seq_radius", "seq_bg_color", "seq_font_size", "seq_font_color"]:
                 prefs.property_unset(p)
         elif self.target_section == 'TEXT':
             for p in [
-                    "pref_text_default_size", "pref_text_default_color", "pref_bg_default_color", "pref_text_default_fit",
-                    "pref_text_default_align"
+                    "text_default_size", "text_default_color", "bg_default_color", "text_default_fit",
+                    "text_default_align"
             ]:
                 prefs.property_unset(p)
             for i in range(1, 7):
-                prefs.property_unset(f"pref_col_preset_{i}")
-                prefs.property_unset(f"pref_label_preset_{i}")
+                prefs.property_unset(f"col_preset_{i}")
+                prefs.property_unset(f"label_preset_{i}")
         elif self.target_section == 'IMG':
-            for p in ["pref_img_max_res", "pref_img_default_align"]:
+            for p in ["img_max_res", "img_default_align"]:
                 prefs.property_unset(p)
         return {'FINISHED'}
 
@@ -256,7 +256,7 @@ class NODE_OT_interactive_seq(Operator):
                         node.na_sequence_index = self.current_idx
 
                         if node.na_sequence_index > 0:
-                            node.na_sequence_color = pref().pref_seq_bg_color
+                            node.na_sequence_color = pref().seq_bg_color
 
                         self.last_node = node
 
