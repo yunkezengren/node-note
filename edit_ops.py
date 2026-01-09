@@ -148,7 +148,7 @@ class NODE_OT_copy_active_to_selected(Operator):
     def execute(self, context):
         act = context.active_node
         if not act: return {'CANCELLED'}
-        strict_sync_props = ["na_font_size", "na_text_color", "na_txt_bg_color", "na_sequence_color", "na_text_fit_content", "na_auto_txt_width"]
+        strict_sync_props = ["na_font_size", "na_text_color", "na_txt_bg_color", "na_sequence_color", "na_text_width_mode", "na_txt_bg_width"]
         count = 0
         for n in context.selected_nodes:
             if n == act: continue
@@ -266,13 +266,10 @@ def draw_ui_layout(layout: UILayout, context: Context):
             op = split_color.operator("node.na_apply_preset", text=def_labels[i])
             op.bg_color = col_vals[i]
 
-        txt_box.prop(node, "na_text_fit_content", text="自适应宽度", icon='UNLINKED')
-        if not node.na_text_fit_content:
-            row_pos = txt_box.row(align=True)
-            row_pos.prop(node, "na_auto_txt_width", text="跟随节点", icon='LINKED')
-            sub = row_pos.row()
-            sub.active = not node.na_auto_txt_width
-            sub.prop(node, "na_txt_bg_width", text="宽度")
+        width_row = txt_box.row(align=True)
+        width_row.prop(node, "na_text_width_mode", text="")
+        if node.na_text_width_mode == 'MANUAL':
+            width_row.prop(node, "na_txt_bg_width", text="宽度")
 
         row_pos = txt_box.row(align=True)
         row_pos.prop(node, "na_txt_pos", text="")
