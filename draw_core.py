@@ -279,9 +279,10 @@ def draw_callback_px():
             show_img = getattr(node, "na_show_img", True)
             seq_idx = getattr(node, "na_seq_index", 0)
             show_text_bg = getattr(node, "na_show_txt", True)
+            show_seq = getattr(node, "na_show_seq", True)
 
             # 如果什么都没有，直接跳过
-            if not text and not (img and show_img) and seq_idx == 0: continue
+            if not text and not (img and show_img) and not (seq_idx > 0 and show_seq): continue
 
             # [修复 1] 颜色检查只控制文本/图片的“显示状态”，不再跳过循环（以免连坐序号）
             col = getattr(node, "na_txt_bg_color", DEFAULT_BG)
@@ -444,7 +445,7 @@ def draw_callback_px():
                     else: draw_missing_placeholder(final_img_x, img_y, img_draw_w, img_draw_h)
 
             # [修复 3] 序号绘制逻辑独立，不受 is_visible_by_color 影响
-            if seq_idx > 0:
+            if seq_idx > 0 and show_seq:
                 gpu.state.depth_test_set('NONE')
                 # 序号圆半径和字体相关属性属于全局风格
                 badge_radius = (prefs.seq_radius if prefs else 7.0) * scaled_zoom
