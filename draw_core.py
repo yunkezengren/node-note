@@ -289,7 +289,7 @@ def draw_callback_px():
             is_visible_by_color = check_color_visibility(scene, col)
 
             # 性能优化：如果颜色不可见 且 没有序号要画，那确实可以跳过
-            if (not is_visible_by_color) and (seq_idx == 0 or not show_seq_global):
+            if not is_visible_by_color and seq_idx == 0:
                 continue
 
             fs = max(1, int(getattr(node, "na_font_size", 8) * scaled_zoom))

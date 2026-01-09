@@ -205,7 +205,8 @@ def draw_ui_layout(layout: UILayout, context: Context):
         # body.column().prop(prefs, "use_occlusion", text="被遮挡时自动隐藏")
         
         row_del = body.row(align=True)
-        row_del.operator("node.na_clear_select_all", text="笔记", icon='TRASH')
+        # 暂时禁用这个
+        # row_del.operator("node.na_clear_select_all", text="删除选中笔记", icon='TRASH')
 
         if prefs.show_annotations:
             body.label(text="按背景色显示文本和图片:", icon='FILTER')
@@ -227,16 +228,17 @@ def draw_ui_layout(layout: UILayout, context: Context):
         return
 
     header, body = layout.panel("setting1", default_closed=False)
-    header.prop(node, "na_show_txt", text="")
+    header.prop(pref(), "show_select_txt", text="")
     header.label(text="文字笔记", icon='FILE_TEXT')
     if node.na_show_txt and node.na_text and node.na_show_img and node.na_image:
         header.operator("node.na_swap_order", text="⇅ 交换")
     header.operator("node.na_clear_select_txt", text="", icon='TRASH')
     if body:
         body.active = node.na_show_txt
-        txt_box = body.box()
+        body_split = body.split(factor=0.01)
+        body_split.label(text="")
+        txt_box = body_split.box()
         col = txt_box.column(align=True)
-        col.label(text="分号换行:", icon='TEXT')
         col.prop(node, "na_text", text="描述: ")
 
         row_pos = txt_box.column()
@@ -249,21 +251,22 @@ def draw_ui_layout(layout: UILayout, context: Context):
         txt_box.separator(factor=0.05)
         split_txt = txt_box.split(factor=0.5)
         split_txt.prop(node, "na_font_size", text="字号")
-        split_txt.row().prop(node, "na_text_color", text="颜色")
+        split_txt.label(text="todo 换行符")
         
         split_color = txt_box.split(factor=0.5)
-        split_color.row().prop(node, "na_txt_bg_color", text="背景")
-        split_color.label(text="预设颜色:")
+        split_color.row().prop(node, "na_text_color", text="文本色")
+        split_color.row().prop(node, "na_txt_bg_color", text="背景色")
 
         row_pos = txt_box.row()
+        row_pos.label(text="背景:")
         def_labels = ["红", "绿", "蓝", "橙", "紫", "无"]
         for i in range(len(def_labels)):
-            split_color = row_pos.split(factor=0.2, align=True)
+            split_color = row_pos.split(factor=0.1, align=True)
             split_color.prop(pref(), f"col_preset_{i+1}", text="")
             op = split_color.operator("node.na_apply_preset", text=def_labels[i])
             op.bg_color = col_vals[i]
 
-        txt_box.prop(node, "na_text_fit_content", text="匹配文本宽度", icon='UNLINKED')
+        txt_box.prop(node, "na_text_fit_content", text="自适应宽度", icon='UNLINKED')
         if not node.na_text_fit_content:
             row_pos = txt_box.row(align=True)
             row_pos.prop(node, "na_auto_txt_width", text="跟随节点", icon='LINKED')
@@ -277,12 +280,14 @@ def draw_ui_layout(layout: UILayout, context: Context):
         row_pos.operator("node.na_reset_offset", text="", icon='LOOP_BACK')
 
     header, body = layout.panel("setting2", default_closed=True)
-    header.prop(node, "na_show_img", text="")
+    header.prop(pref(), "show_select_img", text="")
     header.label(text="图片笔记", icon='IMAGE_DATA')
     header.operator("node.na_clear_select_img", text="", icon='TRASH')
     if body:
         body.active = node.na_show_img
-        img_box = body.box()
+        body_split = body.split(factor=0.01)
+        body_split.label(text="")
+        img_box = body_split.box()
         split = img_box.split(factor=0.75)
         split.template_ID(node, "na_image", open="image.open")
         split.operator("node.na_paste_image", text="粘贴", icon='PASTEDOWN')
@@ -298,17 +303,18 @@ def draw_ui_layout(layout: UILayout, context: Context):
         row_pos.prop(node, "na_img_offset", text="")
         row_pos.operator("node.na_reset_img_offset", text="", icon='LOOP_BACK')
 
-    # todo 序号笔记是全局控制的,要改
     header, body = layout.panel("setting3", default_closed=True)
     header.prop(pref(), "show_select_seq", text="")
     header.label(text="序号笔记", icon='EVENT_NDOF_BUTTON_1')
     header.operator("node.na_clear_select_seq", text="", icon='TRASH')
     if body:
-        body.active = pref().show_select_seq
-        seq_box = body.box()
+        body.active = node.na_show_seq
+        body_split = body.split(factor=0.01)
+        body_split.label(text="")
+        seq_box = body_split.box()
         split = seq_box.split(factor=0.5)
         split.prop(node, "na_seq_index", text="序号")
-        split.row().prop(node, "na_sequence_color", text="背景")
+        split.row().prop(node, "na_sequence_color", text="背景色")
 
         row_pos = seq_box.row()
         row_pos.operator("node.na_interactive_seq", text="自动编号", icon='BRUSH_DATA', depress=pref().is_interactive_mode)
@@ -322,7 +328,6 @@ def draw_ui_layout(layout: UILayout, context: Context):
 
 class NODE_OT_na_quick_edit(Operator):
     bl_idname = "node.na_quick_edit"
-    # [修改点] 右键菜单名称改为“节点随记”
     bl_label = "节点随记"
     bl_options = {'REGISTER', 'UNDO'}
 

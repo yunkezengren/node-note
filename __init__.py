@@ -42,8 +42,6 @@ def update_na_image(self, context):
         node["_na_last_img_name"] = ""
     tag_redraw(self, context)
 
-# --- 偏好设置类 ---
-
 class NODE_OT_reset_prefs(Operator):
     """重置当前页面的设置"""
     bl_idname = "node.na_reset_prefs"
@@ -116,7 +114,7 @@ def init_props():
 def clear_props():
     props = [
         "na_text", "na_font_size", "na_txt_bg_color", "na_text_color", "na_auto_txt_width", "na_txt_bg_width", "na_swap_content_order",
-        "na_image", "na_img_width", "na_show_img", "na_auto_img_width", "na_txt_pos", "na_txt_offset", "na_z_order_switch",
+        "na_image", "na_img_width", "na_show_img", "na_show_seq", "na_auto_img_width", "na_txt_pos", "na_txt_offset", "na_z_order_switch",
         "na_seq_index", "na_sequence_color", "na_img_pos", "na_img_offset", "na_text_fit_content", "na_show_txt", "na_is_initialized"
     ]
     for p in props:
@@ -142,22 +140,25 @@ class NODE_PT_annotator_gpu_panel(Panel):
 class NODE_OT_na_swap_order(Operator):
     bl_idname = "node.na_swap_order"
     bl_label = "交换图文位置"
-    bl_description = "文本笔记和图像笔记交换顺序"
+    bl_description = "交换选中节点文本笔记和图像笔记顺序"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         node = context.active_node
         if not node: return {'CANCELLED'}
-        if hasattr(node, "na_txt_pos") and hasattr(node, "na_img_pos"):
-            align_txt = node.na_txt_pos
-            align_img = node.na_img_pos
-            if align_txt != align_img:
-                node.na_txt_pos = align_img
-                node.na_img_pos = align_txt
-            else:
-                if hasattr(node, "na_swap_content_order"):
-                    node.na_swap_content_order = not node.na_swap_content_order
-            context.area.tag_redraw()
+        nodes = context.selected_nodes if context.selected_nodes else [context.active_node]
+        for node in nodes:
+            node.na_show_img = pref().show_select_img
+            if hasattr(node, "na_txt_pos") and hasattr(node, "na_img_pos"):
+                align_txt = node.na_txt_pos
+                align_img = node.na_img_pos
+                if align_txt != align_img:
+                    node.na_txt_pos = align_img
+                    node.na_img_pos = align_txt
+                else:
+                    if hasattr(node, "na_swap_content_order"):
+                        node.na_swap_content_order = not node.na_swap_content_order
+                context.area.tag_redraw()
         return {'FINISHED'}
 
 class NODE_OT_interactive_seq(Operator):
@@ -298,42 +299,6 @@ class NODE_OT_clear_select_seq(Operator):
             node.na_seq_index = 0
             if not node.na_text and not node.na_image:
                 node.na_is_initialized = False
-        return {'FINISHED'}
-
-class NODE_OT_show_select_txt(Operator):
-    bl_idname = "node.na_show_select_txt"
-    bl_label = "显示文本"
-    bl_description = "显示选中节点的文字笔记"
-    bl_options = {'UNDO'}
-
-    def execute(self, context):
-        nodes = context.selected_nodes if context.selected_nodes else [context.active_node]
-        for node in nodes:
-            node.na_show_txt = True
-        return {'FINISHED'}
-
-class NODE_OT_show_select_img(Operator):
-    bl_idname = "node.na_show_select_img"
-    bl_label = "显示图片"
-    bl_description = "显示选中节点的图片笔记"
-    bl_options = {'UNDO'}
-
-    def execute(self, context):
-        nodes = context.selected_nodes if context.selected_nodes else [context.active_node]
-        for node in nodes:
-            node.na_show_img = True
-        return {'FINISHED'}
-
-class NODE_OT_show_select_seq(Operator):
-    bl_idname = "node.na_show_select_seq"
-    bl_label = "显示序号"
-    bl_description = "显示选中节点的序号笔记"
-    bl_options = {'UNDO'}
-
-    def execute(self, context):
-        nodes = context.selected_nodes if context.selected_nodes else [context.active_node]
-        for node in nodes:
-            node.na_show_seq = True
         return {'FINISHED'}
 
 class NODE_OT_clear_all_scene_notes(Operator):
