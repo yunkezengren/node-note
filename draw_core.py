@@ -272,7 +272,6 @@ def draw_callback_px():
             occluders = [get_node_screen_rect(context, n) for n in context.selected_nodes]
 
         sequence_coords = {}
-        show_seq_global = prefs.show_select_seq
 
         for node in tree.nodes:
             text = getattr(node, "na_text", "").strip()
@@ -410,7 +409,7 @@ def draw_callback_px():
                     txt_x, txt_y = outer_x, outer_y
 
             seq_anchor_x, seq_anchor_y = sx, sy
-            if seq_idx > 0 and show_seq_global:
+            if seq_idx > 0:
                 sequence_coords[seq_idx] = (seq_anchor_x, seq_anchor_y)
 
             is_occluded = False
@@ -445,7 +444,7 @@ def draw_callback_px():
                     else: draw_missing_placeholder(final_img_x, img_y, img_draw_w, img_draw_h)
 
             # [修复 3] 序号绘制逻辑独立，不受 is_visible_by_color 影响
-            if seq_idx > 0 and show_seq_global:
+            if seq_idx > 0:
                 gpu.state.depth_test_set('NONE')
                 # 序号圆半径和字体相关属性属于全局风格
                 badge_radius = (prefs.seq_radius if prefs else 7.0) * scaled_zoom
@@ -467,7 +466,7 @@ def draw_callback_px():
                 blf.position(font_id, int(badge_x - dims[0] / 2), int(badge_y - dims[1] / 2.5), 0)
                 blf.draw(font_id, num_str)
 
-        if prefs.show_sequence_lines and show_seq_global and len(sequence_coords) > 1:
+        if prefs.show_sequence_lines and len(sequence_coords) > 1:
             sorted_indices = sorted(sequence_coords.keys())
             line_points = []
             line_col = (1.0, 0.8, 0.2, 0.8)

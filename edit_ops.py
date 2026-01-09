@@ -224,12 +224,12 @@ def draw_ui_layout(layout: UILayout, context: Context):
 
     node = context.active_node
     if not node:
-        layout.label(text="需要选中节点", icon='INFO')
+        layout.label(text="需要活动节点", icon='INFO')
         return
 
     header, body = layout.panel("setting1", default_closed=False)
-    header.prop(pref(), "show_select_txt", text="")
-    header.label(text="文字笔记", icon='FILE_TEXT')
+    header.label(text="", icon='FILE_TEXT')
+    header.operator("node.na_show_select_txt", text="文字笔记", icon="HIDE_OFF" if node.na_show_txt else "HIDE_ON")
     if node.na_show_txt and node.na_text and node.na_show_img and node.na_image:
         header.operator("node.na_swap_order", text="⇅ 交换")
     header.operator("node.na_clear_select_txt", text="", icon='TRASH')
@@ -277,8 +277,8 @@ def draw_ui_layout(layout: UILayout, context: Context):
         row_pos.operator("node.na_reset_offset", text="", icon='LOOP_BACK')
 
     header, body = layout.panel("setting2", default_closed=True)
-    header.prop(pref(), "show_select_img", text="")
-    header.label(text="图片笔记", icon='IMAGE_DATA')
+    header.label(text="", icon='IMAGE_DATA')
+    header.operator("node.na_show_select_img", text="图片笔记", icon="HIDE_OFF" if node.na_show_img else "HIDE_ON")
     header.operator("node.na_clear_select_img", text="", icon='TRASH')
     if body:
         body.active = node.na_show_img
@@ -300,8 +300,8 @@ def draw_ui_layout(layout: UILayout, context: Context):
         row_pos.operator("node.na_reset_img_offset", text="", icon='LOOP_BACK')
 
     header, body = layout.panel("setting3", default_closed=True)
-    header.prop(pref(), "show_select_seq", text="")
-    header.label(text="序号笔记", icon='EVENT_NDOF_BUTTON_1')
+    header.label(text="", icon='EVENT_NDOF_BUTTON_1')
+    header.operator("node.na_show_select_seq", text="序号笔记", icon="HIDE_OFF" if node.na_show_seq else "HIDE_ON")
     header.operator("node.na_clear_select_seq", text="", icon='TRASH')
     if body:
         body.active = node.na_show_seq

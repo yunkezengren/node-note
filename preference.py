@@ -10,32 +10,11 @@ def tag_redraw(self, context):
     except:
         pass
 
-def update_show_select_txt(self, context):
-    nodes = context.selected_nodes if context.selected_nodes else [context.active_node]
-    for node in nodes:
-        node.na_show_txt = self.show_select_txt
-    tag_redraw(self, context)
-
-def update_show_select_img(self, context):
-    nodes = context.selected_nodes if context.selected_nodes else [context.active_node]
-    for node in nodes:
-        node.na_show_img = self.show_select_img
-    tag_redraw(self, context)
-
-def update_show_select_seq(self, context):
-    nodes = context.selected_nodes if context.selected_nodes else [context.active_node]
-    for node in nodes:
-        node.na_show_seq = self.show_select_seq
-    tag_redraw(self, context)
-
 class NodeMemoAddonPreferences(AddonPreferences):
     bl_idname = __package__
 
     # 1. 全局设置
     show_annotations    : BoolProperty(name="显示所有", default=True, update=tag_redraw)
-    show_select_txt     : BoolProperty(name="显示选中文本", default=True, update=update_show_select_txt, description="显示选中所有节点的文本笔记")
-    show_select_img     : BoolProperty(name="显示选中图片", default=True, update=update_show_select_img, description="显示选中所有节点的图片笔记")
-    show_select_seq     : BoolProperty(name="显示选中序号", default=True, update=update_show_select_seq, description="显示选中所有节点的序号笔记")
     show_sequence_lines : BoolProperty(name="显示逻辑连线", default=False, update=tag_redraw, description="显示节点之间的序号连线")
     is_interactive_mode : BoolProperty(name="交互模式", default=False, update=tag_redraw, description="点击节点即可编号，右键或ESC退出")
     sort_by_sequence    : BoolProperty(name="按序号排序", default=False, update=tag_redraw, description="勾选后，有序号的节点将优先显示在列表顶部")

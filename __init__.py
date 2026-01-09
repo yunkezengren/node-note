@@ -331,6 +331,54 @@ class NODE_OT_clear_all_scene_notes(Operator):
             node.na_is_initialized = False
         return {'FINISHED'}
 
+class NODE_OT_show_select_txt(Operator):
+    bl_idname = "node.na_show_select_txt"
+    bl_label = "显示文本"
+    bl_description = "显示选中节点的文字笔记"
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+        active_node = context.active_node
+        nodes = context.selected_nodes
+        if not active_node: return {'CANCELLED'}
+        new_value = not active_node.na_show_txt
+        active_node.na_show_txt = new_value
+        for node in nodes:
+            node.na_show_txt = new_value
+        return {'FINISHED'}
+
+class NODE_OT_show_select_img(Operator):
+    bl_idname = "node.na_show_select_img"
+    bl_label = "显示图片"
+    bl_description = "显示选中节点的图片笔记"
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+        active_node = context.active_node
+        nodes = context.selected_nodes
+        if not active_node: return {'CANCELLED'}
+        new_value = not active_node.na_show_img
+        active_node.na_show_img = new_value
+        for node in nodes:
+            node.na_show_img = new_value
+        return {'FINISHED'}
+
+class NODE_OT_show_select_seq(Operator):
+    bl_idname = "node.na_show_select_seq"
+    bl_label = "显示序号"
+    bl_description = "显示选中节点的序号笔记"
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+        active_node = context.active_node
+        nodes = context.selected_nodes
+        if not active_node: return {'CANCELLED'}
+        new_value = not active_node.na_show_seq
+        active_node.na_show_seq = new_value
+        for node in nodes:
+            node.na_show_seq = new_value
+        return {'FINISHED'}
+
 class NODE_OT_fix_prop(Operator):
     bl_idname = "node.na_fix_prop"
     bl_label = "修复属性"
@@ -345,6 +393,9 @@ classes = [
     NODE_OT_clear_select_txt,
     NODE_OT_clear_select_img,
     NODE_OT_clear_select_seq,
+    NODE_OT_show_select_txt,
+    NODE_OT_show_select_img,
+    NODE_OT_show_select_seq,
     NODE_OT_fix_prop,
     NODE_OT_clear_all_scene_notes,
     NODE_OT_na_swap_order,
