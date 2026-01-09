@@ -84,8 +84,13 @@ def init_props():
                                              min=0.0,
                                              max=1.0,
                                              update=tag_redraw)
-    txt_width_items = [('FIT', "自适应宽度", "宽度自动适应文本内容"), ('AUTO', "跟随节点宽度", "宽度自动跟随节点宽度"), ('MANUAL', "手动设置宽度", "手动设置宽度")]
-    Node.na_txt_width_mode = EnumProperty(name="宽度模式", items=txt_width_items, default='AUTO', update=tag_redraw)
+    width_item_auto = [('AUTO', "跟随节点宽度", "宽度自动跟随节点宽度")]
+    txt_width_items_1 = [('FIT', "自适应宽度", "宽度自动适应文本内容"), ('MANUAL', "手动设置宽度", "手动设置宽度")]
+    def get_txt_width_items(self, context):
+        if self.bl_idname == "NodeReroute":
+            return txt_width_items_1
+        return width_item_auto + txt_width_items_1
+    Node.na_txt_width_mode = EnumProperty(name="宽度模式", items=get_txt_width_items, default=0, update=tag_redraw)
     Node.na_txt_bg_width = IntProperty(name="背景宽", default=200, min=1, max=2000, update=update_manual_text_width)
     Node.na_swap_content_order = BoolProperty(name="互换位置", default=False, update=tag_redraw)
     Node.na_z_order_switch = BoolProperty(name="层级切换", description="交换图片与文字的前后层级", default=False, update=tag_redraw)
@@ -98,8 +103,12 @@ def init_props():
                                                  max=1.0,
                                                  update=tag_redraw)
     Node.na_image = PointerProperty(name="图像", type=bpy.types.Image, update=update_na_image)
-    img_width_items = [('ORIGINAL', "原始宽度", "显示图像原始宽度"), ('AUTO', "跟随节点宽度", "宽度自动跟随节点宽度"), ('MANUAL', "手动设置宽度", "手动设置宽度")]
-    Node.na_img_width_mode = EnumProperty(name="图宽模式", items=img_width_items, default='AUTO', update=tag_redraw)
+    img_width_items1 = [('ORIGINAL', "原始宽度", "显示图像原始宽度"), ('MANUAL', "手动设置宽度", "手动设置宽度")]
+    def get_img_width_items(self, context):
+        if self.bl_idname == "NodeReroute":
+            return img_width_items1
+        return width_item_auto + img_width_items1
+    Node.na_img_width_mode = EnumProperty(name="图宽模式", items=get_img_width_items, default=0, update=tag_redraw)
     Node.na_img_width = IntProperty(name="图宽", default=140, min=10, max=2000, update=update_manual_img_width)
     Node.na_show_txt = BoolProperty(name="显示文本", default=True, update=tag_redraw)
     Node.na_show_img = BoolProperty(name="显示图片", default=True, update=tag_redraw)
