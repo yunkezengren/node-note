@@ -85,7 +85,7 @@ class NODE_OT_open_image(Operator):
             img = bpy.data.images.load(self.filepath)
             img.colorspace_settings.name, img.alpha_mode, img.use_fake_user = 'Non-Color', 'STRAIGHT', True
             context.active_node.na_image = img
-            context.active_node.na_show_image = True
+            context.active_node.na_show_img = True
 
             # [注入] 图片默认对齐
             prefs = pref()
@@ -115,7 +115,7 @@ class NODE_OT_paste_image(Operator):
             img.colorspace_settings.name, img.alpha_mode, img.use_fake_user = 'Non-Color', 'STRAIGHT', True
             img.pack()
             context.active_node.na_image = img
-            context.active_node.na_show_image = True
+            context.active_node.na_show_img = True
 
             # [注入] 图片默认对齐
             prefs = pref()
@@ -206,15 +206,9 @@ def draw_ui_layout(layout: UILayout, context: Context):
         
         row_del = body.row(align=True)
         row_del.operator("node.na_clear_select_all", text="笔记", icon='TRASH')
-        row_del.operator("node.na_clear_select_txt", text="文本", icon='TRASH')
-        row_del.operator("node.na_clear_select_img", text="图片", icon='TRASH')
-        row_del.operator("node.na_clear_select_seq", text="序号", icon='TRASH')
-        if len(context.selected_nodes) > 1:
-            body.row().operator("node.na_copy_to_selected", text="同步活动", icon='DUPLICATE')
 
-        
         if prefs.show_annotations:
-            body.label(text="按颜色显示笔记:", icon='FILTER')
+            body.label(text="按背景色显示文本和图片:", icon='FILTER')
             split = body.split(factor=0.1, align=True)
             split.label(text="    ")
             split.prop(prefs, "filter_red", text=def_labels[0], toggle=True)
@@ -224,18 +218,22 @@ def draw_ui_layout(layout: UILayout, context: Context):
             split.prop(prefs, "filter_purple", text=def_labels[4], toggle=True)
             split.prop(prefs, "filter_other", text=def_labels[5], toggle=True)
 
+        if len(context.selected_nodes) > 1:
+            body.row().operator("node.na_copy_to_selected", text="同步活动样式到选中", icon='DUPLICATE')
+
     node = context.active_node
     if not node:
         layout.label(text="需要选中节点", icon='INFO')
         return
 
     header, body = layout.panel("setting1", default_closed=False)
-    header.prop(node, "na_show_text", text="")
+    header.prop(node, "na_show_txt", text="")
     header.label(text="文字笔记", icon='FILE_TEXT')
-    if node.na_show_text and node.na_text and node.na_show_image and node.na_image:
+    if node.na_show_txt and node.na_text and node.na_show_img and node.na_image:
         header.operator("node.na_swap_order", text="⇅ 交换")
+    header.operator("node.na_clear_select_txt", text="", icon='TRASH')
     if body:
-        body.active = node.na_show_text
+        body.active = node.na_show_txt
         txt_box = body.box()
         col = txt_box.column(align=True)
         col.label(text="分号换行:", icon='TEXT')
@@ -279,10 +277,11 @@ def draw_ui_layout(layout: UILayout, context: Context):
         row_pos.operator("node.na_reset_offset", text="", icon='LOOP_BACK')
 
     header, body = layout.panel("setting2", default_closed=True)
-    header.prop(node, "na_show_image", text="")
+    header.prop(node, "na_show_img", text="")
     header.label(text="图片笔记", icon='IMAGE_DATA')
+    header.operator("node.na_clear_select_img", text="", icon='TRASH')
     if body:
-        body.active = node.na_show_image
+        body.active = node.na_show_img
         img_box = body.box()
         split = img_box.split(factor=0.75)
         split.template_ID(node, "na_image", open="image.open")
@@ -301,20 +300,19 @@ def draw_ui_layout(layout: UILayout, context: Context):
 
     # todo 序号笔记是全局控制的,要改
     header, body = layout.panel("setting3", default_closed=True)
-    header.prop(pref(), "show_global_sequence", text="")
+    header.prop(pref(), "show_select_seq", text="")
     header.label(text="序号笔记", icon='EVENT_NDOF_BUTTON_1')
+    header.operator("node.na_clear_select_seq", text="", icon='TRASH')
     if body:
-        body.active = pref().show_global_sequence
+        body.active = pref().show_select_seq
         seq_box = body.box()
         split = seq_box.split(factor=0.5)
-        split.prop(node, "na_sequence_index", text="序号")
-        split.row().prop(node, "na_sequence_color", text="背景色")
+        split.prop(node, "na_seq_index", text="序号")
+        split.row().prop(node, "na_sequence_color", text="背景")
 
-        row_pos = seq_box.column(align=True)
-        row_pos.operator("node.na_interactive_seq", text="点击节点自动编号", icon='BRUSH_DATA', depress=pref().is_interactive_mode)
-
-        row_pos.prop(pref(), "show_sequence_lines", text="显示序号连线", icon='EMPTY_ARROWS')
-        row_pos.operator("node.na_clear_global_sequence", text="删除全部序号", icon='TRASH')
+        row_pos = seq_box.row()
+        row_pos.operator("node.na_interactive_seq", text="自动编号", icon='BRUSH_DATA', depress=pref().is_interactive_mode)
+        row_pos.prop(pref(), "show_sequence_lines", text="显示连线", icon='EMPTY_ARROWS')
 
     header, body = layout.panel("setting4", default_closed=True)
     header.label(text="文本导航列表")

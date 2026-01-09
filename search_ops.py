@@ -50,7 +50,7 @@ def draw_search_list(layout: bpy.types.UILayout, context):
     
     for node in tree.nodes:
         has_text = hasattr(node, "na_text") and node.na_text.strip()
-        has_seq = hasattr(node, "na_sequence_index") and node.na_sequence_index > 0
+        has_seq = hasattr(node, "na_seq_index") and node.na_seq_index > 0
         
         if has_text or has_seq:
             all_notes_count += 1
@@ -61,8 +61,8 @@ def draw_search_list(layout: bpy.types.UILayout, context):
     # 排序逻辑
     if pref().sort_by_sequence:
         annotated_nodes.sort(key=lambda n: (
-            0 if getattr(n, "na_sequence_index", 0) > 0 else 1,
-            getattr(n, "na_sequence_index", 0),
+            0 if getattr(n, "na_seq_index", 0) > 0 else 1,
+            getattr(n, "na_seq_index", 0),
             getattr(n, "location", (0,0))[0]
         ))
     else:
@@ -95,7 +95,7 @@ def draw_search_list(layout: bpy.types.UILayout, context):
             split.label(text="", icon='QUESTION')
         
         display_text = ""
-        seq_idx = getattr(node, "na_sequence_index", 0)
+        seq_idx = getattr(node, "na_seq_index", 0)
         txt_content = getattr(node, "na_text", "").strip()
         
         if seq_idx > 0:

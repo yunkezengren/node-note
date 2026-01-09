@@ -272,14 +272,14 @@ def draw_callback_px():
             occluders = [get_node_screen_rect(context, n) for n in context.selected_nodes]
 
         sequence_coords = {}
-        show_seq_global = prefs.show_global_sequence
+        show_seq_global = prefs.show_select_seq
 
         for node in tree.nodes:
             text = getattr(node, "na_text", "").strip()
             img = getattr(node, "na_image", None)
-            show_img = getattr(node, "na_show_image", True)
-            seq_idx = getattr(node, "na_sequence_index", 0)
-            show_text_bg = getattr(node, "na_show_text", True)
+            show_img = getattr(node, "na_show_img", True)
+            seq_idx = getattr(node, "na_seq_index", 0)
+            show_text_bg = getattr(node, "na_show_txt", True)
 
             # 如果什么都没有，直接跳过
             if not text and not (img and show_img) and seq_idx == 0: continue

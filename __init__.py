@@ -88,12 +88,12 @@ def init_props():
                                              max=1.0,
                                              update=tag_redraw)
     Node.na_text_fit_content = BoolProperty(name="适应文本", default=False, update=tag_redraw, description="背景宽度自动适应文本内容")
-    Node.na_show_text = BoolProperty(name="显示文本", default=True, update=tag_redraw)
+    Node.na_show_txt = BoolProperty(name="显示文本", default=True, update=tag_redraw)
     Node.na_auto_txt_width = BoolProperty(name="跟随节点", default=True, update=tag_redraw, description="宽度自动跟随节点宽度")
     Node.na_txt_bg_width = IntProperty(name="背景宽", default=200, min=1, max=2000, update=update_manual_text_width)
     Node.na_swap_content_order = BoolProperty(name="互换位置", default=False, update=tag_redraw)
     Node.na_z_order_switch = BoolProperty(name="层级切换", description="交换图片与文字的前后层级", default=False, update=tag_redraw)
-    Node.na_sequence_index = IntProperty(name="序号", default=0, min=0, update=tag_redraw, description="逻辑序号 (0为不显示)")
+    Node.na_seq_index = IntProperty(name="序号", default=0, min=0, update=tag_redraw, description="逻辑序号 (0为不显示)")
     Node.na_sequence_color = FloatVectorProperty(name="序号颜色",
                                                  subtype='COLOR',
                                                  size=4,
@@ -104,7 +104,8 @@ def init_props():
     Node.na_image = PointerProperty(name="图像", type=bpy.types.Image, update=update_na_image)
     Node.na_auto_img_width = BoolProperty(name="自动图宽", default=True, update=tag_redraw)
     Node.na_img_width = IntProperty(name="图宽", default=140, min=10, max=2000, update=update_manual_img_width)
-    Node.na_show_image = BoolProperty(name="显图", default=True, update=tag_redraw)
+    Node.na_show_img = BoolProperty(name="显示图片", default=True, update=tag_redraw)
+    Node.na_show_seq = BoolProperty(name="显示序号", default=True, update=tag_redraw)
     align_items = [('TOP', "顶部", ""), ('BOTTOM', "底部", ""), ('LEFT', "左侧", ""), ('RIGHT', "右侧", "")]
     Node.na_txt_pos = EnumProperty(name="对齐", items=align_items, default='TOP', update=tag_redraw, description="文本位置")
     Node.na_txt_offset = IntVectorProperty(name="文本偏移", size=2, default=(0, 0), update=tag_redraw, subtype='XYZ', description="文本偏移")
@@ -115,8 +116,8 @@ def init_props():
 def clear_props():
     props = [
         "na_text", "na_font_size", "na_txt_bg_color", "na_text_color", "na_auto_txt_width", "na_txt_bg_width", "na_swap_content_order",
-        "na_image", "na_img_width", "na_show_image", "na_auto_img_width", "na_txt_pos", "na_txt_offset", "na_z_order_switch",
-        "na_sequence_index", "na_sequence_color", "na_img_pos", "na_img_offset", "na_text_fit_content", "na_show_text", "na_is_initialized"
+        "na_image", "na_img_width", "na_show_img", "na_auto_img_width", "na_txt_pos", "na_txt_offset", "na_z_order_switch",
+        "na_seq_index", "na_sequence_color", "na_img_pos", "na_img_offset", "na_text_fit_content", "na_show_txt", "na_is_initialized"
     ]
     for p in props:
         if hasattr(Node, p): delattr(Node, p)
@@ -128,8 +129,7 @@ class NODE_PT_annotator_gpu_panel(Panel):
     bl_idname = "NODE_PT_annotator_gpu_panel"
     bl_space_type = 'NODE_EDITOR'
     bl_region_type = 'UI'
-    # [修改点] 侧边栏标签统一为“节点随记”
-    bl_category = "节点随记"
+    bl_category = "Node"
 
     @classmethod
     def poll(cls, context):
@@ -161,9 +161,9 @@ class NODE_OT_na_swap_order(Operator):
         return {'FINISHED'}
 
 class NODE_OT_interactive_seq(Operator):
-    """画笔点选编号 (右键/ESC退出)"""
     bl_idname = "node.na_interactive_seq"
     bl_label = "交互式编号"
+    bl_description = "画笔点选节点自动编号 (右键/ESC退出)"
     bl_options = {'REGISTER', 'UNDO'}
 
     def modal(self, context, event):
@@ -190,9 +190,9 @@ class NODE_OT_interactive_seq(Operator):
 
                     if node and node != self.last_node:
                         self.current_idx += 1
-                        node.na_sequence_index = self.current_idx
+                        node.na_seq_index = self.current_idx
 
-                        if node.na_sequence_index > 0:
+                        if node.na_seq_index > 0:
                             node.na_sequence_color = pref().seq_bg_color
 
                         self.last_node = node
@@ -222,8 +222,8 @@ class NODE_OT_interactive_seq(Operator):
             tree = context.space_data.edit_tree
             if tree:
                 for n in tree.nodes:
-                    if hasattr(n, "na_sequence_index"):
-                        max_idx = max(max_idx, n.na_sequence_index)
+                    if hasattr(n, "na_seq_index"):
+                        max_idx = max(max_idx, n.na_seq_index)
 
             self.current_idx = max_idx
             self.last_node = None
@@ -237,24 +237,7 @@ class NODE_OT_interactive_seq(Operator):
             pref().is_interactive_mode = False
             return {'CANCELLED'}
 
-class NODE_OT_clear_global_sequence(Operator):
-    bl_idname = "node.na_clear_global_sequence"
-    bl_label = "删除全局序号"
-    bl_options = {'UNDO'}
-
-    def invoke(self, context, event):
-        return context.window_manager.invoke_confirm(self, event)
-
-    def execute(self, context):
-        if context.space_data.edit_tree:
-            count = 0
-            for node in context.space_data.edit_tree.nodes:
-                if hasattr(node, "na_sequence_index") and node.na_sequence_index > 0:
-                    node.na_sequence_index = 0
-                    count += 1
-            self.report({'INFO'}, f"已删除 {count} 个节点的序号")
-            context.area.tag_redraw()
-        return {'FINISHED'}
+# todo 增加 self.report({'INFO'}, f"已删除 {count} 个节点的序号")
 
 class NODE_OT_clear_select_all(Operator):
     bl_idname = "node.na_clear_select_all"
@@ -265,10 +248,11 @@ class NODE_OT_clear_select_all(Operator):
     def execute(self, context):
         nodes = context.selected_nodes if context.selected_nodes else [context.active_node]
         for node in nodes:
-            node.na_text = ""
-            node.na_image = None
-            node.na_sequence_index = 0
-            node.na_is_initialized = False
+            if node.na_text or node.na_image or node.na_seq_index:
+                node.na_text = ""
+                node.na_image = None
+                node.na_seq_index = 0
+                node.na_is_initialized = False
         return {'FINISHED'}
 
 class NODE_OT_clear_select_txt(Operator):
@@ -280,8 +264,9 @@ class NODE_OT_clear_select_txt(Operator):
     def execute(self, context):
         nodes = context.selected_nodes if context.selected_nodes else [context.active_node]
         for node in nodes:
+            if not node.na_text: continue
             node.na_text = ""
-            if not node.na_image and not node.na_sequence_index:
+            if not node.na_image and not node.na_seq_index:
                 node.na_is_initialized = False
         return {'FINISHED'}
 
@@ -294,8 +279,9 @@ class NODE_OT_clear_select_img(Operator):
     def execute(self, context):
         nodes = context.selected_nodes if context.selected_nodes else [context.active_node]
         for node in nodes:
+            if not node.na_image: continue
             node.na_image = None
-            if not node.na_text and not node.na_sequence_index:
+            if not node.na_text and not node.na_seq_index:
                 node.na_is_initialized = False
         return {'FINISHED'}
 
@@ -308,9 +294,46 @@ class NODE_OT_clear_select_seq(Operator):
     def execute(self, context):
         nodes = context.selected_nodes if context.selected_nodes else [context.active_node]
         for node in nodes:
-            node.na_sequence_index = 0
+            if not node.na_seq_index: continue
+            node.na_seq_index = 0
             if not node.na_text and not node.na_image:
                 node.na_is_initialized = False
+        return {'FINISHED'}
+
+class NODE_OT_show_select_txt(Operator):
+    bl_idname = "node.na_show_select_txt"
+    bl_label = "显示文本"
+    bl_description = "显示选中节点的文字笔记"
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+        nodes = context.selected_nodes if context.selected_nodes else [context.active_node]
+        for node in nodes:
+            node.na_show_txt = True
+        return {'FINISHED'}
+
+class NODE_OT_show_select_img(Operator):
+    bl_idname = "node.na_show_select_img"
+    bl_label = "显示图片"
+    bl_description = "显示选中节点的图片笔记"
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+        nodes = context.selected_nodes if context.selected_nodes else [context.active_node]
+        for node in nodes:
+            node.na_show_img = True
+        return {'FINISHED'}
+
+class NODE_OT_show_select_seq(Operator):
+    bl_idname = "node.na_show_select_seq"
+    bl_label = "显示序号"
+    bl_description = "显示选中节点的序号笔记"
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+        nodes = context.selected_nodes if context.selected_nodes else [context.active_node]
+        for node in nodes:
+            node.na_show_seq = True
         return {'FINISHED'}
 
 class NODE_OT_clear_all_scene_notes(Operator):
@@ -325,12 +348,13 @@ class NODE_OT_clear_all_scene_notes(Operator):
     # todo: 是否递归节点组内
     def execute(self, context):
         edit_tree = context.space_data.edit_tree
-        if edit_tree:
-            for node in edit_tree.nodes:
-                node.na_text = ""
-                node.na_image = None
-                node.na_sequence_index = 0
-                node.na_is_initialized = False
+        if not edit_tree: return {'CANCELLED'}
+        for node in edit_tree.nodes:
+            if not node.na_text and not node.na_image and not node.na_seq_index: continue
+            node.na_text = ""
+            node.na_image = None
+            node.na_seq_index = 0
+            node.na_is_initialized = False
         return {'FINISHED'}
 
 class NODE_OT_fix_prop(Operator):
@@ -351,7 +375,6 @@ classes = [
     NODE_OT_clear_all_scene_notes,
     NODE_OT_na_swap_order,
     NODE_OT_interactive_seq,
-    NODE_OT_clear_global_sequence,
     NODE_OT_reset_prefs,
     NodeMemoAddonPreferences,
 ]
