@@ -19,7 +19,7 @@ def update_manual_text_width(self, context):
     tag_redraw(self, context)
 
 def update_manual_img_width(self, context):
-    if self.na_auto_img_width: self.na_auto_img_width = False
+    self.na_img_width_mode = 'MANUAL'
     tag_redraw(self, context)
 
 def update_na_image(self, context):
@@ -84,7 +84,7 @@ def init_props():
                                              min=0.0,
                                              max=1.0,
                                              update=tag_redraw)
-    txt_width_items = [('FIT', "自适应宽度", "宽度自动适应文本内容,或显示图像原始宽度"), ('AUTO', "跟随节点宽度", "宽度自动跟随节点宽度"), ('MANUAL', "手动", "手动设置宽度")]
+    txt_width_items = [('FIT', "自适应宽度", "宽度自动适应文本内容"), ('AUTO', "跟随节点宽度", "宽度自动跟随节点宽度"), ('MANUAL', "手动设置宽度", "手动设置宽度")]
     Node.na_text_width_mode = EnumProperty(name="宽度模式", items=txt_width_items, default='AUTO', update=tag_redraw)
     Node.na_txt_bg_width = IntProperty(name="背景宽", default=200, min=1, max=2000, update=update_manual_text_width)
     Node.na_swap_content_order = BoolProperty(name="互换位置", default=False, update=tag_redraw)
@@ -98,7 +98,8 @@ def init_props():
                                                  max=1.0,
                                                  update=tag_redraw)
     Node.na_image = PointerProperty(name="图像", type=bpy.types.Image, update=update_na_image)
-    Node.na_auto_img_width = BoolProperty(name="自动图宽", default=True, update=tag_redraw)
+    img_width_items = [('ORIGINAL', "原始宽度", "显示图像原始宽度"), ('AUTO', "跟随节点宽度", "宽度自动跟随节点宽度"), ('MANUAL', "手动设置宽度", "手动设置宽度")]
+    Node.na_img_width_mode = EnumProperty(name="图宽模式", items=img_width_items, default='AUTO', update=tag_redraw)
     Node.na_img_width = IntProperty(name="图宽", default=140, min=10, max=2000, update=update_manual_img_width)
     Node.na_show_txt = BoolProperty(name="显示文本", default=True, update=tag_redraw)
     Node.na_show_img = BoolProperty(name="显示图片", default=True, update=tag_redraw)
@@ -113,7 +114,7 @@ def init_props():
 def clear_props():
     props = [
         "na_text", "na_font_size", "na_txt_bg_color", "na_text_color", "na_text_width_mode", "na_txt_bg_width", "na_swap_content_order",
-        "na_image", "na_img_width", "na_show_img", "na_show_seq", "na_auto_img_width", "na_txt_pos", "na_txt_offset", "na_z_order_switch",
+        "na_image", "na_img_width", "na_show_img", "na_show_seq", "na_img_width_mode", "na_txt_pos", "na_txt_offset", "na_z_order_switch",
         "na_seq_index", "na_sequence_color", "na_img_pos", "na_img_offset", "na_show_txt", "na_is_initialized"
     ]
     for p in props:

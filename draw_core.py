@@ -344,8 +344,14 @@ def draw_callback_px():
 
             img_draw_w, img_draw_h, texture = 0, 0, None
             if img and show_img:
+                img_width_mode = getattr(node, "na_img_width_mode", 'AUTO')
                 ref_w = max(node_w_px, (view_to_region_scaled(context, loc.x + MIN_AUTO_WIDTH, loc.y)[0] - sx))
-                base_w = ref_w if getattr(node, "na_auto_img_width", True) else (getattr(node, "na_img_width", 150) * scaled_zoom)
+                if img_width_mode == 'ORIGINAL':
+                    base_w = img.size[0] * scaled_zoom
+                elif img_width_mode == 'AUTO':
+                    base_w = ref_w
+                else:
+                    base_w = getattr(node, "na_img_width", 150) * scaled_zoom
                 if img.size[0] > 0:
                     img_draw_w = base_w
                     img_draw_h = base_w * (img.size[1] / img.size[0])
