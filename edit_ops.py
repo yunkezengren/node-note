@@ -148,7 +148,7 @@ class NODE_OT_copy_active_to_selected(Operator):
     def execute(self, context):
         act = context.active_node
         if not act: return {'CANCELLED'}
-        strict_sync_props = ["na_font_size", "na_text_color", "na_txt_bg_color", "na_sequence_color", "na_text_width_mode", "na_txt_bg_width", "na_img_width_mode", "na_img_width"]
+        strict_sync_props = ["na_font_size", "na_text_color", "na_txt_bg_color", "na_sequence_color", "na_txt_width_mode", "na_txt_bg_width", "na_img_width_mode", "na_img_width"]
         count = 0
         for n in context.selected_nodes:
             if n == act: continue
@@ -267,8 +267,8 @@ def draw_ui_layout(layout: UILayout, context: Context):
             op.bg_color = col_vals[i]
 
         width_row = txt_box.row(align=True)
-        width_row.prop(node, "na_text_width_mode", text="宽度")
-        if node.na_text_width_mode == 'MANUAL':
+        width_row.prop(node, "na_txt_width_mode", text="宽度")
+        if node.na_txt_width_mode == 'MANUAL':
             width_row.prop(node, "na_txt_bg_width", text="宽度")
 
         row_pos = txt_box.row(align=True)

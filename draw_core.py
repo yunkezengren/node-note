@@ -316,17 +316,17 @@ def draw_callback_px():
             font_id = 0
             blf.size(font_id, fs)
 
-            width_mode = getattr(node, "na_text_width_mode", 'AUTO')
+            txt_width_mode = getattr(node, "na_txt_width_mode", 'AUTO')
             target_width_px = 0
 
-            if width_mode == 'FIT':
+            if txt_width_mode == 'FIT':
                 max_line_w = 0
                 if text:
                     for line in text.replace(";", "\n").replace("；", "\n").splitlines():
                         w = blf.dimensions(font_id, line)[0]
                         if w > max_line_w: max_line_w = w
                 target_width_px = max_line_w + (pad*2)
-            elif width_mode == 'AUTO':
+            elif txt_width_mode == 'AUTO':
                 min_w = view_to_region_scaled(context, loc.x + MIN_AUTO_WIDTH, loc.y)[0] - sx
                 target_width_px = max(node_w_px, min_w)
             else:
@@ -335,7 +335,7 @@ def draw_callback_px():
 
             lines = []
             if text:
-                if width_mode == 'FIT':
+                if txt_width_mode == 'FIT':
                     lines = text.replace(";", "\n").replace("；", "\n").splitlines()
                 else:
                     lines = wrap_text_pure(font_id, text, max(1, target_width_px - pad*2))
