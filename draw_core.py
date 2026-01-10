@@ -272,7 +272,7 @@ def draw_callback_px() -> None:
     if is_occlusion_enabled and context.selected_nodes:
         occluders = [get_node_screen_rect(context, n) for n in context.selected_nodes]
 
-    sequence_coords: dict[int, list[tuple[int, int, float, RGBA]]] = {}
+    sequence_coords: dict[int, list[tuple[float, float, float]]] = {}
 
     seq_scale: float = prefs.seq_scale
     badge_radius = 7 * seq_scale * scaled_zoom
@@ -450,10 +450,9 @@ def draw_callback_px() -> None:
             gpu.state.depth_test_set('NONE')
             badge_x = seq_anchor_x
             badge_y = seq_anchor_y
-            seq_col = getattr(node, "na_sequence_color", (0.8, 0.1, 0.1, 1.0))
             if seq_idx not in sequence_coords:
                 sequence_coords[seq_idx] = []
-            sequence_coords[seq_idx].append((badge_x, badge_y, badge_radius, seq_col))
+            sequence_coords[seq_idx].append((badge_x, badge_y, badge_radius))
 
     if prefs.show_sequence_lines and len(sequence_coords) > 1:
         line_points = []
@@ -481,15 +480,15 @@ def draw_callback_px() -> None:
         draw_lines_batch(line_points, line_col, thickness=line_thickness)
 
     for idx in sequence_coords:
-        for badge_x, badge_y, badge_radius, seq_col in sequence_coords[idx]:
-            draw_circle_batch(badge_x, badge_y, badge_radius, seq_col)
+        for badge_x, badge_y, badge_radius in sequence_coords[idx]:
+            draw_circle_batch(badge_x, badge_y, badge_radius, tuple(prefs.seq_bg_color))
 
     seq_font_col = list(prefs.seq_font_color) if prefs else (1.0, 1.0, 1.0, 1.0)
     base_font_size = 8 * seq_scale
     blf.size(font_id, int(base_font_size * scaled_zoom))
     blf.color(font_id, *seq_font_col)
     for idx in sequence_coords:
-        for badge_x, badge_y, badge_radius, seq_col in sequence_coords[idx]:
+        for badge_x, badge_y, badge_radius in sequence_coords[idx]:
             num_str = str(idx)
             dims = blf.dimensions(font_id, num_str)
             blf.position(font_id, int(badge_x - dims[0] / 2), int(badge_y - dims[1] / 2.5), 0)
