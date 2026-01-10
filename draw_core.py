@@ -272,9 +272,9 @@ def draw_callback_px() -> None:
     if is_occlusion_enabled and context.selected_nodes:
         occluders = [get_node_screen_rect(context, n) for n in context.selected_nodes]
 
-    sequence_coords: dict[int, tuple] = {}
+    sequence_coords: dict[int, list[tuple[int, int, float, RGBA]]] = {}
 
-    seq_scale = prefs.seq_scale
+    seq_scale: float = prefs.seq_scale
     badge_radius = 7 * seq_scale * scaled_zoom
     for node in tree.nodes:
         text = getattr(node, "na_text", "").strip()
@@ -413,8 +413,6 @@ def draw_callback_px() -> None:
                 txt_x, txt_y = outer_x, outer_y
 
         seq_anchor_x, seq_anchor_y = sx, sy
-        if seq_idx > 0:
-            sequence_coords[seq_idx] = (seq_anchor_x, seq_anchor_y)
 
         is_occluded = False
         if is_occlusion_enabled and occluders and not node.select and node != context.active_node:
@@ -453,7 +451,9 @@ def draw_callback_px() -> None:
             badge_x = seq_anchor_x
             badge_y = seq_anchor_y
             seq_col = getattr(node, "na_sequence_color", (0.8, 0.1, 0.1, 1.0))
-            sequence_coords[seq_idx] = (badge_x, badge_y, badge_radius, seq_col)
+            if seq_idx not in sequence_coords:
+                sequence_coords[seq_idx] = []
+            sequence_coords[seq_idx].append((badge_x, badge_y, badge_radius, seq_col))
 
     if prefs.show_sequence_lines and len(sequence_coords) > 1:
         sorted_indices = sorted(sequence_coords.keys())
@@ -462,26 +462,31 @@ def draw_callback_px() -> None:
         for i in range(len(sorted_indices) - 1):
             idx_a = sorted_indices[i]
             idx_b = sorted_indices[i + 1]
-            p1 = sequence_coords[idx_a][:2]
-            p2 = sequence_coords[idx_b][:2]
-            line_points.append(p1)
-            line_points.append(p2)
-            arrow_sz = 8.0 * scaled_zoom * seq_scale
-            retreat = sequence_coords[idx_a][2]
-            draw_arrow_head(p1, p2, line_col, size=arrow_sz, retreat=retreat)
+            if sequence_coords[idx_a] and sequence_coords[idx_b]:
+                p1 = sequence_coords[idx_a][0][:2]
+                p2 = sequence_coords[idx_b][0][:2]
+                line_points.append(p1)
+                line_points.append(p2)
+                arrow_sz = 8.0 * scaled_zoom * seq_scale
+                retreat = sequence_coords[idx_a][0][2]
+                draw_arrow_head(p1, p2, line_col, size=arrow_sz, retreat=retreat)
         line_thickness = prefs.seq_line_thickness
         draw_lines_batch(line_points, line_col, thickness=line_thickness)
 
-    for idx, (badge_x, badge_y, badge_radius, seq_col) in sequence_coords.items():
-        draw_circle_batch(badge_x, badge_y, badge_radius, seq_col)
-        seq_font_col = list(prefs.seq_font_color) if prefs else (1.0, 1.0, 1.0, 1.0)
-        base_font_size = 8 * seq_scale
-        blf.size(font_id, int(base_font_size * scaled_zoom))
-        blf.color(font_id, *seq_font_col)
-        num_str = str(idx)
-        dims = blf.dimensions(font_id, num_str)
-        blf.position(font_id, int(badge_x - dims[0] / 2), int(badge_y - dims[1] / 2.5), 0)
-        blf.draw(font_id, num_str)
+    for idx in sequence_coords:
+        for badge_x, badge_y, badge_radius, seq_col in sequence_coords[idx]:
+            draw_circle_batch(badge_x, badge_y, badge_radius, seq_col)
+
+    seq_font_col = list(prefs.seq_font_color) if prefs else (1.0, 1.0, 1.0, 1.0)
+    base_font_size = 8 * seq_scale
+    blf.size(font_id, int(base_font_size * scaled_zoom))
+    blf.color(font_id, *seq_font_col)
+    for idx in sequence_coords:
+        for badge_x, badge_y, badge_radius, seq_col in sequence_coords[idx]:
+            num_str = str(idx)
+            dims = blf.dimensions(font_id, num_str)
+            blf.position(font_id, int(badge_x - dims[0] / 2), int(badge_y - dims[1] / 2.5), 0)
+            blf.draw(font_id, num_str)
 
 handler = None
 
