@@ -277,8 +277,19 @@ def draw_callback_px() -> None:
     seq_scale: float = prefs.seq_scale
     seq_scale_mode: str = prefs.seq_scale_mode
     seq_abs_scale: float = prefs.seq_abs_scale
-    zoom_factor = scaled_zoom if seq_scale_mode == 'RELATIVE' else 1.0
-    badge_radius = 7 * seq_scale * zoom_factor * seq_abs_scale
+
+    if seq_scale_mode == 'RELATIVE':
+        badge_radius = 7 * seq_scale * scaled_zoom
+        arrow_sz = 8.0 * seq_scale * scaled_zoom
+        base_font_size = 8 * seq_scale * scaled_zoom
+    else:
+        # 将节点编辑器空间的140宽度转换为屏幕像素
+        max_diameter = view_to_region_scaled(context, 140, 0)[0] - view_to_region_scaled(context, 0, 0)[0]
+        badge_radius = min(7 * 2 , max_diameter / 2) * seq_abs_scale
+        # 限制箭头和字体大小，确保它们不会超过徽章的大小
+        arrow_sz = min(16 , max_diameter * 0.6) * seq_abs_scale
+        base_font_size = min(16 , max_diameter / 2) * seq_abs_scale
+
     for node in tree.nodes:
         text = getattr(node, "na_text", "").strip()
         img = getattr(node, "na_image", None)
@@ -329,7 +340,7 @@ def draw_callback_px() -> None:
             max_line_w = 0
             for line in text_split_lines(text):
                 width = blf.dimensions(font_id, line)[0]
-                if width > max_line_w: 
+                if width > max_line_w:
                     max_line_w = width
             target_width_px = max_line_w + (pad*2)
         elif txt_width_mode == 'AUTO':
@@ -444,9 +455,9 @@ def draw_callback_px() -> None:
                 if (is_stacked and align in {'TOP', 'BOTTOM'}) or (not is_stacked and img_align in {'TOP', 'BOTTOM'}):
                     center_correction = (node_w_px-img_draw_w) / 2
                     final_img_x += center_correction
-                if texture: 
+                if texture:
                     draw_texture_batch(texture, final_img_x, img_y, img_draw_w, img_draw_h)
-                else: 
+                else:
                     draw_missing_placeholder(final_img_x, img_y, img_draw_w, img_draw_h)
 
         if seq_idx > 0 and show_seq:
@@ -475,7 +486,6 @@ def draw_callback_px() -> None:
                     for p2 in sequence_coords[target_idx]:
                         line_points.append(p1[:2])
                         line_points.append(p2[:2])
-                        arrow_sz = 8.0 * zoom_factor * seq_scale * seq_abs_scale
                         retreat = p1[2]
                         draw_arrow_head(p1[:2], p2[:2], line_col, size=arrow_sz, retreat=retreat)
 
@@ -487,7 +497,6 @@ def draw_callback_px() -> None:
             draw_circle_batch(badge_x, badge_y, badge_radius, tuple(prefs.seq_bg_color))
 
     seq_font_col = list(prefs.seq_font_color) if prefs else (1.0, 1.0, 1.0, 1.0)
-    base_font_size = 8 * seq_scale * zoom_factor * seq_abs_scale
     blf.size(font_id, int(base_font_size))
     blf.color(font_id, *seq_font_col)
     for idx in sequence_coords:
@@ -501,7 +510,7 @@ handler = None
 
 def register_draw_handler() -> None:
     global handler
-    if not handler: 
+    if not handler:
         handler = bpy.types.SpaceNodeEditor.draw_handler_add(draw_callback_px, (), 'WINDOW', 'POST_PIXEL') # type: ignore
 
 def unregister_draw_handler() -> None:
