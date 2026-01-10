@@ -470,7 +470,7 @@ def draw_callback_px() -> None:
     if prefs.show_sequence_lines and len(sequence_coords) > 1:
         sorted_indices = sorted(sequence_coords.keys())
         line_points = []
-        line_col = (1.0, 0.8, 0.2, 0.8)
+        line_col = list(prefs.seq_line_color) if prefs else (1.0, 0.8, 0.2, 0.8)
         for i in range(len(sorted_indices) - 1):
             idx_a = sorted_indices[i]
             idx_b = sorted_indices[i + 1]

@@ -320,6 +320,9 @@ def draw_ui_layout(layout: UILayout, context: Context):
         row_seq.label(text="统一设置序号大小", icon='INFO')
         row_seq.prop(prefs, "seq_scale", text="缩放")
 
+        row_line = seq_box.row()
+        row_line.prop(prefs, "seq_line_color", text="连线颜色")
+
     header, body = layout.panel("setting4", default_closed=True)
     header.label(text="文本导航列表")
     header.prop(prefs, "sort_by_sequence", text="按序号排列")

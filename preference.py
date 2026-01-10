@@ -50,6 +50,13 @@ class NodeMemoAddonPreferences(AddonPreferences):
                                               min=0,
                                               max=1,
                                               update=tag_redraw)
+    seq_line_color      : FloatVectorProperty(name="连线颜色",
+                                              subtype='COLOR',
+                                              size=4,
+                                              default=(1.0, 0.8, 0.2, 0.8),
+                                              min=0,
+                                              max=1,
+                                              update=tag_redraw)
 
     # 3. 文本设置区
     text_default_size   : IntProperty(name="默认字号", default=8, min=4, max=100)
