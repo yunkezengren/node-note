@@ -275,7 +275,10 @@ def draw_callback_px() -> None:
     sequence_coords: dict[int, list[tuple[float, float, float]]] = {}
 
     seq_scale: float = prefs.seq_scale
-    badge_radius = 7 * seq_scale * scaled_zoom
+    seq_scale_mode: str = prefs.seq_scale_mode
+    seq_abs_scale: float = prefs.seq_abs_scale
+    zoom_factor = scaled_zoom if seq_scale_mode == 'RELATIVE' else 1.0
+    badge_radius = 7 * seq_scale * zoom_factor * seq_abs_scale
     for node in tree.nodes:
         text = getattr(node, "na_text", "").strip()
         img = getattr(node, "na_image", None)
@@ -472,7 +475,7 @@ def draw_callback_px() -> None:
                     for p2 in sequence_coords[target_idx]:
                         line_points.append(p1[:2])
                         line_points.append(p2[:2])
-                        arrow_sz = 8.0 * scaled_zoom * seq_scale
+                        arrow_sz = 8.0 * zoom_factor * seq_scale * seq_abs_scale
                         retreat = p1[2]
                         draw_arrow_head(p1[:2], p2[:2], line_col, size=arrow_sz, retreat=retreat)
 
@@ -484,8 +487,8 @@ def draw_callback_px() -> None:
             draw_circle_batch(badge_x, badge_y, badge_radius, tuple(prefs.seq_bg_color))
 
     seq_font_col = list(prefs.seq_font_color) if prefs else (1.0, 1.0, 1.0, 1.0)
-    base_font_size = 8 * seq_scale
-    blf.size(font_id, int(base_font_size * scaled_zoom))
+    base_font_size = 8 * seq_scale * zoom_factor * seq_abs_scale
+    blf.size(font_id, int(base_font_size))
     blf.color(font_id, *seq_font_col)
     for idx in sequence_coords:
         for badge_x, badge_y, badge_radius in sequence_coords[idx]:

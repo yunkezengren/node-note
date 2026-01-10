@@ -312,12 +312,15 @@ def draw_ui_layout(layout: UILayout, context: Context):
         split.row().prop(prefs, "seq_font_color", text="文本色")
         split.row().prop(prefs, "seq_bg_color", text="背景色")
 
-        row_pos = seq_box.row()
-        row_pos.operator("node.na_interactive_seq", text="交互编号", icon='BRUSH_DATA', depress=prefs.is_interactive_mode)
-
         row_set = seq_box.row()
-        row_set.label(text="全局设置:", icon='INFO')
-        row_set.prop(prefs, "seq_scale", text="缩放")
+        row_set.operator("node.na_interactive_seq", text="交互编号", icon='BRUSH_DATA', depress=prefs.is_interactive_mode)
+
+        row_set = seq_box.row(align=True)
+        row_set.prop(prefs, "seq_scale_mode", text="缩放模式")
+        if prefs.seq_scale_mode == 'ABSOLUTE':
+            row_set.prop(prefs, "seq_abs_scale", text="屏幕缩放")
+        else:
+            row_set.prop(prefs, "seq_scale", text="相对缩放")
         
         row_set = seq_box.split(factor=0.3)
         row_set.prop(prefs, "show_sequence_lines", text="显示连线", icon='EMPTY_ARROWS')

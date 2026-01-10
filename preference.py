@@ -36,6 +36,11 @@ class NodeMemoAddonPreferences(AddonPreferences):
 
     # 2. 序号设置区
     seq_scale           : FloatProperty(name="序号缩放", default=1.0, min=0.1, max=20.0, update=tag_redraw)
+    seq_scale_mode      : EnumProperty(name="缩放模式",
+                                       items=[('RELATIVE', "相对缩放", "跟随节点编辑器缩放"), ('ABSOLUTE', "屏幕空间", "固定屏幕像素大小")],
+                                       default='RELATIVE',
+                                       update=tag_redraw)
+    seq_abs_scale       : FloatProperty(name="屏幕空间缩放", default=1.0, min=0.1, max=10.0, update=tag_redraw)
     seq_bg_color        : FloatVectorProperty(name="圆背景色",
                                               subtype='COLOR',
                                               size=4,
@@ -139,7 +144,11 @@ class NodeMemoAddonPreferences(AddonPreferences):
 
         col = box.column(align=True)
         split = col.split(factor=0.5)
-        split.prop(self, "seq_scale")
+        split.prop(self, "seq_scale_mode")
+        if self.seq_scale_mode == 'ABSOLUTE':
+            split.prop(self, "seq_abs_scale")
+        else:
+            split.prop(self, "seq_scale")
         split = col.split(factor=0.5)
         split.row().prop(self, "seq_font_color", text="文本色")
         split.row().prop(self, "seq_bg_color", text="背景色")
