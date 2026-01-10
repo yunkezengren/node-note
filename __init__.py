@@ -109,7 +109,7 @@ def init_props():
                                                  min=0.0,
                                                  max=1.0,
                                                  update=tag_redraw)
-    Node.na_image = PointerProperty(name="图像", type=bpy.types.Image, update=update_na_image)
+    Node.na_image = PointerProperty(name="图像", type=bpy.types.Image, update=update_na_image) # type: ignore
     Node.na_show_txt = BoolProperty(name="显示文本", default=True, update=tag_redraw)
     Node.na_show_img = BoolProperty(name="显示图片", default=True, update=tag_redraw)
     Node.na_show_seq = BoolProperty(name="显示序号", default=True, update=tag_redraw)

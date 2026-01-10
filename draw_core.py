@@ -62,7 +62,7 @@ def create_texture_from_pixels(image: Image) -> gpu.types.GPUTexture | None:
         # TODO 优化性能
         pixel_data = array.array('f', [0.0] * width * height * 4)
         image.pixels.foreach_get(pixel_data)
-        texture = gpu.types.GPUTexture((width, height), format='RGBA32F', data=pixel_data)
+        texture = gpu.types.GPUTexture((width, height), format='RGBA32F', data=pixel_data) # type: ignore
         _manual_texture_cache[cache_key] = texture
         return texture
     except:
@@ -272,8 +272,10 @@ def draw_callback_px() -> None:
     if is_occlusion_enabled and context.selected_nodes:
         occluders = [get_node_screen_rect(context, n) for n in context.selected_nodes]
 
-    sequence_coords = {}
+    sequence_coords: dict[int, tuple] = {}
 
+    seq_scale = prefs.seq_scale
+    badge_radius = 7 * seq_scale * scaled_zoom
     for node in tree.nodes:
         text = getattr(node, "na_text", "").strip()
         img = getattr(node, "na_image", None)
@@ -320,12 +322,12 @@ def draw_callback_px() -> None:
         txt_width_mode = getattr(node, "na_txt_width_mode", 'AUTO')
         target_width_px = 0
 
-        if txt_width_mode == 'FIT':
+        if txt_width_mode == 'FIT' and text:
             max_line_w = 0
-            if text:
-                for line in text_split_lines(text):
-                    w = blf.dimensions(font_id, line)[0]
-                    if w > max_line_w: max_line_w = w
+            for line in text_split_lines(text):
+                width = blf.dimensions(font_id, line)[0]
+                if width > max_line_w: 
+                    max_line_w = width
             target_width_px = max_line_w + (pad*2)
         elif txt_width_mode == 'AUTO':
             min_w = view_to_region_scaled(context, loc.x + MIN_AUTO_WIDTH, loc.y)[0] - sx
@@ -352,7 +354,7 @@ def draw_callback_px() -> None:
             elif img_width_mode == 'AUTO':
                 base_w = ref_w
             else:
-                base_w = getattr(node, "na_img_width", 150) * scaled_zoom
+                base_w = getattr(node, "na_img_width", 140) * scaled_zoom
             if img.size[0] > 0:
                 img_draw_w = base_w
                 img_draw_h = base_w * (img.size[1] / img.size[0])
@@ -424,7 +426,6 @@ def draw_callback_px() -> None:
             if any(not (bbox[2] < o[0] or bbox[0] > o[2] or bbox[3] < o[1] or bbox[1] > o[3]) for o in occluders):
                 is_occluded = True
 
-        # [修复 2] 只有当 (没有被遮挡) 且 (颜色可见) 时，才绘制内容
         if not is_occluded and is_visible_by_color:
             if text and show_text_bg:
                 draw_rounded_rect_batch(txt_x, txt_y, target_width_px, text_layer_height, col, CORNER_RADIUS * scaled_zoom)
@@ -449,50 +450,48 @@ def draw_callback_px() -> None:
 
         if seq_idx > 0 and show_seq:
             gpu.state.depth_test_set('NONE')
-            seq_scale = prefs.seq_scale if prefs else 1.0
-            badge_radius = (7.0 * seq_scale) * scaled_zoom
             badge_x = seq_anchor_x
             badge_y = seq_anchor_y
-
-            # 序号颜色
             seq_col = getattr(node, "na_sequence_color", (0.8, 0.1, 0.1, 1.0))
-            draw_circle_batch(badge_x, badge_y, badge_radius, seq_col)
-
-            # 序号字号和颜色
-            seq_font_col = list(prefs.seq_font_color) if prefs else (1.0, 1.0, 1.0, 1.0)
-            base_font_size = 8 * seq_scale
-            blf.size(font_id, int(base_font_size * scaled_zoom))
-            blf.color(font_id, *seq_font_col)
-            num_str = str(seq_idx)
-            dims = blf.dimensions(font_id, num_str)
-            blf.position(font_id, int(badge_x - dims[0] / 2), int(badge_y - dims[1] / 2.5), 0)
-            blf.draw(font_id, num_str)
+            sequence_coords[seq_idx] = (badge_x, badge_y, badge_radius, seq_col)
 
     if prefs.show_sequence_lines and len(sequence_coords) > 1:
         sorted_indices = sorted(sequence_coords.keys())
         line_points = []
-        line_col = list(prefs.seq_line_color) if prefs else (1.0, 0.8, 0.2, 0.8)
+        line_col = tuple(prefs.seq_line_color)
         for i in range(len(sorted_indices) - 1):
             idx_a = sorted_indices[i]
             idx_b = sorted_indices[i + 1]
-            p1 = sequence_coords[idx_a]
-            p2 = sequence_coords[idx_b]
+            p1 = sequence_coords[idx_a][:2]
+            p2 = sequence_coords[idx_b][:2]
             line_points.append(p1)
             line_points.append(p2)
-            arrow_sz = 8.0 * scaled_zoom
-            retreat_dist = 6.0 * scaled_zoom
-            draw_arrow_head(p1, p2, line_col, size=arrow_sz, retreat=retreat_dist)
-        draw_lines_batch(line_points, line_col, thickness=3.0)
+            arrow_sz = 8.0 * scaled_zoom * seq_scale
+            retreat = sequence_coords[idx_a][2]
+            draw_arrow_head(p1, p2, line_col, size=arrow_sz, retreat=retreat)
+        line_thickness = prefs.seq_line_thickness
+        draw_lines_batch(line_points, line_col, thickness=line_thickness)
 
-h = None
+    for idx, (badge_x, badge_y, badge_radius, seq_col) in sequence_coords.items():
+        draw_circle_batch(badge_x, badge_y, badge_radius, seq_col)
+        seq_font_col = list(prefs.seq_font_color) if prefs else (1.0, 1.0, 1.0, 1.0)
+        base_font_size = 8 * seq_scale
+        blf.size(font_id, int(base_font_size * scaled_zoom))
+        blf.color(font_id, *seq_font_col)
+        num_str = str(idx)
+        dims = blf.dimensions(font_id, num_str)
+        blf.position(font_id, int(badge_x - dims[0] / 2), int(badge_y - dims[1] / 2.5), 0)
+        blf.draw(font_id, num_str)
+
+handler = None
 
 def register_draw_handler() -> None:
-    global h
-    if not h: 
-        h = bpy.types.SpaceNodeEditor.draw_handler_add(draw_callback_px, (), 'WINDOW', 'POST_PIXEL')
+    global handler
+    if not handler: 
+        handler = bpy.types.SpaceNodeEditor.draw_handler_add(draw_callback_px, (), 'WINDOW', 'POST_PIXEL') # type: ignore
 
 def unregister_draw_handler() -> None:
-    global h
-    if h:
-        bpy.types.SpaceNodeEditor.draw_handler_remove(h, 'WINDOW')
-        h = None
+    global handler
+    if handler:
+        bpy.types.SpaceNodeEditor.draw_handler_remove(handler, 'WINDOW')
+        handler = None

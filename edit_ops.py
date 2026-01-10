@@ -319,9 +319,10 @@ def draw_ui_layout(layout: UILayout, context: Context):
         row_set.label(text="全局设置:", icon='INFO')
         row_set.prop(prefs, "seq_scale", text="缩放")
         
-        row_set = seq_box.split(factor=0.5)
+        row_set = seq_box.split(factor=0.3)
         row_set.prop(prefs, "show_sequence_lines", text="显示连线", icon='EMPTY_ARROWS')
-        row_set.row().prop(prefs, "seq_line_color", text="连线颜色")
+        row_set.row().prop(prefs, "seq_line_color", text="颜色")
+        row_set.prop(prefs, "seq_line_thickness", text="线宽")
 
     header, body = layout.panel("setting4", default_closed=True)
     header.label(text="文本导航列表")
