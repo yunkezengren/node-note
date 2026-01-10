@@ -313,15 +313,15 @@ def draw_ui_layout(layout: UILayout, context: Context):
         split.row().prop(prefs, "seq_bg_color", text="背景色")
 
         row_pos = seq_box.row()
-        row_pos.operator("node.na_interactive_seq", text="自动编号", icon='BRUSH_DATA', depress=prefs.is_interactive_mode)
-        row_pos.prop(prefs, "show_sequence_lines", text="显示连线", icon='EMPTY_ARROWS')
+        row_pos.operator("node.na_interactive_seq", text="交互编号", icon='BRUSH_DATA', depress=prefs.is_interactive_mode)
 
-        row_seq = seq_box.row()
-        row_seq.label(text="统一设置序号大小", icon='INFO')
-        row_seq.prop(prefs, "seq_scale", text="缩放")
-
-        row_line = seq_box.row()
-        row_line.prop(prefs, "seq_line_color", text="连线颜色")
+        row_set = seq_box.row()
+        row_set.label(text="全局设置:", icon='INFO')
+        row_set.prop(prefs, "seq_scale", text="缩放")
+        
+        row_set = seq_box.split(factor=0.5)
+        row_set.prop(prefs, "show_sequence_lines", text="显示连线", icon='EMPTY_ARROWS')
+        row_set.row().prop(prefs, "seq_line_color", text="连线颜色")
 
     header, body = layout.panel("setting4", default_closed=True)
     header.label(text="文本导航列表")

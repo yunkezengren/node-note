@@ -126,12 +126,12 @@ def draw_circle_batch(x: float, y: float, radius: float, color: RGBA) -> None:
     if not shader: return
     vertices: list[float2] = [(x, y)]
     indices: list[int3] = []
-    theta_step = (2 * math.pi) / 16
-    for i in range(17):
+    theta_step = (2 * math.pi) / 32
+    for i in range(33):
         px = x + math.cos(i * theta_step) * radius
         py = y + math.sin(i * theta_step) * radius
         vertices.append((px, py))
-    for i in range(16):
+    for i in range(32):
         indices.append((0, i + 1, i + 2))
     batch = batch_for_shader(shader, 'TRIS', {"pos": vertices}, indices=indices)
     shader.bind()
@@ -143,6 +143,7 @@ def draw_lines_batch(points: list[float2], color: RGBA, thickness: float = 2.0) 
     if len(points) < 2: return
     shader = get_shader('UNIFORM_COLOR')
     if not shader: return
+    gpu.state.line_width_set(thickness)
     batch = batch_for_shader(shader, 'LINES', {"pos": points})
     shader.bind()
     shader.uniform_float("color", color)
@@ -481,7 +482,7 @@ def draw_callback_px() -> None:
             arrow_sz = 8.0 * scaled_zoom
             retreat_dist = 6.0 * scaled_zoom
             draw_arrow_head(p1, p2, line_col, size=arrow_sz, retreat=retreat_dist)
-        draw_lines_batch(line_points, line_col, thickness=2.0)
+        draw_lines_batch(line_points, line_col, thickness=3.0)
 
 h = None
 
