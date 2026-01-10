@@ -456,20 +456,27 @@ def draw_callback_px() -> None:
             sequence_coords[seq_idx].append((badge_x, badge_y, badge_radius, seq_col))
 
     if prefs.show_sequence_lines and len(sequence_coords) > 1:
-        sorted_indices = sorted(sequence_coords.keys())
         line_points = []
         line_col = tuple(prefs.seq_line_color)
-        for i in range(len(sorted_indices) - 1):
-            idx_a = sorted_indices[i]
-            idx_b = sorted_indices[i + 1]
-            if sequence_coords[idx_a] and sequence_coords[idx_b]:
-                p1 = sequence_coords[idx_a][0][:2]
-                p2 = sequence_coords[idx_b][0][:2]
-                line_points.append(p1)
-                line_points.append(p2)
-                arrow_sz = 8.0 * scaled_zoom * seq_scale
-                retreat = sequence_coords[idx_a][0][2]
-                draw_arrow_head(p1, p2, line_col, size=arrow_sz, retreat=retreat)
+        sorted_indices = sorted(sequence_coords.keys())
+        max_idx = max(sorted_indices)
+
+        for idx_a in sorted_indices:
+            target_idx = None
+            for next_idx in range(idx_a + 1, max_idx + 1):
+                if next_idx in sequence_coords:
+                    target_idx = next_idx
+                    break
+
+            if target_idx is not None:
+                for p1 in sequence_coords[idx_a]:
+                    for p2 in sequence_coords[target_idx]:
+                        line_points.append(p1[:2])
+                        line_points.append(p2[:2])
+                        arrow_sz = 8.0 * scaled_zoom * seq_scale
+                        retreat = p1[2]
+                        draw_arrow_head(p1[:2], p2[:2], line_col, size=arrow_sz, retreat=retreat)
+
         line_thickness = prefs.seq_line_thickness
         draw_lines_batch(line_points, line_col, thickness=line_thickness)
 
