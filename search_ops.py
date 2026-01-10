@@ -37,11 +37,9 @@ class NODE_OT_jump_to_note(Operator):
         self.report({'WARNING'}, f"节点 {self.node_name} 未找到")
         return {'CANCELLED'}
 
+
 def draw_search_list(layout: UILayout, context: Context):
-    tree: NodeTree = context.space_data.edit_tree
-    
     row = layout.row(align=True)
-    
     row.prop(pref(), "navigator_search", text="", icon='VIEWZOOM')
     search_key = pref().navigator_search.strip().lower()
     if search_key:
@@ -50,6 +48,7 @@ def draw_search_list(layout: UILayout, context: Context):
     annotated_nodes: list[Node] = []
     all_notes_count = 0
     
+    tree: NodeTree = context.space_data.edit_tree
     for node in tree.nodes:
         has_text = hasattr(node, "na_text") and node.na_text.strip()
         has_seq = hasattr(node, "na_seq_index") and node.na_seq_index > 0

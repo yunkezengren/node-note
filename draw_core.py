@@ -50,34 +50,33 @@ def get_gpu_texture(image: Image) -> gpu.types.GPUTexture | None:
         pass
     return create_texture_from_pixels(image)
 
-_manual_texture_cache = {}
+_manual_texture_cache: dict[str, gpu.types.GPUTexture] = {}
 
 def create_texture_from_pixels(image: Image) -> gpu.types.GPUTexture | None:
     global _manual_texture_cache
     cache_key = image.name
-    if cache_key in _manual_texture_cache: return _manual_texture_cache[cache_key]
+    if cache_key in _manual_texture_cache:
+        return _manual_texture_cache[cache_key]
     try:
-        w, h = image.size
-        # [TODO] 降采样优化点
-        pixel_data = array.array('f', [0.0] * w * h * 4)
+        width, height = image.size
+        # TODO 优化性能
+        pixel_data = array.array('f', [0.0] * width * height * 4)
         image.pixels.foreach_get(pixel_data)
-        texture = gpu.types.GPUTexture((w, h), format='RGBA32F', data=pixel_data)
+        texture = gpu.types.GPUTexture((width, height), format='RGBA32F', data=pixel_data)
         _manual_texture_cache[cache_key] = texture
         return texture
     except:
         return None
 
 def get_region_zoom(context: Context) -> float:
-    region = context.region
-    view2d = region.view2d
+    view2d = context.region.view2d
     x0, y0 = view2d.view_to_region(0, 0, clip=False)
     x1, y1 = view2d.view_to_region(1000, 1000, clip=False)
     return 1.0 if x1 == x0 else math.sqrt((x1 - x0)**2 + (y1 - y0)**2) / 1000
 
 def view_to_region_scaled(context: Context, x: float, y: float) -> int2:
     ui_scale = context.preferences.system.ui_scale
-    region = context.region
-    return region.view2d.view_to_region(x * ui_scale, y * ui_scale, clip=False)
+    return context.region.view2d.view_to_region(x * ui_scale, y * ui_scale, clip=False)
 
 def draw_rounded_rect_batch(x: float, y: float, width: float, height: float, color: RGBA, radius: float = 3.0) -> None:
     shader = get_shader('UNIFORM_COLOR')
@@ -224,9 +223,9 @@ def check_color_visibility(scene: Scene, bg_color: RGBA) -> bool:
 
 def get_node_screen_rect(context: Context, node: Node) -> Rect:
     loc_x, loc_y = node.location.x, node.location.y
-    w, h = node.width, node.dimensions.y
+    width, height = node.width, node.dimensions.y
     x1, y1 = view_to_region_scaled(context, loc_x, loc_y)
-    x2, y2 = view_to_region_scaled(context, loc_x + w, loc_y - h)
+    x2, y2 = view_to_region_scaled(context, loc_x + width, loc_y - height)
     return (min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2))
 
 def is_rect_overlap(r1: Rect, r2: Rect) -> bool:
@@ -251,7 +250,8 @@ def wrap_text_pure(font_id: int, text: str, max_width: float):
         if curr_line: lines.append(curr_line)
     return lines
 
-def draw_callback_px(context: Context) -> None:
+def draw_callback_px() -> None:
+    context = bpy.context
     if not context.space_data or context.space_data.type != 'NODE_EDITOR': return
     prefs = pref()
     if not prefs.show_annotations: return
@@ -441,8 +441,10 @@ def draw_callback_px(context: Context) -> None:
                 if (is_stacked and align in {'TOP', 'BOTTOM'}) or (not is_stacked and img_align in {'TOP', 'BOTTOM'}):
                     center_correction = (node_w_px-img_draw_w) / 2
                     final_img_x += center_correction
-                if texture: draw_texture_batch(texture, final_img_x, img_y, img_draw_w, img_draw_h)
-                else: draw_missing_placeholder(final_img_x, img_y, img_draw_w, img_draw_h)
+                if texture: 
+                    draw_texture_batch(texture, final_img_x, img_y, img_draw_w, img_draw_h)
+                else: 
+                    draw_missing_placeholder(final_img_x, img_y, img_draw_w, img_draw_h)
 
         if seq_idx > 0 and show_seq:
             gpu.state.depth_test_set('NONE')
@@ -486,7 +488,7 @@ h = None
 
 def register_draw_handler() -> None:
     global h
-    if not h:
+    if not h: 
         h = bpy.types.SpaceNodeEditor.draw_handler_add(draw_callback_px, (), 'WINDOW', 'POST_PIXEL')
 
 def unregister_draw_handler() -> None:
