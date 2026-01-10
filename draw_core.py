@@ -448,8 +448,8 @@ def draw_callback_px() -> None:
 
         if seq_idx > 0 and show_seq:
             gpu.state.depth_test_set('NONE')
-            # 序号圆半径和字体相关属性属于全局风格
-            badge_radius = (prefs.seq_radius if prefs else 7.0) * scaled_zoom
+            seq_scale = prefs.seq_scale if prefs else 1.0
+            badge_radius = (7.0 * seq_scale) * scaled_zoom
             badge_x = seq_anchor_x
             badge_y = seq_anchor_y
 
@@ -458,10 +458,9 @@ def draw_callback_px() -> None:
             draw_circle_batch(badge_x, badge_y, badge_radius, seq_col)
 
             # 序号字号和颜色
-            seq_fs = prefs.seq_font_size if prefs else 8
             seq_font_col = list(prefs.seq_font_color) if prefs else (1.0, 1.0, 1.0, 1.0)
-
-            blf.size(font_id, int(seq_fs * scaled_zoom))
+            base_font_size = 8 * seq_scale
+            blf.size(font_id, int(base_font_size * scaled_zoom))
             blf.color(font_id, *seq_font_col)
             num_str = str(seq_idx)
             dims = blf.dimensions(font_id, num_str)

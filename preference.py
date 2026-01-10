@@ -35,22 +35,21 @@ class NodeMemoAddonPreferences(AddonPreferences):
     filter_other        : BoolProperty(name="过滤杂", default=True, update=tag_redraw)
 
     # 2. 序号设置区
-    seq_radius          : FloatProperty(name="序号圆半径", default=7.0, min=1.0, max=50.0, update=tag_redraw)
+    seq_scale           : FloatProperty(name="序号缩放", default=1.0, min=0.1, max=20.0, update=tag_redraw)
     seq_bg_color        : FloatVectorProperty(name="圆背景色",
-                                                subtype='COLOR',
-                                                size=4,
-                                                default=(0.8, 0.1, 0.1, 1.0),
-                                                min=0,
-                                                max=1,
-                                                update=tag_redraw)
-    seq_font_size       : IntProperty(name="数字字号", default=8, min=4, max=100, update=tag_redraw)
+                                              subtype='COLOR',
+                                              size=4,
+                                              default=(0.8, 0.1, 0.1, 1.0),
+                                              min=0,
+                                              max=1,
+                                              update=tag_redraw)
     seq_font_color      : FloatVectorProperty(name="数字颜色",
-                                                  subtype='COLOR',
-                                                  size=4,
-                                                  default=(1.0, 1.0, 1.0, 1.0),
-                                                  min=0,
-                                                  max=1,
-                                                  update=tag_redraw)
+                                              subtype='COLOR',
+                                              size=4,
+                                              default=(1.0, 1.0, 1.0, 1.0),
+                                              min=0,
+                                              max=1,
+                                              update=tag_redraw)
 
     # 3. 文本设置区
     text_default_size   : IntProperty(name="默认字号", default=8, min=4, max=100)
@@ -60,8 +59,8 @@ class NodeMemoAddonPreferences(AddonPreferences):
 
     text_default_fit    : BoolProperty(name="默认适应文本", default=False)
     text_default_align  : EnumProperty(name="默认对齐",
-                                               items=[('TOP', "顶部", ""), ('BOTTOM', "底部", ""), ('LEFT', "左侧", ""), ('RIGHT', "右侧", "")],
-                                               default='TOP')
+                                       items=[('TOP', "顶部", ""), ('BOTTOM', "底部", ""), ('LEFT', "左侧", ""), ('RIGHT', "右侧", "")],
+                                       default='TOP')
 
     # 预设颜色
     col_preset_1        : FloatVectorProperty(name="预设红", subtype='COLOR', size=4, default=(0.6, 0.1, 0.1, 0.9), min=0, max=1)
@@ -81,18 +80,18 @@ class NodeMemoAddonPreferences(AddonPreferences):
 
     # 4. 图像设置区
     img_default_align   : EnumProperty(name="默认对齐",
-                                              items=[('TOP', "顶部", ""), ('BOTTOM', "底部", ""), ('LEFT', "左侧", ""), ('RIGHT', "右侧", "")],
-                                              default='TOP')
+                                       items=[('TOP', "顶部", ""), ('BOTTOM', "底部", ""), ('LEFT', "左侧", ""), ('RIGHT', "右侧", "")],
+                                       default='TOP')
     img_max_res         : EnumProperty(name="纹理分辨率限制",
-                                        description="限制显示的纹理最大尺寸以提升性能",
-                                        items=[
+                                       description="限制显示的纹理最大尺寸以提升性能",
+                                       items=[
                                             ('0', "原图 (最清晰)", ""),
                                             ('2048', "2048 px", ""),
                                             ('1024', "1024 px (推荐)", ""),
                                             ('512', "512 px (极速)", ""),
                                         ],
-                                        default='1024',
-                                        update=tag_redraw)
+                                       default='1024',
+                                       update=tag_redraw)
 
     def draw(self, context):
         layout = self.layout
@@ -131,13 +130,11 @@ class NodeMemoAddonPreferences(AddonPreferences):
         row.operator("node.na_reset_prefs", text="", icon='LOOP_BACK').target_section = 'SEQ'
 
         col = box.column(align=True)
-        split = col.split(factor=0.6)
-        split.prop(self, "seq_radius")
-        split.prop(self, "seq_bg_color", text="")
-
-        split = col.split(factor=0.6)
-        split.prop(self, "seq_font_size")
-        split.prop(self, "seq_font_color", text="")
+        split = col.split(factor=0.5)
+        split.prop(self, "seq_scale")
+        split = col.split(factor=0.5)
+        split.row().prop(self, "seq_font_color", text="文本色")
+        split.row().prop(self, "seq_bg_color", text="背景色")
 
         # 3. 文本设置
         box = layout.box()

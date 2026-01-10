@@ -308,15 +308,21 @@ def draw_ui_layout(layout: UILayout, context: Context):
         seq_box = body_split.box()
         split = seq_box.split(factor=0.5)
         split.prop(node, "na_seq_index", text="序号")
-        split.row().prop(node, "na_sequence_color", text="背景色")
+        split = seq_box.split(factor=0.5)
+        split.row().prop(prefs, "seq_font_color", text="文本色")
+        split.row().prop(prefs, "seq_bg_color", text="背景色")
 
         row_pos = seq_box.row()
-        row_pos.operator("node.na_interactive_seq", text="自动编号", icon='BRUSH_DATA', depress=pref().is_interactive_mode)
-        row_pos.prop(pref(), "show_sequence_lines", text="显示连线", icon='EMPTY_ARROWS')
+        row_pos.operator("node.na_interactive_seq", text="自动编号", icon='BRUSH_DATA', depress=prefs.is_interactive_mode)
+        row_pos.prop(prefs, "show_sequence_lines", text="显示连线", icon='EMPTY_ARROWS')
+
+        row_seq = seq_box.row()
+        row_seq.label(text="统一设置序号大小", icon='INFO')
+        row_seq.prop(prefs, "seq_scale", text="缩放")
 
     header, body = layout.panel("setting4", default_closed=True)
     header.label(text="文本导航列表")
-    header.prop(pref(), "sort_by_sequence", text="按序号排列")
+    header.prop(prefs, "sort_by_sequence", text="按序号排列")
     if body:
         draw_search_list(body, context)
 
