@@ -1,5 +1,5 @@
 import bpy
-from bpy.types import Operator, UILayout, Context
+from bpy.types import Operator, UILayout, Context, Node
 import os
 import subprocess
 import tempfile
@@ -8,8 +8,9 @@ from .preference import pref
 from .search_ops import draw_search_list
 
 # [核心逻辑] 初始化注入
-def inject_defaults_if_needed(node, prefs):
+def inject_defaults_if_needed(node: Node):
     """如果节点未初始化，注入偏好设置的默认值"""
+    prefs = pref()
     if not node.na_is_initialized and prefs:
         # 1. 注入文本相关默认值
         node.na_font_size = prefs.text_default_size
@@ -27,25 +28,22 @@ def inject_defaults_if_needed(node, prefs):
         node.na_is_initialized = True
 
 def paste_image_from_clipboard():
-    try:
-        tmp = tempfile.gettempdir()
-        path = os.path.join(tmp, f"blender_paste_{int(time.time()*1000)}.png")
-        import sys
-        if sys.platform == "win32":
-            cmd = [
-                "powershell", "-WindowStyle", "Hidden", "-command",
-                f"Add-Type -AssemblyName System.Windows.Forms;$i=[System.Windows.Forms.Clipboard]::GetImage();if($i){{$i.Save('{path}',[System.Drawing.Imaging.ImageFormat]::Png);exit 0}}exit 1"
-            ]
-            subprocess.run(cmd)
-        elif sys.platform == "darwin":
-            subprocess.run(["pngpaste", path])
-        elif sys.platform.startswith("linux"):
-            with open(path, "wb") as f:
-                subprocess.run(["xclip", "-selection", "clipboard", "-t", "image/png", "-o"], stdout=f)
-        if os.path.exists(path) and os.path.getsize(path) > 0: return path
-    except:
-        pass
-    return None
+    tmp = tempfile.gettempdir()
+    path = os.path.join(tmp, f"blender_paste_{int(time.time()*1000)}.png")
+    import sys
+    if sys.platform == "win32":
+        cmd = [
+            "powershell", "-WindowStyle", "Hidden", "-command",
+            f"Add-Type -AssemblyName System.Windows.Forms;$i=[System.Windows.Forms.Clipboard]::GetImage();if($i){{$i.Save('{path}',[System.Drawing.Imaging.ImageFormat]::Png);exit 0}}exit 1"
+        ]
+        subprocess.run(cmd)
+    elif sys.platform == "darwin":
+        subprocess.run(["pngpaste", path])
+    elif sys.platform.startswith("linux"):
+        with open(path, "wb") as f:
+            subprocess.run(["xclip", "-selection", "clipboard", "-t", "image/png", "-o"], stdout=f)
+    if os.path.exists(path) and os.path.getsize(path) > 0: 
+        return path
 
 class NODE_OT_reset_offset(Operator):
     bl_idname = "node.na_reset_offset"
@@ -251,7 +249,7 @@ def draw_ui_layout(layout: UILayout, context: Context):
         txt_box.separator(factor=0.05)
         split_txt = txt_box.split(factor=0.5)
         split_txt.prop(node, "na_font_size", text="字号")
-        split_txt.label(text="todo 换行符")
+        split_txt.prop(pref(), "line_separator", text="换行符")
         
         split_color = txt_box.split(factor=0.5)
         split_color.row().prop(node, "na_text_color", text="文本色")
@@ -335,9 +333,8 @@ class NODE_OT_na_quick_edit(Operator):
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        prefs = pref()
-        if context.active_node and prefs:
-            inject_defaults_if_needed(context.active_node, prefs)
+        if context.active_node:
+            inject_defaults_if_needed(context.active_node)
 
         context.window.cursor_warp(event.mouse_x + 100, event.mouse_y)
         return context.window_manager.invoke_popup(self, width=220)
@@ -351,7 +348,7 @@ class NODE_OT_na_quick_edit(Operator):
         row.label(icon="EVENT_NDOF_BUTTON_1")
         draw_ui_layout(layout, context)
 
-def draw_menu_func(self, context):
+def draw_menu_func(self: bpy.types.Menu, context: Context):
     layout = self.layout
     layout.separator()
     layout.operator_context = 'INVOKE_DEFAULT'
@@ -369,6 +366,6 @@ def register():
     bpy.types.NODE_MT_context_menu.prepend(draw_menu_func)
 
 def unregister():
-    if hasattr(bpy.types, "NODE_MT_context_menu"): bpy.types.NODE_MT_context_menu.remove(draw_menu_func)
+    bpy.types.NODE_MT_context_menu.remove(draw_menu_func)
     for c in classes:
         bpy.utils.unregister_class(c)

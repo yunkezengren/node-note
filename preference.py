@@ -2,13 +2,19 @@ import bpy
 from bpy.types import AddonPreferences
 from bpy.props import BoolProperty, StringProperty, FloatProperty, FloatVectorProperty, IntProperty, EnumProperty
 
-def tag_redraw(self, context):
-    try:
-        for window in context.window_manager.windows:
-            for area in window.screen.areas:
-                if area.type == 'NODE_EDITOR': area.tag_redraw()
-    except:
-        pass
+def tag_redraw(self, context: bpy.types.Context):
+    for window in context.window_manager.windows:
+        for area in window.screen.areas:
+            if area.type == 'NODE_EDITOR': area.tag_redraw()
+
+def text_split_lines(text: str) -> list[str]:
+    """使用偏好设置中的分隔符将文本转换为换行"""
+    separator: str = pref().line_separator
+    if not separator:
+        return text.splitlines()
+    for sep in separator.split('|'):
+        text = text.replace(sep, "\n")
+    return text.splitlines()
 
 class NodeMemoAddonPreferences(AddonPreferences):
     bl_idname = __package__
@@ -50,6 +56,7 @@ class NodeMemoAddonPreferences(AddonPreferences):
     text_default_size   : IntProperty(name="默认字号", default=8, min=4, max=100)
     text_default_color  : FloatVectorProperty(name="默认字色", subtype='COLOR', size=4, default=(1.0, 1.0, 1.0, 1.0), min=0, max=1)
     bg_default_color    : FloatVectorProperty(name="默认背景色", subtype='COLOR', size=4, default=(0.2, 0.3, 0.5, 0.9), min=0, max=1)
+    line_separator      : StringProperty(name="换行符", default=";|\\", description="文本中用于换行的分隔符，支持多个（用 | 分隔），如: ;|\\ ")
 
     text_default_fit    : BoolProperty(name="默认适应文本", default=False)
     text_default_align  : EnumProperty(name="默认对齐",

@@ -1,7 +1,9 @@
 import bpy
-from .preference import pref
+from bpy.types import Operator, UILayout, Context, Node, NodeTree
+from .preference import pref, text_split_lines
 
-class NODE_OT_clear_search(bpy.types.Operator):
+
+class NODE_OT_clear_search(Operator):
     """清除搜索内容"""
     bl_idname = "node.na_clear_search"
     bl_label = "清除搜索"
@@ -11,7 +13,7 @@ class NODE_OT_clear_search(bpy.types.Operator):
         pref().navigator_search = ""
         return {'FINISHED'}
 
-class NODE_OT_jump_to_note(bpy.types.Operator):
+class NODE_OT_jump_to_note(Operator):
     """跳转到指定注记节点"""
     bl_idname = "node.na_jump_to_note"
     bl_label = "跳转到注记"
@@ -35,8 +37,8 @@ class NODE_OT_jump_to_note(bpy.types.Operator):
         self.report({'WARNING'}, f"节点 {self.node_name} 未找到")
         return {'CANCELLED'}
 
-def draw_search_list(layout: bpy.types.UILayout, context):
-    tree = context.space_data.edit_tree
+def draw_search_list(layout: UILayout, context: Context):
+    tree: NodeTree = context.space_data.edit_tree
     
     row = layout.row(align=True)
     
@@ -45,7 +47,7 @@ def draw_search_list(layout: bpy.types.UILayout, context):
     if search_key:
         row.operator("node.na_clear_search", text="", icon='X')
 
-    annotated_nodes = []
+    annotated_nodes: list[Node] = []
     all_notes_count = 0
     
     for node in tree.nodes:
@@ -102,7 +104,8 @@ def draw_search_list(layout: bpy.types.UILayout, context):
             display_text += f"[{seq_idx}] "
         
         if txt_content:
-            txt_pure = txt_content.split('\n')[0].split(';')[0]
+            # todo 提示里完整显示
+            txt_pure = text_split_lines(txt_content)[0]
             display_text += txt_pure
         else:
             display_text += node.name 

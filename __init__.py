@@ -69,7 +69,7 @@ class NODE_OT_reset_prefs(Operator):
 
 def init_props():
     Node.na_text = StringProperty(name="内容", default="", update=tag_redraw, options={'TEXTEDIT_UPDATE'})
-    Node.na_font_size = IntProperty(name="字号", default=8, min=4, max=500, update=tag_redraw)
+    Node.na_font_size = IntProperty(name="字号", default=10, min=4, max=500, update=tag_redraw)
     Node.na_txt_bg_color = FloatVectorProperty(name="背景",
                                                subtype='COLOR',
                                                size=4,
