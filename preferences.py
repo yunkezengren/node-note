@@ -20,7 +20,7 @@ class NodeMemoAddonPreferences(AddonPreferences):
     bl_idname = __package__
 
     # 1. 全局设置
-    show_annotations    : BoolProperty(name="显示所有", default=True, update=tag_redraw)
+    show_all_notes      : BoolProperty(name="显示所有", default=True, update=tag_redraw)
     show_sequence_lines : BoolProperty(name="显示逻辑连线", default=False, update=tag_redraw, description="显示节点之间的序号连线")
     is_interactive_mode : BoolProperty(name="交互模式", default=False, update=tag_redraw, description="点击节点即可编号，右键或ESC退出")
     sort_by_sequence    : BoolProperty(name="按序号排序", default=False, update=tag_redraw, description="勾选后，有序号的节点将优先显示在列表顶部")
@@ -132,7 +132,7 @@ class NodeMemoAddonPreferences(AddonPreferences):
         col.prop(self, "use_occlusion", text="默认开启自动遮挡")
 
         col.separator()
-        col.prop(self, "show_annotations", text="默认显示所有")
+        col.prop(self, "show_all_notes", text="默认显示所有")
         col.prop(self, "show_select_seq", text="默认显示序号")
         col.prop(self, "show_sequence_lines", text="默认显示逻辑连线")
 

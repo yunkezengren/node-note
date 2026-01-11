@@ -33,7 +33,7 @@ def draw_ui_layout(layout: UILayout, context: Context):
     if body:
         row_pos = body.row()
         row_pos.operator("preferences.addon_show", text="偏好", icon='PREFERENCES').module = __package__
-        row_pos.prop(prefs, "show_annotations", text="显示", icon='HIDE_OFF', toggle=True)
+        row_pos.prop(prefs, "show_all_notes", text="显示", icon='HIDE_OFF', toggle=True)
         row_pos.operator("node.na_clear_all_scene_notes", text="全删", icon='TRASH')
         # 还很不完善
         # body.column().prop(prefs, "use_occlusion", text="被遮挡时自动隐藏")
@@ -42,7 +42,7 @@ def draw_ui_layout(layout: UILayout, context: Context):
         # 暂时禁用这个
         # row_del.operator("node.na_clear_select_all", text="删除选中笔记", icon='TRASH')
 
-        if prefs.show_annotations:
+        if prefs.show_all_notes:
             body.label(text="按背景色显示文本和图片:", icon='FILTER')
             split = body.split(factor=0.1, align=True)
             split.label(text="    ")

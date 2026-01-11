@@ -33,15 +33,12 @@ def view_to_region_scaled(context: Context, x: float, y: float) -> int2:
     return context.region.view2d.view_to_region(x * ui_scale, y * ui_scale, clip=False)
 
 # todo 需要改进
-def check_color_visibility(scene: Scene, bg_color: RGBA) -> bool:
+def check_color_visibility(bg_color: RGBA) -> bool:
     """检查背景颜色是否可见（用于过滤显示）"""
     prefs = pref()
-    if not prefs: return True
-
     r, g, b, a = bg_color
-    if a < 0.05: return False  # 完全透明
-
-    # 根据颜色通道判断
+    if a < 0.05: 
+        return False  # 完全透明
     if r > 0.5 and g < 0.2 and b < 0.2:  # 红色系
         return prefs.filter_red
     if g > 0.4 and r < 0.3 and b < 0.3:  # 绿色系
