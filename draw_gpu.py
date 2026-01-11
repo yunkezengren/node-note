@@ -2,17 +2,22 @@ import bpy
 import blf
 import gpu
 from gpu_extras.batch import batch_for_shader
-from bpy.types import Context, Scene, Node, Image
+from bpy.types import Image
 import array
 import math
-from .preference import pref, text_split_lines
+from .preferences import pref, text_split_lines
+from .utils import (
+    float2,
+    int3,
+    RGBA,
+    nd_abs_loc,
+    get_region_zoom,
+    view_to_region_scaled,
+    check_color_visibility,
+    get_node_screen_rect,
+)
 
-float2 = tuple[float, float]
-int2 = tuple[int, int]
-int3 = tuple[int, int, int]
-RGBA = tuple[float, float, float, float]
-Rect = tuple[float, float, float, float]
-
+# ==================== 常量 ====================
 PADDING_X = 2
 PADDING_Y = 2
 MARGIN_BOTTOM = 2
@@ -21,7 +26,9 @@ CORNER_RADIUS = 2.0
 CORNER_SCALE_Y = 1.1
 DEFAULT_BG = (0.2, 0.3, 0.5, 0.9)
 
+handler = None
 _shader_cache: dict[str, gpu.types.GPUShader] = {}
+_manual_texture_cache: dict[str, gpu.types.GPUTexture] = {}
 
 def get_shader(name: str):
     if name not in _shader_cache:
@@ -50,8 +57,6 @@ def get_gpu_texture(image: Image) -> gpu.types.GPUTexture | None:
         pass
     return create_texture_from_pixels(image)
 
-_manual_texture_cache: dict[str, gpu.types.GPUTexture] = {}
-
 def create_texture_from_pixels(image: Image) -> gpu.types.GPUTexture | None:
     global _manual_texture_cache
     cache_key = image.name
@@ -67,16 +72,6 @@ def create_texture_from_pixels(image: Image) -> gpu.types.GPUTexture | None:
         return texture
     except:
         return None
-
-def get_region_zoom(context: Context) -> float:
-    view2d = context.region.view2d
-    x0, y0 = view2d.view_to_region(0, 0, clip=False)
-    x1, y1 = view2d.view_to_region(1000, 1000, clip=False)
-    return 1.0 if x1 == x0 else math.sqrt((x1 - x0)**2 + (y1 - y0)**2) / 1000
-
-def view_to_region_scaled(context: Context, x: float, y: float) -> int2:
-    ui_scale = context.preferences.system.ui_scale
-    return context.region.view2d.view_to_region(x * ui_scale, y * ui_scale, clip=False)
 
 def draw_rounded_rect_batch(x: float, y: float, width: float, height: float, color: RGBA, radius: float = 3.0) -> None:
     shader = get_shader('UNIFORM_COLOR')
@@ -205,33 +200,6 @@ def draw_arrow_head(start_point: float2, end_point: float2, color: RGBA, size: f
     gpu.state.blend_set('ALPHA')
     batch.draw(shader)
 
-def check_color_visibility(scene: Scene, bg_color: RGBA) -> bool:
-    prefs = pref()
-    if not prefs: return True
-    r, g, b = bg_color[:3]
-    preset_cols = {
-        'red': prefs.col_preset_1,
-        'green': prefs.col_preset_2,
-        'blue': prefs.col_preset_3,
-        'orange': prefs.col_preset_4,
-        'purple': prefs.col_preset_5,
-    }
-    prefs = pref()
-    for name, col_vec in preset_cols.items():
-        if abs(r - col_vec[0]) + abs(g - col_vec[1]) + abs(b - col_vec[2]) < 0.05:
-            return getattr(prefs, f"filter_{name}", True)
-    return prefs.filter_other
-
-def get_node_screen_rect(context: Context, node: Node) -> Rect:
-    loc_x, loc_y = node.location.x, node.location.y
-    width, height = node.width, node.dimensions.y
-    x1, y1 = view_to_region_scaled(context, loc_x, loc_y)
-    x2, y2 = view_to_region_scaled(context, loc_x + width, loc_y - height)
-    return (min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2))
-
-def is_rect_overlap(r1: Rect, r2: Rect) -> bool:
-    return not (r1[2] < r2[0] or r1[0] > r2[2] or r1[3] < r2[1] or r1[1] > r2[3])
-
 def wrap_text_pure(font_id: int, text: str, max_width: float):
     lines = []
     for para in text_split_lines(text):
@@ -318,7 +286,7 @@ def draw_callback_px() -> None:
         img_off = getattr(node, "na_img_offset", (0, 0)) if hasattr(node, "na_img_offset") else (0, 0)
         swap = getattr(node, "na_swap_content_order", False)
 
-        loc = node.location
+        loc = nd_abs_loc(node)
         h_logical = node.dimensions.y / sys_ui_scale
         logical_top_y = max(loc.y - (h_logical/2 + 9), loc.y + (h_logical/2 - 9)) if node.hide else loc.y
         logical_bottom_y = min(loc.y - (h_logical/2 + 9), loc.y + (h_logical/2 - 9)) if node.hide else (loc.y - h_logical)
@@ -505,8 +473,6 @@ def draw_callback_px() -> None:
             dims = blf.dimensions(font_id, num_str)
             blf.position(font_id, int(badge_x - dims[0] / 2), int(badge_y - dims[1] / 2.5), 0)
             blf.draw(font_id, num_str)
-
-handler = None
 
 def register_draw_handler() -> None:
     global handler
