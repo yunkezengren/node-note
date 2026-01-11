@@ -1,4 +1,4 @@
-from bpy.types import Panel, UILayout, Context, Menu, Node, NodeTree
+from bpy.types import Panel, UILayout, Context, Menu, Node, NodeTree, Image
 from .preferences import pref, text_split_lines
 
 class NODE_PT_node_note_gpu_panel(Panel):
@@ -217,6 +217,8 @@ def draw_search_list(layout: UILayout, context: Context):
     layout.label(text=f"列表 ({len(noted_nodes)}):", icon=sort_icon)
 
     col = layout.column()
+    header: UILayout 
+    body: UILayout
     for index, node in enumerate(noted_nodes):
         header, body = layout.panel(f"note_{index}_{node.name}", default_closed=True)
 
@@ -245,12 +247,12 @@ def draw_search_list(layout: UILayout, context: Context):
             display_text += split_lines[0]
         else:
             display_text += node.name
-
+        if node == context.active_node:
+            display_text = "★★: " + display_text 
         op = split_text.operator("node.note_jump_to_note", text=display_text, icon='VIEW_ZOOM', emboss=True)
         op.node_name = node.name
 
-        # split_text.label(text=display_text)
-        image = getattr(node, "note_image", None)
+        image: Image = getattr(node, "note_image", None)
         if image:
             split_img_name.label(text=image.name)
 
@@ -263,6 +265,13 @@ def draw_search_list(layout: UILayout, context: Context):
             row_node.label(text=f"节点:  {node.name}", icon='NODE')
             row_img = note_col.row()
             row_img.label(text=f"图片:  {image.name if image else '无'}", icon='IMAGE_DATA')
+
+            if image:
+                img_split = note_col.split(factor=0.1)
+                img_split.label(text="")
+                img_box = img_split.box()
+                img_box.template_ID_preview(node, "note_image")
+
             row_text = note_col.column()
             if split_lines:
                 row_text.label(text=f"文本:  {split_lines[0]}", icon='FILE_TEXT')
