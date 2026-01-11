@@ -256,32 +256,6 @@ def _get_draw_params() -> dict:
         'base_font_size': base_font_size,
     }
 
-def _calculate_text_width(node: Node, text: str, node_info: dict, txt_width_mode: str) -> float:
-    """计算文本宽度"""
-    scaled_zoom = node_info['scaled_zoom']
-    pad = PADDING_X * scaled_zoom
-    fs = max(1, int(getattr(node, "na_font_size", 8) * scaled_zoom))
-
-    font_id = 0
-    blf.size(font_id, fs)
-    sx = node_info['sx']
-    node_w_px = node_info['node_w_px']
-    loc = node_info['loc']
-
-    if txt_width_mode == 'FIT' and text:
-        max_line_w = 0
-        for line in text_split_lines(text):
-            width = blf.dimensions(font_id, line)[0]
-            if width > max_line_w:
-                max_line_w = width
-        return max_line_w + (pad*2)
-    elif txt_width_mode == 'AUTO':
-        min_w = view_to_region_scaled(loc.x + MIN_AUTO_WIDTH, loc.y)[0] - sx
-        return max(node_w_px, min_w)
-    else:
-        manual_w = getattr(node, "na_txt_bg_width", 200)
-        return view_to_region_scaled(loc.x + manual_w, loc.y)[0] - sx
-
 def _wrap_text(font_id: int, text: str, txt_width_mode: str, target_width_px: float, pad: float) -> list:
     """文本换行处理"""
     if txt_width_mode == 'FIT':
@@ -289,26 +263,17 @@ def _wrap_text(font_id: int, text: str, txt_width_mode: str, target_width_px: fl
     else:
         return wrap_text_pure(font_id, text, max(1, target_width_px - pad*2))
 
-def _draw_text_note(node: Node, text, bg_color: RGBA, node_info: dict) -> None:
-    """绘制文本笔记（文本+背景）"""
+def _draw_text_note(node: Node, text, bg_color: RGBA, node_info: dict, txt_x: float, txt_y: float, target_width_px: float, text_layer_height: float) -> None:
+    """绘制文本笔记(文本+背景)"""
     scaled_zoom = node_info['scaled_zoom']
     pad = PADDING_X * scaled_zoom
-    # 从node_data获取属性
     # 计算文本尺寸
     fs = max(1, int(getattr(node, "na_font_size", 8) * scaled_zoom))
-    align = getattr(node, "na_txt_pos", 'TOP')
-    offset = getattr(node, "na_txt_offset", (0, 0))
-    txt_width_mode = getattr(node, "na_txt_width_mode", 'AUTO')
-    # 计算目标宽度
-    target_width_px = _calculate_text_width(node, text, node_info, txt_width_mode)
     # 文本换行
     font_id = 0
     blf.size(font_id, fs)
+    txt_width_mode = getattr(node, "na_txt_width_mode", 'AUTO')
     lines = _wrap_text(font_id, text, txt_width_mode, target_width_px, pad)
-    # 计算文本层高度
-    text_layer_height = (len(lines) * fs * 1.3) + pad*2 if lines else 0
-    # 计算位置
-    txt_x, txt_y = _calculate_element_position(node_info, align, offset, target_width_px, text_layer_height, scaled_zoom)
     # 绘制背景
     draw_rounded_rect_batch(txt_x, txt_y, target_width_px, text_layer_height, bg_color, CORNER_RADIUS * scaled_zoom)
     # 绘制文本
@@ -321,43 +286,8 @@ def _draw_text_note(node: Node, text, bg_color: RGBA, node_info: dict) -> None:
         blf.position(font_id, int(txt_x + pad), int(py + i*lh + fs*0.25), 0)
         blf.draw(font_id, l)
 
-def _draw_image_note(node: Node, img: Image, node_info: dict) -> None:
+def _draw_image_note(node: Node, img: Image, img_x: float, img_y: float, img_draw_w: float, img_draw_h: float, texture) -> None:
     """绘制图像笔记"""
-    scaled_zoom = node_info['scaled_zoom']
-    sx = node_info['sx']
-    sy = node_info['sy']
-    node_w_px = node_info['node_w_px']
-
-    # 计算图像尺寸
-    img_width_mode = getattr(node, "na_img_width_mode", 'AUTO')
-    img_align = getattr(node, "na_img_pos", 'TOP')
-    img_off = getattr(node, "na_img_offset", (0, 0))
-
-    ref_w = max(node_w_px, (view_to_region_scaled(sx + MIN_AUTO_WIDTH, sy)[0] - sx))
-
-    if img_width_mode == 'ORIGINAL':
-        base_w = img.size[0] * scaled_zoom
-    elif img_width_mode == 'AUTO':
-        base_w = ref_w
-    else:
-        base_w = getattr(node, "na_img_width", 140) * scaled_zoom
-
-    img_draw_w = base_w
-    img_draw_h = base_w * (img.size[1] / img.size[0]) if img.size[0] > 0 else 0
-
-    # 获取纹理
-    texture = get_gpu_texture(img) if img.size[0] > 0 else None
-
-    # 计算位置
-    img_x, img_y = _calculate_element_position(node_info, img_align, img_off, img_draw_w, img_draw_h, scaled_zoom)
-
-    # 居中校正
-    is_stacked = getattr(node, "na_txt_pos", 'TOP') == img_align
-    align = getattr(node, "na_txt_pos", 'TOP')
-    if (is_stacked and align in {'TOP', 'BOTTOM'}) or (not is_stacked and img_align in {'TOP', 'BOTTOM'}):
-        center_correction = (node_w_px-img_draw_w) / 2
-        img_x += center_correction
-
     # 绘制
     if texture:
         draw_texture_batch(texture, img_x, img_y, img_draw_w, img_draw_h)
@@ -411,11 +341,132 @@ def _process_and_draw_text_and_image_note(node: Node, params: dict, sequence_coo
     # 计算位置和尺寸
     node_info = _calculate_node_position(node, params)
 
+    # 获取对齐和交换属性
+    txt_align = getattr(node, "na_txt_pos", 'TOP')
+    img_align = getattr(node, "na_img_pos", 'TOP')
+    swap = getattr(node, "na_swap_content_order", False)
+    
+    # 检查是否堆叠
+    is_stacked = (txt_align == img_align)
+    
+    # 计算文本和图像的尺寸
+    scaled_zoom = node_info['scaled_zoom']
+    pad = PADDING_X * scaled_zoom
+    node_w_px = node_info['node_w_px']
+    loc = node_info['loc']
+    
+    # 文本尺寸计算
+    target_width_px = 0
+    text_layer_height = 0
+    lines = []
     if text and show_txt and visible_by_bg_color:
-        _draw_text_note(node, text, bg_color, node_info)
+        fs = max(1, int(getattr(node, "na_font_size", 8) * scaled_zoom))
+        txt_width_mode = getattr(node, "na_txt_width_mode", 'AUTO')
+        
+        # 计算目标宽度
+        if txt_width_mode == 'FIT' and text:
+            font_id = 0
+            blf.size(font_id, fs)
+            max_line_w = 0
+            for line in text_split_lines(text):
+                width = blf.dimensions(font_id, line)[0]
+                if width > max_line_w:
+                    max_line_w = width
+            target_width_px = max_line_w + (pad*2)
+        elif txt_width_mode == 'AUTO':
+            min_w = view_to_region_scaled(loc.x + MIN_AUTO_WIDTH, loc.y)[0] - node_info['sx']
+            target_width_px = max(node_w_px, min_w)
+        else:
+            manual_w = getattr(node, "na_txt_bg_width", 200)
+            target_width_px = view_to_region_scaled(loc.x + manual_w, loc.y)[0] - node_info['sx']
+        
+        # 文本换行
+        font_id = 0
+        blf.size(font_id, fs)
+        if txt_width_mode == 'FIT':
+            lines = text_split_lines(text)
+        else:
+            lines = _wrap_text(font_id, text, txt_width_mode, target_width_px, pad)
+        
+        text_layer_height = (len(lines) * fs * 1.3) + pad*2 if lines else 0
+    
+    # 图像尺寸计算
+    img_draw_w = 0
+    img_draw_h = 0
+    texture = None
     if img and show_img and visible_by_bg_color:
-        _draw_image_note(node, img, node_info)
+        img_width_mode = getattr(node, "na_img_width_mode", 'AUTO')
+        ref_w = max(node_w_px, (view_to_region_scaled(loc.x + MIN_AUTO_WIDTH, loc.y)[0] - node_info['sx']))
+        
+        if img_width_mode == 'ORIGINAL':
+            base_w = img.size[0] * scaled_zoom
+        elif img_width_mode == 'AUTO':
+            base_w = ref_w
+        else:
+            base_w = getattr(node, "na_img_width", 140) * scaled_zoom
+        
+        img_draw_w = base_w
+        img_draw_h = base_w * (img.size[1] / img.size[0]) if img.size[0] > 0 else 0
+        texture = get_gpu_texture(img) if img.size[0] > 0 else None
+    
+    # 计算位置(应用堆叠逻辑)
+    if not is_stacked:
+        # 非堆叠情况：各自独立计算位置
+        if text and show_txt and visible_by_bg_color:
+            offset = getattr(node, "na_txt_offset", (0, 0))
+            txt_x, txt_y = _calculate_element_position(node_info, txt_align, offset, target_width_px, text_layer_height, scaled_zoom)
+        else:
+            txt_x, txt_y = 0, 0
+            
+        if img and show_img and visible_by_bg_color:
+            img_off = getattr(node, "na_img_offset", (0, 0))
+            img_x, img_y = _calculate_element_position(node_info, img_align, img_off, img_draw_w, img_draw_h, scaled_zoom)
+        else:
+            img_x, img_y = 0, 0
+    else:
+        # 堆叠情况：计算相对位置
+        inner_w, inner_h, inner_off = (target_width_px, text_layer_height, getattr(node, "na_txt_offset", (0, 0))) if not swap else (img_draw_w, img_draw_h, getattr(node, "na_img_offset", (0, 0)))
+        outer_w, outer_h, outer_off = (img_draw_w, img_draw_h, getattr(node, "na_img_offset", (0, 0))) if not swap else (target_width_px, text_layer_height, getattr(node, "na_txt_offset", (0, 0)))
+        
+        inner_x, inner_y = _calculate_element_position(node_info, txt_align, inner_off, inner_w, inner_h, scaled_zoom)
+        outer_x, outer_y = inner_x, inner_y
 
+        ox_scaled = outer_off[0] * scaled_zoom
+        oy_scaled = outer_off[1] * scaled_zoom
+        sy = node_info['sy']
+        
+        if txt_align == 'TOP':
+            outer_x = inner_x + ox_scaled
+            outer_y = inner_y + inner_h + oy_scaled
+        elif txt_align == 'BOTTOM':
+            outer_x = inner_x + ox_scaled
+            outer_y = inner_y - outer_h + oy_scaled
+        elif txt_align == 'LEFT':
+            outer_x = inner_x - outer_w + ox_scaled
+            outer_y = sy - outer_h + oy_scaled
+        elif txt_align == 'RIGHT':
+            outer_x = inner_x + inner_w + ox_scaled
+            outer_y = sy - outer_h + oy_scaled
+        
+        if not swap:
+            txt_x, txt_y = inner_x, inner_y
+            img_x, img_y = outer_x, outer_y
+        else:
+            img_x, img_y = inner_x, inner_y
+            txt_x, txt_y = outer_x, outer_y
+    
+    # 绘制文本
+    if text and show_txt and visible_by_bg_color:
+        _draw_text_note(node, text, bg_color, node_info, txt_x, txt_y, target_width_px, text_layer_height)
+    
+    # 绘制图像(包含居中校正)
+    if img and show_img and visible_by_bg_color:
+        # 居中校正
+        if (is_stacked and txt_align in {'TOP', 'BOTTOM'}) or (not is_stacked and img_align in {'TOP', 'BOTTOM'}):
+            center_correction = (node_w_px - img_draw_w) / 2
+            img_x += center_correction
+        _draw_image_note(node, img, img_x, img_y, img_draw_w, img_draw_h, texture)
+    
     # 收集序号坐标
     if seq_idx > 0 and show_seq:
         _collect_sequence_coords(seq_idx, node_info, sequence_coords, params)
@@ -457,7 +508,7 @@ def _draw_sequence_lines(sequence_coords: dict, params: dict) -> None:
     draw_lines_batch(line_points, line_col, thickness=line_thickness)
 
 def _draw_sequence_badges(sequence_coords: dict, params: dict) -> None:
-    """绘制序号徽章（背景+文本）"""
+    """绘制序号徽章(背景+文本)"""
     prefs = pref()
     badge_radius = params['badge_radius']
     base_font_size = params['base_font_size']
