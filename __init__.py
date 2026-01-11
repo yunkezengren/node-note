@@ -1,5 +1,5 @@
 import bpy
-from bpy.types import Operator, Panel, UILayout, Node
+from bpy.types import Operator, Panel, Node
 from bpy.props import StringProperty, IntProperty, FloatVectorProperty, BoolProperty, PointerProperty, FloatProperty, EnumProperty, IntVectorProperty
 from . import draw_core
 from . import edit_ops
@@ -84,9 +84,9 @@ def init_props():
                                              min=0.0,
                                              max=1.0,
                                              update=tag_redraw)
-    width_item_auto = [('AUTO', "跟随节点宽度", "宽度自动跟随节点宽度")]
-    txt_width_items_1 = [('FIT', "自适应宽度", "宽度自动适应文本内容"), ('MANUAL', "手动设置宽度", "手动设置宽度")]
-    img_width_items1 = [('ORIGINAL', "原始宽度", "显示图像原始宽度"), ('MANUAL', "手动设置宽度", "手动设置宽度")]
+    width_item_auto = [('AUTO', "跟随节点", "宽度自动跟随节点宽度")]
+    txt_width_items_1 = [('FIT', "适应内容", "宽度自动适应文本内容"), ('MANUAL', "手动设置", "手动设置宽度")]
+    img_width_items1 = [('ORIGINAL', "原始宽度", "显示图像原始宽度"), ('MANUAL', "手动设置", "手动设置宽度")]
     def get_txt_width_items(self, context):
         if self.bl_idname == "NodeReroute":
             return txt_width_items_1
@@ -407,25 +407,23 @@ def register():
     init_props()
     for cls in classes:
         bpy.utils.register_class(cls)
-    if draw_core: draw_core.register_draw_handler()
-    if edit_ops: edit_ops.register()
-    if search_ops: search_ops.register()
-    wm = bpy.context.window_manager
-    kc = wm.keyconfigs.addon
+    draw_core.register_draw_handler()
+    edit_ops.register()
+    search_ops.register()
+    kc = bpy.context.window_manager.keyconfigs.addon
     if kc:
         km = kc.keymaps.new(name='Node Editor', space_type='NODE_EDITOR')
         kmi = km.keymap_items.new("node.na_quick_edit", 'RIGHTMOUSE', 'PRESS', shift=True)
         addon_keymaps.append((km, kmi))
 
 def unregister():
-    if search_ops: search_ops.unregister()
-    if edit_ops: edit_ops.unregister()
-    if draw_core: draw_core.unregister_draw_handler()
+    search_ops.unregister()
+    edit_ops.unregister()
+    draw_core.unregister_draw_handler()
     for cls in classes:
         bpy.utils.unregister_class(cls)
     clear_props()
-    wm = bpy.context.window_manager
-    kc = wm.keyconfigs.addon
+    kc = bpy.context.window_manager.keyconfigs.addon
     if kc:
         for km, kmi in addon_keymaps:
             km.keymap_items.remove(kmi)

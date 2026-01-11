@@ -351,7 +351,7 @@ def draw_callback_px() -> None:
             target_width_px = (view_to_region_scaled(context, loc.x + manual_w, loc.y)[0] - sx)
 
         lines = []
-        if text:
+        if text and show_text_bg:  # 只有在显示文本背景时才计算文本内容
             if txt_width_mode == 'FIT':
                 lines = text_split_lines(text)
             else:

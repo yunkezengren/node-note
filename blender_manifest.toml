@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 id = "NodeMemo"
 version = "1.0.0"
-name = "节点随记"
+name = "Node Memory/节点随记"
 tagline = "为节点思路设置清晰的路标和精准的导航"
 maintainer = "無東;W_Cloud"
 type = "add-on"
