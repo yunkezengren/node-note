@@ -432,7 +432,8 @@ def _process_and_draw_text_and_image_note(node: Node, params: DrawParams, badge_
         elif img_width_mode == 'AUTO':
             base_width = ref_width
         else:
-            base_width = getattr(node, "note_img_width", 140) * scaled_zoom
+            manual_w = getattr(node, "note_img_width", 140)
+            base_width = view_to_region_scaled(loc[0] + manual_w, loc[1])[0] - node_info.left_x
 
         img_draw_w = base_width
         img_draw_h = base_width * (img.size[1] / img.size[0]) if img.size[0] > 0 else 0
