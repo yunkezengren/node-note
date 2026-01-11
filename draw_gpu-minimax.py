@@ -289,7 +289,7 @@ def _calc_text_target_width(
     node_region_x_right: float, scaled_zoom: float
 ) -> float:
     """计算文本目标宽度"""
-    txt_width_mode = getattr(node, "na_txt_width_mode", 'AUTO')
+    txt_width_mode = getattr(node, "note_txt_width_mode", 'AUTO')
     pad = PADDING_X * scaled_zoom
 
     if txt_width_mode == 'FIT' and text:
@@ -304,7 +304,7 @@ def _calc_text_target_width(
         min_w = view_to_region_scaled(context, node_region_x + MIN_AUTO_WIDTH, 0)[0] - node_region_x
         return max(node_region_x_right - node_region_x, min_w)
 
-    manual_w = getattr(node, "na_txt_bg_width", 200)
+    manual_w = getattr(node, "note_txt_bg_width", 200)
     return view_to_region_scaled(context, node_region_x + manual_w, 0)[0] - node_region_x
 
 
@@ -313,7 +313,7 @@ def _calc_image_dimensions(
     node_region_x_right: float
 ) -> tuple[float, float, gpu.types.GPUTexture | None]:
     """计算图像绘制尺寸和纹理"""
-    img_width_mode = getattr(node, "na_img_width_mode", 'AUTO')
+    img_width_mode = getattr(node, "note_img_width_mode", 'AUTO')
     ref_w = max(node_region_x_right - node_region_x, view_to_region_scaled(context, node_region_x + MIN_AUTO_WIDTH, 0)[0] - node_region_x)
 
     if img_width_mode == 'ORIGINAL':
@@ -321,7 +321,7 @@ def _calc_image_dimensions(
     elif img_width_mode == 'AUTO':
         base_w = ref_w
     else:
-        base_w = getattr(node, "na_img_width", 140) * scaled_zoom
+        base_w = getattr(node, "note_img_width", 140) * scaled_zoom
 
     if image.size[0] <= 0:
         return 0, 0, None
@@ -485,30 +485,30 @@ def _init_context() -> DrawContext | None:
 
 def _create_node_context(draw_ctx: DrawContext, node: Node) -> NodeDrawContext | None:
     """为单个节点创建绘制上下文"""
-    text = getattr(node, "na_text", "").strip()
-    img = getattr(node, "na_image", None)
-    show_img = getattr(node, "na_show_img", True)
-    seq_idx = getattr(node, "na_seq_index", 0)
-    show_text_bg = getattr(node, "na_show_txt", True)
-    show_seq = getattr(node, "na_show_seq", True)
+    text = getattr(node, "note_text", "").strip()
+    img = getattr(node, "note_image", None)
+    show_img = getattr(node, "note_show_img", True)
+    seq_idx = getattr(node, "note_seq_index", 0)
+    show_text_bg = getattr(node, "note_show_txt", True)
+    show_seq = getattr(node, "note_show_seq", True)
 
     if not text and not (img and show_img) and not (seq_idx > 0 and show_seq):
         return None
 
-    col = getattr(node, "na_txt_bg_color", DEFAULT_BG)
+    col = getattr(node, "note_txt_bg_color", DEFAULT_BG)
     is_visible_by_color = check_color_visibility(draw_ctx.context.scene, col)
 
     if not is_visible_by_color and seq_idx == 0:
         return None
 
-    fs = max(1, int(getattr(node, "na_font_size", 8) * draw_ctx.scaled_zoom))
+    fs = max(1, int(getattr(node, "note_font_size", 8) * draw_ctx.scaled_zoom))
     pad = PADDING_X * draw_ctx.scaled_zoom
 
-    align = getattr(node, "na_txt_pos", 'TOP')
-    off = getattr(node, "na_txt_offset", (0, 0))
-    img_align = getattr(node, "na_img_pos", 'TOP') if hasattr(node, "na_img_pos") else 'TOP'
-    img_off = getattr(node, "na_img_offset", (0, 0)) if hasattr(node, "na_img_offset") else (0, 0)
-    swap = getattr(node, "na_swap_content_order", False)
+    align = getattr(node, "note_txt_pos", 'TOP')
+    off = getattr(node, "note_txt_offset", (0, 0))
+    img_align = getattr(node, "note_img_pos", 'TOP') if hasattr(node, "note_img_pos") else 'TOP'
+    img_off = getattr(node, "note_img_offset", (0, 0)) if hasattr(node, "note_img_offset") else (0, 0)
+    swap = getattr(node, "note_swap_content_order", False)
 
     loc = nd_abs_loc(node)
     h_logical = node.dimensions.y / draw_ctx.sys_ui_scale
@@ -531,7 +531,7 @@ def _create_node_context(draw_ctx: DrawContext, node: Node) -> NodeDrawContext |
 
     lines = []
     if text and show_text_bg:
-        txt_width_mode = getattr(node, "na_txt_width_mode", 'AUTO')
+        txt_width_mode = getattr(node, "note_txt_width_mode", 'AUTO')
         if txt_width_mode == 'FIT':
             lines = text_split_lines(text)
         else:
@@ -570,7 +570,7 @@ def _create_node_context(draw_ctx: DrawContext, node: Node) -> NodeDrawContext |
         sequence_idx=seq_idx,
         show_text_bg=show_text_bg,
         show_sequence=show_seq,
-        text_color=getattr(node, "na_text_color", (1, 1, 1, 1)),
+        text_color=getattr(node, "note_text_color", (1, 1, 1, 1)),
         bg_color=col,
         font_size=fs,
         scaled_padding=pad,

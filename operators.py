@@ -8,7 +8,7 @@ from .node_properties import inject_defaults_if_needed, init_props
 
 class NODE_OT_reset_prefs(Operator):
     """重置当前页面的设置"""
-    bl_idname = "node.na_reset_prefs"
+    bl_idname = "node.note_reset_prefs"
     bl_label = "重置为默认"
     bl_options = {'INTERNAL'}
 
@@ -30,8 +30,8 @@ class NODE_OT_reset_prefs(Operator):
                 prefs.property_unset(p)
         return {'FINISHED'}
 
-class NODE_OT_na_swap_order(Operator):
-    bl_idname = "node.na_swap_order"
+class NODE_OT_note_swap_order(Operator):
+    bl_idname = "node.note_swap_order"
     bl_label = "交换图文位置"
     bl_description = "交换选中节点文本笔记和图像笔记顺序"
     bl_options = {'REGISTER', 'UNDO'}
@@ -41,20 +41,20 @@ class NODE_OT_na_swap_order(Operator):
         if not node: return {'CANCELLED'}
         nodes = context.selected_nodes if context.selected_nodes else [context.active_node]
         for node in nodes:
-            if hasattr(node, "na_txt_pos") and hasattr(node, "na_img_pos"):
-                align_txt = node.na_txt_pos
-                align_img = node.na_img_pos
+            if hasattr(node, "note_txt_pos") and hasattr(node, "note_img_pos"):
+                align_txt = node.note_txt_pos
+                align_img = node.note_img_pos
                 if align_txt != align_img:
-                    node.na_txt_pos = align_img
-                    node.na_img_pos = align_txt
+                    node.note_txt_pos = align_img
+                    node.note_img_pos = align_txt
                 else:
-                    if hasattr(node, "na_swap_content_order"):
-                        node.na_swap_content_order = not node.na_swap_content_order
+                    if hasattr(node, "note_swap_content_order"):
+                        node.note_swap_content_order = not node.note_swap_content_order
                 context.area.tag_redraw()
         return {'FINISHED'}
 
 class NODE_OT_interactive_seq(Operator):
-    bl_idname = "node.na_interactive_seq"
+    bl_idname = "node.note_interactive_seq"
     bl_label = "交互式编号"
     bl_description = "画笔点选节点自动编号 (右键/ESC退出)"
     bl_options = {'REGISTER', 'UNDO'}
@@ -83,10 +83,10 @@ class NODE_OT_interactive_seq(Operator):
 
                     if node and node != self.last_node:
                         self.current_idx += 1
-                        node.na_seq_index = self.current_idx
+                        node.note_seq_index = self.current_idx
 
-                        if node.na_seq_index > 0:
-                            node.na_sequence_color = pref().seq_bg_color
+                        if node.note_seq_index > 0:
+                            node.note_sequence_color = pref().seq_bg_color
 
                         self.last_node = node
 
@@ -115,8 +115,8 @@ class NODE_OT_interactive_seq(Operator):
             tree = context.space_data.edit_tree
             if tree:
                 for n in tree.nodes:
-                    if hasattr(n, "na_seq_index"):
-                        max_idx = max(max_idx, n.na_seq_index)
+                    if hasattr(n, "note_seq_index"):
+                        max_idx = max(max_idx, n.note_seq_index)
 
             self.current_idx = max_idx
             self.last_node = None
@@ -131,7 +131,7 @@ class NODE_OT_interactive_seq(Operator):
             return {'CANCELLED'}
 
 class NODE_OT_clear_select_all(Operator):
-    bl_idname = "node.na_clear_select_all"
+    bl_idname = "node.note_clear_select_all"
     bl_label = "删除全部"
     bl_description = "删除选中节点的所有笔记"
     bl_options = {'UNDO'}
@@ -139,15 +139,15 @@ class NODE_OT_clear_select_all(Operator):
     def execute(self, context):
         nodes = context.selected_nodes if context.selected_nodes else [context.active_node]
         for node in nodes:
-            if node.na_text or node.na_image or node.na_seq_index:
-                node.na_text = ""
-                node.na_image = None
-                node.na_seq_index = 0
-                node.na_is_initialized = False
+            if node.note_text or node.note_image or node.note_seq_index:
+                node.note_text = ""
+                node.note_image = None
+                node.note_seq_index = 0
+                node.note_is_initialized = False
         return {'FINISHED'}
 
 class NODE_OT_clear_select_txt(Operator):
-    bl_idname = "node.na_clear_select_txt"
+    bl_idname = "node.note_clear_select_txt"
     bl_label = "删除文本"
     bl_description = "删除选中节点的文字笔记"
     bl_options = {'UNDO'}
@@ -155,14 +155,14 @@ class NODE_OT_clear_select_txt(Operator):
     def execute(self, context):
         nodes = context.selected_nodes if context.selected_nodes else [context.active_node]
         for node in nodes:
-            if not node.na_text: continue
-            node.na_text = ""
-            if not node.na_image and not node.na_seq_index:
-                node.na_is_initialized = False
+            if not node.note_text: continue
+            node.note_text = ""
+            if not node.note_image and not node.note_seq_index:
+                node.note_is_initialized = False
         return {'FINISHED'}
 
 class NODE_OT_clear_select_img(Operator):
-    bl_idname = "node.na_clear_select_img"
+    bl_idname = "node.note_clear_select_img"
     bl_label = "删除图片"
     bl_description = "删除选中节点的图片笔记"
     bl_options = {'UNDO'}
@@ -170,14 +170,14 @@ class NODE_OT_clear_select_img(Operator):
     def execute(self, context):
         nodes = context.selected_nodes if context.selected_nodes else [context.active_node]
         for node in nodes:
-            if not node.na_image: continue
-            node.na_image = None
-            if not node.na_text and not node.na_seq_index:
-                node.na_is_initialized = False
+            if not node.note_image: continue
+            node.note_image = None
+            if not node.note_text and not node.note_seq_index:
+                node.note_is_initialized = False
         return {'FINISHED'}
 
 class NODE_OT_clear_select_seq(Operator):
-    bl_idname = "node.na_clear_select_seq"
+    bl_idname = "node.note_clear_select_seq"
     bl_label = "删除序号"
     bl_description = "删除选中节点的序号笔记"
     bl_options = {'UNDO'}
@@ -185,14 +185,14 @@ class NODE_OT_clear_select_seq(Operator):
     def execute(self, context):
         nodes = context.selected_nodes if context.selected_nodes else [context.active_node]
         for node in nodes:
-            if not node.na_seq_index: continue
-            node.na_seq_index = 0
-            if not node.na_text and not node.na_image:
-                node.na_is_initialized = False
+            if not node.note_seq_index: continue
+            node.note_seq_index = 0
+            if not node.note_text and not node.note_image:
+                node.note_is_initialized = False
         return {'FINISHED'}
 
 class NODE_OT_clear_all_scene_notes(Operator):
-    bl_idname = "node.na_clear_all_scene_notes"
+    bl_idname = "node.note_clear_all_scene_notes"
     bl_label = "删除所有笔记"
     bl_description = "删除节点树中所有笔记"
     bl_options = {'UNDO'}
@@ -205,15 +205,15 @@ class NODE_OT_clear_all_scene_notes(Operator):
         edit_tree = context.space_data.edit_tree
         if not edit_tree: return {'CANCELLED'}
         for node in edit_tree.nodes:
-            if not node.na_text and not node.na_image and not node.na_seq_index: continue
-            node.na_text = ""
-            node.na_image = None
-            node.na_seq_index = 0
-            node.na_is_initialized = False
+            if not node.note_text and not node.note_image and not node.note_seq_index: continue
+            node.note_text = ""
+            node.note_image = None
+            node.note_seq_index = 0
+            node.note_is_initialized = False
         return {'FINISHED'}
 
 class NODE_OT_show_select_txt(Operator):
-    bl_idname = "node.na_show_select_txt"
+    bl_idname = "node.note_show_select_txt"
     bl_label = "显示文本"
     bl_description = "显示选中节点的文字笔记"
     bl_options = {'UNDO'}
@@ -222,14 +222,14 @@ class NODE_OT_show_select_txt(Operator):
         active_node = context.active_node
         nodes = context.selected_nodes
         if not active_node: return {'CANCELLED'}
-        new_value = not active_node.na_show_txt
-        active_node.na_show_txt = new_value
+        new_value = not active_node.note_show_txt
+        active_node.note_show_txt = new_value
         for node in nodes:
-            node.na_show_txt = new_value
+            node.note_show_txt = new_value
         return {'FINISHED'}
 
 class NODE_OT_show_select_img(Operator):
-    bl_idname = "node.na_show_select_img"
+    bl_idname = "node.note_show_select_img"
     bl_label = "显示图片"
     bl_description = "显示选中节点的图片笔记"
     bl_options = {'UNDO'}
@@ -238,14 +238,14 @@ class NODE_OT_show_select_img(Operator):
         active_node = context.active_node
         nodes = context.selected_nodes
         if not active_node: return {'CANCELLED'}
-        new_value = not active_node.na_show_img
-        active_node.na_show_img = new_value
+        new_value = not active_node.note_show_img
+        active_node.note_show_img = new_value
         for node in nodes:
-            node.na_show_img = new_value
+            node.note_show_img = new_value
         return {'FINISHED'}
 
 class NODE_OT_show_select_seq(Operator):
-    bl_idname = "node.na_show_select_seq"
+    bl_idname = "node.note_show_select_seq"
     bl_label = "显示序号"
     bl_description = "显示选中节点的序号笔记"
     bl_options = {'UNDO'}
@@ -254,14 +254,14 @@ class NODE_OT_show_select_seq(Operator):
         active_node = context.active_node
         nodes = context.selected_nodes
         if not active_node: return {'CANCELLED'}
-        new_value = not active_node.na_show_seq
-        active_node.na_show_seq = new_value
+        new_value = not active_node.note_show_seq
+        active_node.note_show_seq = new_value
         for node in nodes:
-            node.na_show_seq = new_value
+            node.note_show_seq = new_value
         return {'FINISHED'}
 
 class NODE_OT_fix_prop(Operator):
-    bl_idname = "node.na_fix_prop"
+    bl_idname = "node.note_fix_prop"
     bl_label = "修复属性"
 
     def execute(self, context):
@@ -271,31 +271,31 @@ class NODE_OT_fix_prop(Operator):
 # --- 从 edit_ops.py 移动的操作符 ---
 
 class NODE_OT_reset_offset(Operator):
-    bl_idname = "node.na_reset_offset"
+    bl_idname = "node.note_reset_offset"
     bl_label = "复位"
     bl_options = {'UNDO'}
 
     def execute(self, context):
         node = context.active_node
-        if hasattr(node, "na_txt_offset"): node.na_txt_offset = (0, 0)
-        if hasattr(node, "na_txt_pos"): node.na_txt_pos = 'TOP'
+        if hasattr(node, "note_txt_offset"): node.note_txt_offset = (0, 0)
+        if hasattr(node, "note_txt_pos"): node.note_txt_pos = 'TOP'
         context.area.tag_redraw()
         return {'FINISHED'}
 
 class NODE_OT_reset_img_offset(Operator):
-    bl_idname = "node.na_reset_img_offset"
+    bl_idname = "node.note_reset_img_offset"
     bl_label = "复位图片偏移"
     bl_options = {'UNDO'}
 
     def execute(self, context):
         node = context.active_node
-        if hasattr(node, "na_img_offset"): node.na_img_offset = (0, 0)
-        if hasattr(node, "na_img_pos"): node.na_img_pos = 'TOP'
+        if hasattr(node, "note_img_offset"): node.note_img_offset = (0, 0)
+        if hasattr(node, "note_img_pos"): node.note_img_pos = 'TOP'
         context.area.tag_redraw()
         return {'FINISHED'}
 
 class NODE_OT_open_image(Operator):
-    bl_idname = "node.na_open_image"
+    bl_idname = "node.note_open_image"
     bl_label = "打开"
     bl_options = {'REGISTER', 'UNDO'}
     filepath: bpy.props.StringProperty(subtype="FILE_PATH")
@@ -306,13 +306,13 @@ class NODE_OT_open_image(Operator):
         try:
             img = bpy.data.images.load(self.filepath)
             img.colorspace_settings.name, img.alpha_mode, img.use_fake_user = 'Non-Color', 'STRAIGHT', True
-            context.active_node.na_image = img
-            context.active_node.na_show_img = True
+            context.active_node.note_image = img
+            context.active_node.note_show_img = True
 
             # [注入] 图片默认对齐
             prefs = pref()
             if prefs:
-                context.active_node.na_img_pos = prefs.img_default_align
+                context.active_node.note_img_pos = prefs.img_default_align
 
             context.area.tag_redraw()
         except Exception as e:
@@ -324,7 +324,7 @@ class NODE_OT_open_image(Operator):
         return {'RUNNING_MODAL'}
 
 class NODE_OT_paste_image(Operator):
-    bl_idname = "node.na_paste_image"
+    bl_idname = "node.note_paste_image"
     bl_label = "从剪贴板粘贴图像"
     bl_description = "从剪贴板粘贴图像"
     bl_options = {'UNDO'}
@@ -336,13 +336,13 @@ class NODE_OT_paste_image(Operator):
             img = bpy.data.images.load(path)
             img.colorspace_settings.name, img.alpha_mode, img.use_fake_user = 'Non-Color', 'STRAIGHT', True
             img.pack()
-            context.active_node.na_image = img
-            context.active_node.na_show_img = True
+            context.active_node.note_image = img
+            context.active_node.note_show_img = True
 
             # [注入] 图片默认对齐
             prefs = pref()
             if prefs:
-                context.active_node.na_img_pos = prefs.img_default_align
+                context.active_node.note_img_pos = prefs.img_default_align
 
             self.report({'INFO'}, f"成功导入图片: {img.name}")
             return {'FINISHED'}
@@ -350,7 +350,7 @@ class NODE_OT_paste_image(Operator):
         return {'CANCELLED'}
 
 class NODE_OT_apply_preset(Operator):
-    bl_idname = "node.na_apply_preset"
+    bl_idname = "node.note_apply_preset"
     bl_label = "预设"
     bl_options = {'UNDO'}
     bg_color: bpy.props.FloatVectorProperty(size=4)
@@ -358,19 +358,19 @@ class NODE_OT_apply_preset(Operator):
 
     def execute(self, context):
         for n in (context.selected_nodes or [context.active_node]):
-            n.na_txt_bg_color = self.bg_color
-            n.na_text_color = self.text_color
+            n.note_txt_bg_color = self.bg_color
+            n.note_text_color = self.text_color
         return {'FINISHED'}
 
 class NODE_OT_copy_active_to_selected(Operator):
-    bl_idname = "node.na_copy_to_selected"
+    bl_idname = "node.note_copy_to_selected"
     bl_label = "同步给选中"
     bl_options = {'UNDO'}
 
     def execute(self, context):
         act = context.active_node
         if not act: return {'CANCELLED'}
-        strict_sync_props = ["na_font_size", "na_text_color", "na_txt_bg_color", "na_sequence_color", "na_txt_width_mode", "na_txt_bg_width", "na_img_width_mode", "na_img_width"]
+        strict_sync_props = ["note_font_size", "note_text_color", "note_txt_bg_color", "note_sequence_color", "note_txt_width_mode", "note_txt_bg_width", "note_img_width_mode", "note_img_width"]
         count = 0
         for n in context.selected_nodes:
             if n == act: continue
@@ -383,30 +383,30 @@ class NODE_OT_copy_active_to_selected(Operator):
         return {'FINISHED'}
 
 class NODE_OT_add_quick_tag(Operator):
-    bl_idname = "node.na_add_quick_tag"
+    bl_idname = "node.note_add_quick_tag"
     bl_label = "标签"
     bl_options = {'UNDO'}
     tag_text: bpy.props.StringProperty()
 
     def execute(self, context):
         for n in (context.selected_nodes or [context.active_node]):
-            n.na_text = (self.tag_text + " " + n.na_text) if pref().tag_mode_prepend else (n.na_text + " " + self.tag_text)
+            n.note_text = (self.tag_text + " " + n.note_text) if pref().tag_mode_prepend else (n.note_text + " " + self.tag_text)
         return {'FINISHED'}
 
 class NODE_OT_copy_node_label(Operator):
-    bl_idname = "node.na_copy_node_label"
+    bl_idname = "node.note_copy_node_label"
     bl_label = "引用"
     bl_options = {'UNDO'}
 
     def execute(self, context):
         for n in (context.selected_nodes or [context.active_node]):
             lbl = n.label or n.name
-            if not n.na_text.startswith(lbl): n.na_text = lbl + " " + n.na_text
+            if not n.note_text.startswith(lbl): n.note_text = lbl + " " + n.note_text
         return {'FINISHED'}
 
 class NODE_OT_clear_search(Operator):
     """清除搜索内容"""
-    bl_idname = "node.na_clear_search"
+    bl_idname = "node.note_clear_search"
     bl_label = "清除搜索"
     bl_options = {'INTERNAL'}
 
@@ -416,7 +416,7 @@ class NODE_OT_clear_search(Operator):
 
 class NODE_OT_jump_to_note(Operator):
     """跳转到指定注记节点"""
-    bl_idname = "node.na_jump_to_note"
+    bl_idname = "node.note_jump_to_note"
     bl_label = "跳转到注记"
     bl_description = "聚焦视图到该节点"
     
@@ -438,8 +438,8 @@ class NODE_OT_jump_to_note(Operator):
         self.report({'WARNING'}, f"节点 {self.node_name} 未找到")
         return {'CANCELLED'}
 
-class NODE_OT_na_quick_edit(Operator):
-    bl_idname = "node.na_quick_edit"
+class NODE_OT_note_quick_edit(Operator):
+    bl_idname = "node.note_quick_edit"
     bl_label = "节点随记"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -480,7 +480,7 @@ classes = [
     NODE_OT_show_select_seq,
     NODE_OT_fix_prop,
     NODE_OT_clear_all_scene_notes,
-    NODE_OT_na_swap_order,
+    NODE_OT_note_swap_order,
     NODE_OT_interactive_seq,
     NODE_OT_reset_prefs,
     
@@ -493,7 +493,7 @@ classes = [
     NODE_OT_add_quick_tag,
     NODE_OT_copy_node_label,
     NODE_OT_open_image,
-    NODE_OT_na_quick_edit,
+    NODE_OT_note_quick_edit,
     
     # 从 search_ops.py 移动的
     NODE_OT_clear_search,

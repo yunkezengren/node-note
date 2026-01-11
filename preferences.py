@@ -121,7 +121,7 @@ class NodeMemoAddonPreferences(AddonPreferences):
         if km:
             kmi = None
             for k in km.keymap_items:
-                if k.idname == 'node.na_quick_edit':
+                if k.idname == 'node.note_quick_edit':
                     kmi = k
                     break
             if kmi:
@@ -141,7 +141,7 @@ class NodeMemoAddonPreferences(AddonPreferences):
         box = layout.box()
         row = box.row()
         row.label(text="序号样式设置", icon='LINENUMBERS_ON')
-        row.operator("node.na_reset_prefs", text="", icon='LOOP_BACK').target_section = 'SEQ'
+        row.operator("node.note_reset_prefs", text="", icon='LOOP_BACK').target_section = 'SEQ'
 
         col = box.column(align=True)
         split = col.split(factor=0.5)
@@ -158,7 +158,7 @@ class NodeMemoAddonPreferences(AddonPreferences):
         box = layout.box()
         row = box.row()
         row.label(text="文本与背景默认值", icon='TEXT')
-        row.operator("node.na_reset_prefs", text="", icon='LOOP_BACK').target_section = 'TEXT'
+        row.operator("node.note_reset_prefs", text="", icon='LOOP_BACK').target_section = 'TEXT'
 
         col = box.column(align=True)
         row = col.row(align=True)
@@ -185,7 +185,7 @@ class NodeMemoAddonPreferences(AddonPreferences):
         box = layout.box()
         row = box.row()
         row.label(text="图像默认值 & 性能", icon='IMAGE_DATA')
-        row.operator("node.na_reset_prefs", text="", icon='LOOP_BACK').target_section = 'IMG'
+        row.operator("node.note_reset_prefs", text="", icon='LOOP_BACK').target_section = 'IMG'
 
         col = box.column(align=True)
         col.prop(self, "img_default_align", text="默认对齐")

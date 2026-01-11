@@ -302,16 +302,16 @@ def _draw_text_note(node: Node, text, bg_color: RGBA, node_info: NodeInfo, txt_x
     scaled_zoom = node_info.scaled_zoom
     pad = PaddingX * scaled_zoom
     # 计算文本尺寸
-    fs = max(1, int(getattr(node, "na_font_size", 8) * scaled_zoom))
+    fs = max(1, int(getattr(node, "note_font_size", 8) * scaled_zoom))
     # 文本换行
     font_id = 0
     blf.size(font_id, fs)
-    txt_width_mode = getattr(node, "na_txt_width_mode", 'AUTO')
+    txt_width_mode = getattr(node, "note_txt_width_mode", 'AUTO')
     lines = _wrap_text(font_id, text, txt_width_mode, note_width, pad)
     # 绘制背景
     draw_rounded_rect_batch(txt_x, txt_y, note_width, text_note_height, bg_color, CornerRadius * scaled_zoom)
     # 绘制文本
-    blf.color(font_id, *node.na_text_color)
+    blf.color(font_id, *node.note_text_color)
     blf.disable(font_id, blf.SHADOW)
     blf.size(font_id, fs)
     line_y = txt_y + pad
@@ -353,17 +353,17 @@ def _calculate_node_position(node: Node, params: DrawParams) -> NodeInfo:
 def _process_and_draw_text_and_image_note(node: Node, params: DrawParams, badge_infos: dict[int, list[BadgeInfo]]) -> None:
     """处理单个节点的注释绘制"""
     # 获取节点属性
-    text = getattr(node, "na_text", "").strip()
-    img = getattr(node, "na_image", None)
-    seq_idx = getattr(node, "na_seq_index", 0)
-    show_txt = getattr(node, "na_show_txt", True)
-    show_img = getattr(node, "na_show_img", True)
-    show_seq = getattr(node, "na_show_seq", True)
+    text = getattr(node, "note_text", "").strip()
+    img = getattr(node, "note_image", None)
+    seq_idx = getattr(node, "note_seq_index", 0)
+    show_txt = getattr(node, "note_show_txt", True)
+    show_img = getattr(node, "note_show_img", True)
+    show_seq = getattr(node, "note_show_seq", True)
     # 跳过空注释
     if not (text and show_txt) and not (img and show_img) and not (seq_idx > 0 and show_seq):
         return
     # 颜色可见性检查
-    bg_color = getattr(node, "na_txt_bg_color", DefaultBg)
+    bg_color = getattr(node, "note_txt_bg_color", DefaultBg)
     visible_by_bg_color = check_color_visibility(bg_color)
     if not visible_by_bg_color and seq_idx == 0:
         return
@@ -371,9 +371,9 @@ def _process_and_draw_text_and_image_note(node: Node, params: DrawParams, badge_
     node_info = _calculate_node_position(node, params)
 
     # 获取对齐和交换属性
-    txt_align = getattr(node, "na_txt_pos", 'TOP')
-    img_align = getattr(node, "na_img_pos", 'TOP')
-    swap = getattr(node, "na_swap_content_order", False)
+    txt_align = getattr(node, "note_txt_pos", 'TOP')
+    img_align = getattr(node, "note_img_pos", 'TOP')
+    swap = getattr(node, "note_swap_content_order", False)
 
     # 检查是否堆叠
     is_stacked = (txt_align == img_align)
@@ -389,8 +389,8 @@ def _process_and_draw_text_and_image_note(node: Node, params: DrawParams, badge_
     text_note_height = 0
     lines = []
     if text and show_txt and visible_by_bg_color:
-        fs = max(1, int(getattr(node, "na_font_size", 8) * scaled_zoom))
-        txt_width_mode = getattr(node, "na_txt_width_mode", 'AUTO')
+        fs = max(1, int(getattr(node, "note_font_size", 8) * scaled_zoom))
+        txt_width_mode = getattr(node, "note_txt_width_mode", 'AUTO')
 
         # 计算目标宽度
         if txt_width_mode == 'FIT' and text:
@@ -406,7 +406,7 @@ def _process_and_draw_text_and_image_note(node: Node, params: DrawParams, badge_
             min_w = view_to_region_scaled(loc[0] + MinAutoWidth, loc[1])[0] - node_info.left_x
             note_width = max(node_width_px, min_w)
         else:
-            manual_w = getattr(node, "na_txt_bg_width", 200)
+            manual_w = getattr(node, "note_txt_bg_width", 200)
             note_width = view_to_region_scaled(loc[0] + manual_w, loc[1])[0] - node_info.left_x
 
         # 文本换行
@@ -424,7 +424,7 @@ def _process_and_draw_text_and_image_note(node: Node, params: DrawParams, badge_
     img_draw_h = 0
     texture = None
     if img and show_img and visible_by_bg_color:
-        img_width_mode = getattr(node, "na_img_width_mode", 'AUTO')
+        img_width_mode = getattr(node, "note_img_width_mode", 'AUTO')
         ref_width = max(node_width_px, (view_to_region_scaled(loc[0] + MinAutoWidth, loc[1])[0] - node_info.left_x))
 
         if img_width_mode == 'ORIGINAL':
@@ -432,7 +432,7 @@ def _process_and_draw_text_and_image_note(node: Node, params: DrawParams, badge_
         elif img_width_mode == 'AUTO':
             base_width = ref_width
         else:
-            base_width = getattr(node, "na_img_width", 140) * scaled_zoom
+            base_width = getattr(node, "note_img_width", 140) * scaled_zoom
 
         img_draw_w = base_width
         img_draw_h = base_width * (img.size[1] / img.size[0]) if img.size[0] > 0 else 0
@@ -442,26 +442,26 @@ def _process_and_draw_text_and_image_note(node: Node, params: DrawParams, badge_
     if not is_stacked:
         # 非堆叠情况：各自独立计算位置
         if text and show_txt and visible_by_bg_color:
-            offset = getattr(node, "na_txt_offset", (0, 0))
+            offset = getattr(node, "note_txt_offset", (0, 0))
             txt_x, txt_y = _calc_note_pos(node_info, txt_align, offset, note_width, text_note_height, scaled_zoom)
         else:
             txt_x, txt_y = 0, 0
 
         if img and show_img and visible_by_bg_color:
-            img_off = getattr(node, "na_img_offset", (0, 0))
+            img_off = getattr(node, "note_img_offset", (0, 0))
             img_x, img_y = _calc_note_pos(node_info, img_align, img_off, img_draw_w, img_draw_h, scaled_zoom)
         else:
             img_x, img_y = 0, 0
     else:
         # 堆叠情况：计算相对位置
         inner_width, inner_height, inner_offset = (note_width, text_note_height,
-                                                   getattr(node, "na_txt_offset",
+                                                   getattr(node, "note_txt_offset",
                                                            (0, 0))) if not swap else (img_draw_w, img_draw_h,
-                                                                                      getattr(node, "na_img_offset", (0, 0)))
+                                                                                      getattr(node, "note_img_offset", (0, 0)))
         outer_width, outer_height, outer_offset = (img_draw_w, img_draw_h,
-                                                   getattr(node, "na_img_offset",
+                                                   getattr(node, "note_img_offset",
                                                            (0, 0))) if not swap else (note_width, text_note_height,
-                                                                                      getattr(node, "na_txt_offset", (0, 0)))
+                                                                                      getattr(node, "note_txt_offset", (0, 0)))
 
         inner_x, inner_y = _calc_note_pos(node_info, txt_align, inner_offset, inner_width, inner_height, scaled_zoom)
         outer_x, outer_y = inner_x, inner_y
