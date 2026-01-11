@@ -505,9 +505,9 @@ def _process_and_draw_text_and_image_note(node: Node, params: DrawParams, badge_
 
     # 收集序号坐标
     if badge_idx > 0 and show_badge:
-        _collect_badgeuence_coords(badge_idx, node_info, badge_infos, params)
+        _collect_badget_coords(badge_idx, node_info, badge_infos, params)
 
-def _collect_badgeuence_coords(badge_idx: int, node_info: NodeInfo, badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
+def _collect_badget_coords(badge_idx: int, node_info: NodeInfo, badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
     """收集序号坐标"""
     badge_x = node_info.left_x
     badge_y = node_info.top_y
@@ -517,9 +517,9 @@ def _collect_badgeuence_coords(badge_idx: int, node_info: NodeInfo, badge_infos:
         badge_infos[badge_idx] = []
     badge_infos[badge_idx].append(BadgeInfo(x=badge_x, y=badge_y, radius=badge_radius))
 
-def _draw_badgeuence_lines(badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
+def _draw_badget_lines(badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
     """绘制序号连线"""
-    if not pref().show_badgeuence_lines or len(badge_infos) < 2: return
+    if not pref().show_badget_lines or len(badge_infos) < 2: return
     line_points = []
     line_col: RGBA = pref().badge_line_color
     sorted_indices = sorted(badge_infos.keys())
@@ -543,7 +543,7 @@ def _draw_badgeuence_lines(badge_infos: dict[int, list[BadgeInfo]], params: Draw
     line_thickness = pref().badge_line_thickness
     draw_lines_batch(line_points, line_col, thickness=line_thickness)
 
-def _draw_badgeuence_badges(badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
+def _draw_badget_badges(badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
     """绘制序号徽章(背景+文本)"""
     prefs = pref()
     badge_radius = params.badge_radius
@@ -566,10 +566,10 @@ def _draw_badgeuence_badges(badge_infos: dict[int, list[BadgeInfo]], params: Dra
             blf.position(font_id, int(badge.x - dims[0] / 2), int(badge.y - dims[1] / 2.5), 0)
             blf.draw(font_id, num_str)
 
-def _draw_badgeuence_notes(badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
+def _draw_badget_notes(badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
     # 绘制序列连线
-    _draw_badgeuence_lines(badge_infos, params)
-    _draw_badgeuence_badges(badge_infos, params)
+    _draw_badget_lines(badge_infos, params)
+    _draw_badget_badges(badge_infos, params)
 
 def _calc_note_pos(node_info: NodeInfo, alignment: str, offset_vec: float2, self_width: float, self_height: float,
                    scaled_zoom: float) -> float2:
@@ -610,7 +610,7 @@ def draw_callback_px() -> None:
     badge_infos: dict[int, list[BadgeInfo]] = {}
     for node in tree.nodes:
         _process_and_draw_text_and_image_note(node, params, badge_infos)
-    _draw_badgeuence_notes(badge_infos, params)
+    _draw_badget_notes(badge_infos, params)
 
 def register_draw_handler() -> None:
     global handler

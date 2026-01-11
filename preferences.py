@@ -21,9 +21,9 @@ class NodeMemoAddonPreferences(AddonPreferences):
 
     # 1. 全局设置
     show_all_notes      : BoolProperty(name="显示所有", default=True, update=tag_redraw)
-    show_badgeuence_lines : BoolProperty(name="显示逻辑连线", default=False, update=tag_redraw, description="显示节点之间的序号连线")
+    show_badget_lines   : BoolProperty(name="显示逻辑连线", default=False, update=tag_redraw, description="显示节点之间的序号连线")
     is_interactive_mode : BoolProperty(name="交互模式", default=False, update=tag_redraw, description="点击节点即可编号，右键或ESC退出")
-    sort_by_badgeuence    : BoolProperty(name="按序号排序", default=False, update=tag_redraw, description="勾选后，有序号的节点将优先显示在列表顶部")
+    sort_by_badget      : BoolProperty(name="按序号排序", default=True, update=tag_redraw, description="勾选后，有序号的节点将优先显示在列表顶部")
     use_occlusion       : BoolProperty(name="自动遮挡", default=False, update=tag_redraw)
     tag_mode_prepend    : BoolProperty(name="前缀模式", default=True, description="特殊字符添加到已有文本前")
     navigator_search    : StringProperty(name="搜索", default="")
@@ -39,7 +39,7 @@ class NodeMemoAddonPreferences(AddonPreferences):
     badge_rel_scale           : FloatProperty(name="序号缩放", default=1.0, min=0.1, max=20.0, update=tag_redraw)
     badge_scale_mode      : EnumProperty(name="缩放模式",
                                        items=[('RELATIVE', "相对缩放", "跟随节点编辑器缩放"), ('ABSOLUTE', "屏幕空间", "固定屏幕像素大小")],
-                                       default='RELATIVE',
+                                       default='ABSOLUTE',
                                        update=tag_redraw)
     badge_abs_scale       : FloatProperty(name="屏幕空间缩放", default=1.0, min=0.1, max=10.0, update=tag_redraw)
     badge_bg_color        : FloatVectorProperty(name="圆背景色",
@@ -135,7 +135,7 @@ class NodeMemoAddonPreferences(AddonPreferences):
         col.separator()
         col.prop(self, "show_all_notes", text="默认显示所有")
         col.prop(self, "show_select_badge", text="默认显示序号")
-        col.prop(self, "show_badgeuence_lines", text="默认显示逻辑连线")
+        col.prop(self, "show_badget_lines", text="默认显示逻辑连线")
 
         # 2. 序号设置
         box = layout.box()

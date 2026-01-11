@@ -11,7 +11,7 @@ from .preferences import NodeMemoAddonPreferences
 addon_keymaps = []
 
 classes = [
-    ui.NODE_PT_annotator_gpu_panel,
+    ui.NODE_PT_node_note_gpu_panel,
     NodeMemoAddonPreferences,
 ]
 
