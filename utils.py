@@ -4,6 +4,7 @@ import subprocess
 import tempfile
 import time
 from .preferences import pref
+import bpy
 from bpy.types import Context, Scene, Node
 
 # ==================== 类型别名 ====================
@@ -27,16 +28,16 @@ def get_region_zoom(context: Context) -> float:
     x1, y1 = view2d.view_to_region(1000, 1000, clip=False)
     return 1.0 if x1 == x0 else math.sqrt((x1 - x0)**2 + (y1 - y0)**2) / 1000
 
-def view_to_region_scaled(context: Context, x: float, y: float) -> int2:
+def view_to_region_scaled(x: float, y: float) -> int2:
     """将节点编辑器坐标转换为屏幕坐标（考虑UI缩放）"""
-    ui_scale = context.preferences.system.ui_scale
-    return context.region.view2d.view_to_region(x * ui_scale, y * ui_scale, clip=False)
+    ui_scale = bpy.context.preferences.system.ui_scale
+    return bpy.context.region.view2d.view_to_region(x * ui_scale, y * ui_scale, clip=False)
 
 # todo 需要改进
-def check_color_visibility(bg_color: RGBA) -> bool:
+def check_color_visibility(color: RGBA) -> bool:
     """检查背景颜色是否可见（用于过滤显示）"""
     prefs = pref()
-    r, g, b, a = bg_color
+    r, g, b, a = color
     if a < 0.05: 
         return False  # 完全透明
     if r > 0.5 and g < 0.2 and b < 0.2:  # 红色系
@@ -52,12 +53,12 @@ def check_color_visibility(bg_color: RGBA) -> bool:
 
     return prefs.filter_other
 
-def get_node_screen_rect(context: Context, node: Node) -> Rect:
+def get_node_screen_rect(node: Node) -> Rect:
     """获取节点在屏幕空间中的矩形区域"""
     loc_x, loc_y = nd_abs_loc(node)
     width, height = node.width, node.dimensions.y
-    min_x, min_y = view_to_region_scaled(context, loc_x, loc_y)
-    max_x, max_y = view_to_region_scaled(context, loc_x + width, loc_y - height)
+    min_x, min_y = view_to_region_scaled(loc_x, loc_y)
+    max_x, max_y = view_to_region_scaled(loc_x + width, loc_y - height)
     return min_x, min_y, max_x, max_y
 
 def is_rect_overlap(r1: Rect, r2: Rect) -> bool:

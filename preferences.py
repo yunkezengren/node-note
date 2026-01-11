@@ -27,6 +27,7 @@ class NodeMemoAddonPreferences(AddonPreferences):
     use_occlusion       : BoolProperty(name="自动遮挡", default=False, update=tag_redraw)
     tag_mode_prepend    : BoolProperty(name="前缀模式", default=True, description="特殊字符添加到已有文本前")
     navigator_search    : StringProperty(name="搜索", default="")
+    # todo 根据已有笔记颜色动态显示按钮
     filter_red          : BoolProperty(name="过滤红", default=True, update=tag_redraw)
     filter_green        : BoolProperty(name="过滤绿", default=True, update=tag_redraw)
     filter_blue         : BoolProperty(name="过滤蓝", default=True, update=tag_redraw)

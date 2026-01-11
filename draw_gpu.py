@@ -1,5 +1,4 @@
 import bpy
-from bpy import context
 import blf
 import gpu
 from gpu_extras.batch import batch_for_shader
@@ -222,6 +221,7 @@ def wrap_text_pure(font_id: int, text: str, max_width: float):
 
 def _get_draw_params() -> dict:
     """获取绘制参数"""
+    context = bpy.context
     prefs = pref()
     # 缩放计算
     sys_ui_scale = context.preferences.system.ui_scale
@@ -232,7 +232,7 @@ def _get_draw_params() -> dict:
     is_occlusion_enabled = prefs.use_occlusion
     occluders = []
     if is_occlusion_enabled and context.selected_nodes:
-        occluders = [get_node_screen_rect(context, n) for n in context.selected_nodes]
+        occluders = [get_node_screen_rect(n) for n in context.selected_nodes]
     # 序号样式参数
     seq_scale = prefs.seq_scale
     seq_scale_mode = prefs.seq_scale_mode
@@ -242,7 +242,7 @@ def _get_draw_params() -> dict:
         arrow_size = 8.0 * seq_scale * scaled_zoom
         base_font_size = 8 * seq_scale * scaled_zoom
     else:
-        max_diameter = view_to_region_scaled(context, 140, 0)[0] - view_to_region_scaled(context, 0, 0)[0]
+        max_diameter = view_to_region_scaled(140, 0)[0] - view_to_region_scaled(0, 0)[0]
         badge_radius = min(7 * 2, max_diameter / 2) * seq_abs_scale
         arrow_size = min(16, max_diameter * 0.6) * seq_abs_scale
         base_font_size = min(16, max_diameter / 2) * seq_abs_scale
@@ -276,11 +276,11 @@ def _calculate_text_width(node: Node, text: str, node_info: dict, txt_width_mode
                 max_line_w = width
         return max_line_w + (pad*2)
     elif txt_width_mode == 'AUTO':
-        min_w = view_to_region_scaled(context, loc.x + MIN_AUTO_WIDTH, loc.y)[0] - sx
+        min_w = view_to_region_scaled(loc.x + MIN_AUTO_WIDTH, loc.y)[0] - sx
         return max(node_w_px, min_w)
     else:
         manual_w = getattr(node, "na_txt_bg_width", 200)
-        return view_to_region_scaled(context, loc.x + manual_w, loc.y)[0] - sx
+        return view_to_region_scaled(loc.x + manual_w, loc.y)[0] - sx
 
 def _wrap_text(font_id: int, text: str, txt_width_mode: str, target_width_px: float, pad: float) -> list:
     """文本换行处理"""
@@ -289,13 +289,11 @@ def _wrap_text(font_id: int, text: str, txt_width_mode: str, target_width_px: fl
     else:
         return wrap_text_pure(font_id, text, max(1, target_width_px - pad*2))
 
-def _draw_text_note(node: Node, note_data: dict, node_info: dict) -> None:
+def _draw_text_note(node: Node, text, bg_color: RGBA, node_info: dict) -> None:
     """绘制文本笔记（文本+背景）"""
     scaled_zoom = node_info['scaled_zoom']
     pad = PADDING_X * scaled_zoom
     # 从node_data获取属性
-    text = note_data['text']
-    col = note_data['col']
     # 计算文本尺寸
     fs = max(1, int(getattr(node, "na_font_size", 8) * scaled_zoom))
     align = getattr(node, "na_txt_pos", 'TOP')
@@ -312,7 +310,7 @@ def _draw_text_note(node: Node, note_data: dict, node_info: dict) -> None:
     # 计算位置
     txt_x, txt_y = _calculate_element_position(node_info, align, offset, target_width_px, text_layer_height, scaled_zoom)
     # 绘制背景
-    draw_rounded_rect_batch(txt_x, txt_y, target_width_px, text_layer_height, col, CORNER_RADIUS * scaled_zoom)
+    draw_rounded_rect_batch(txt_x, txt_y, target_width_px, text_layer_height, bg_color, CORNER_RADIUS * scaled_zoom)
     # 绘制文本
     blf.color(font_id, *node.na_text_color)
     blf.disable(font_id, blf.SHADOW)
@@ -323,22 +321,19 @@ def _draw_text_note(node: Node, note_data: dict, node_info: dict) -> None:
         blf.position(font_id, int(txt_x + pad), int(py + i*lh + fs*0.25), 0)
         blf.draw(font_id, l)
 
-def _draw_image_note(node: Node, note_data: dict, node_info: dict) -> None:
+def _draw_image_note(node: Node, img: Image, node_info: dict) -> None:
     """绘制图像笔记"""
     scaled_zoom = node_info['scaled_zoom']
     sx = node_info['sx']
     sy = node_info['sy']
     node_w_px = node_info['node_w_px']
 
-    # 从node_data获取属性
-    img = note_data['img']
-
     # 计算图像尺寸
     img_width_mode = getattr(node, "na_img_width_mode", 'AUTO')
     img_align = getattr(node, "na_img_pos", 'TOP')
     img_off = getattr(node, "na_img_offset", (0, 0))
 
-    ref_w = max(node_w_px, (view_to_region_scaled(context, sx + MIN_AUTO_WIDTH, sy)[0] - sx))
+    ref_w = max(node_w_px, (view_to_region_scaled(sx + MIN_AUTO_WIDTH, sy)[0] - sx))
 
     if img_width_mode == 'ORIGINAL':
         base_w = img.size[0] * scaled_zoom
@@ -378,9 +373,9 @@ def _calculate_node_position(node: Node, params: dict) -> dict:
     logical_top_y = max(loc.y - (h_logical/2 + 9), loc.y + (h_logical/2 - 9)) if node.hide else loc.y
     logical_bottom_y = min(loc.y - (h_logical/2 + 9), loc.y + (h_logical/2 - 9)) if node.hide else (loc.y - h_logical)
 
-    sx, sy = view_to_region_scaled(context, loc.x, logical_top_y)
-    _, sy_b = view_to_region_scaled(context, loc.x, logical_bottom_y)
-    sx_r, _ = view_to_region_scaled(context, loc.x + node.width + 1.0, loc.y)
+    sx, sy = view_to_region_scaled(loc.x, logical_top_y)
+    _, sy_b = view_to_region_scaled(loc.x, logical_bottom_y)
+    sx_r, _ = view_to_region_scaled(loc.x + node.width + 1.0, loc.y)
 
     node_w_px = sx_r - sx
     node_h_px = sy - sy_b
@@ -396,42 +391,30 @@ def _calculate_node_position(node: Node, params: dict) -> dict:
         'scaled_zoom': scaled_zoom,
     }
 
-def _draw_text_and_image_notes(node: Node, params: dict, sequence_coords: dict) -> None:
+def _process_and_draw_text_and_image_note(node: Node, params: dict, sequence_coords: dict) -> None:
     """处理单个节点的注释绘制"""
     # 获取节点属性
     text = getattr(node, "na_text", "").strip()
     img = getattr(node, "na_image", None)
-    show_img = getattr(node, "na_show_img", True)
     seq_idx = getattr(node, "na_seq_index", 0)
-    show_text_bg = getattr(node, "na_show_txt", True)
+    show_txt = getattr(node, "na_show_txt", True)
+    show_img = getattr(node, "na_show_img", True)
     show_seq = getattr(node, "na_show_seq", True)
     # 跳过空注释
-    if not text and not (img and show_img) and not (seq_idx > 0 and show_seq):
+    if not (text and show_txt) and not (img and show_img) and not (seq_idx > 0 and show_seq):
         return
     # 颜色可见性检查
-    col = getattr(node, "na_txt_bg_color", DEFAULT_BG)
-    is_visible_by_color = check_color_visibility( col)
-    if not is_visible_by_color and seq_idx == 0:
+    bg_color = getattr(node, "na_txt_bg_color", DEFAULT_BG)
+    visible_by_bg_color = check_color_visibility(bg_color)
+    if not visible_by_bg_color and seq_idx == 0:
         return
     # 计算位置和尺寸
     node_info = _calculate_node_position(node, params)
 
-    # 准备节点数据包
-    note_data = {
-        'text': text,
-        'img': img,
-        'show_img': show_img,
-        'col': col,
-        'seq_idx': seq_idx,
-        'show_text_bg': show_text_bg,
-        'show_seq': show_seq,
-        'is_visible_by_color': is_visible_by_color,
-    }
-
-    if text and show_text_bg and is_visible_by_color:
-        _draw_text_note(node, note_data, node_info)
-    if img and show_img and is_visible_by_color:
-        _draw_image_note(node, note_data, node_info)
+    if text and show_txt and visible_by_bg_color:
+        _draw_text_note(node, text, bg_color, node_info)
+    if img and show_img and visible_by_bg_color:
+        _draw_image_note(node, img, node_info)
 
     # 收集序号坐标
     if seq_idx > 0 and show_seq:
@@ -530,17 +513,16 @@ def _calculate_element_position(node_info: dict, alignment: str, offset_vec: flo
 
 def draw_callback_px() -> None:
     """主绘制回调函数"""
-    if not context.space_data or context.space_data.type != 'NODE_EDITOR' or not pref().show_all_notes:
-        return
-    tree = context.space_data.edit_tree
-    if not tree:
-        return
+    space = bpy.context.space_data
+    if space.type != 'NODE_EDITOR' or not pref().show_all_notes: return
+    tree: NodeTree = space.edit_tree
+    if not tree: return
 
     params = _get_draw_params()
     # 收集序号坐标
     sequence_coords: dict[int, list[tuple[float, float, float]]] = {}
     for node in tree.nodes:
-        _draw_text_and_image_notes(node, params, sequence_coords)
+        _process_and_draw_text_and_image_note(node, params, sequence_coords)
     _draw_sequence_notes(sequence_coords, params)
 
 def register_draw_handler() -> None:
