@@ -109,38 +109,38 @@ def create_texture_from_pixels(image: Image) -> gpu.types.GPUTexture | None:
 def draw_rounded_rect_batch(x: float, y: float, width: float, height: float, color: RGBA, radius: float = 3.0) -> None:
     shader = get_shader('UNIFORM_COLOR')
     if not shader: return
-    r_base = min(radius, width / 2, height / 2)
-    r_x = r_base
-    r_y = r_base * CORNER_SCALE_Y
-    r_y = min(r_y, height / 2)
+    base_radius = min(radius, width / 2, height / 2)
+    radius_x = base_radius
+    radius_y = base_radius * CORNER_SCALE_Y
+    radius_y = min(radius_y, height / 2)
     vertices: list[float2] = []
     indices: list[int3] = []
-    idx_cursor = 0
+    vertex_index = 0
 
     def add_quad(x1: float, y1: float, x2: float, y2: float):
-        nonlocal idx_cursor
+        nonlocal vertex_index
         vertices.extend([(x1, y1), (x2, y1), (x2, y2), (x1, y2)])
-        indices.extend([(idx_cursor, idx_cursor + 1, idx_cursor + 2), (idx_cursor, idx_cursor + 2, idx_cursor + 3)])
-        idx_cursor += 4
+        indices.extend([(vertex_index, vertex_index + 1, vertex_index + 2), (vertex_index, vertex_index + 2, vertex_index + 3)])
+        vertex_index += 4
 
-    if r_base < 0.5:
+    if base_radius < 0.5:
         add_quad(x, y, x + width, y + height)
     else:
-        add_quad(x, y + r_y, x + width, y + height - r_y)
-        add_quad(x + r_x, y, x + width - r_x, y + r_y)
-        add_quad(x + r_x, y + height - r_y, x + width - r_x, y + height)
-        corners = [(x + width - r_x, y + height - r_y, 0.0, math.pi / 2), (x + r_x, y + height - r_y, math.pi / 2, math.pi),
-                   (x + r_x, y + r_y, math.pi, 3 * math.pi / 2), (x + width - r_x, y + r_y, 3 * math.pi / 2, 2 * math.pi)]
-        for cx, cy, sa, ea in corners:
-            center_idx = idx_cursor
-            vertices.append((cx, cy))
-            idx_cursor += 1
-            theta_step = (ea-sa) / 12
+        add_quad(x, y + radius_y, x + width, y + height - radius_y)
+        add_quad(x + radius_x, y, x + width - radius_x, y + radius_y)
+        add_quad(x + radius_x, y + height - radius_y, x + width - radius_x, y + height)
+        corners = [(x + width - radius_x, y + height - radius_y, 0.0, math.pi / 2), (x + radius_x, y + height - radius_y, math.pi / 2, math.pi),
+                   (x + radius_x, y + radius_y, math.pi, 3 * math.pi / 2), (x + width - radius_x, y + radius_y, 3 * math.pi / 2, 2 * math.pi)]
+        for corner_x, corner_y, start_angle, end_angle in corners:
+            center_idx = vertex_index
+            vertices.append((corner_x, corner_y))
+            vertex_index += 1
+            theta_step = (end_angle - start_angle) / 12
             for k in range(13):
-                px = cx + math.cos(sa + k*theta_step) * r_x
-                py = cy + math.sin(sa + k*theta_step) * r_y
-                vertices.append((px, py))
-                idx_cursor += 1
+                point_x = corner_x + math.cos(start_angle + k * theta_step) * radius_x
+                point_y = corner_y + math.sin(start_angle + k * theta_step) * radius_y
+                vertices.append((point_x, point_y))
+                vertex_index += 1
             for k in range(12):
                 indices.append((center_idx, center_idx + 1 + k, center_idx + 2 + k))
     batch = batch_for_shader(shader, 'TRIS', {"pos": vertices}, indices=indices)
@@ -156,9 +156,9 @@ def draw_circle_batch(x: float, y: float, radius: float, color: RGBA) -> None:
     indices: list[int3] = []
     theta_step = (2 * math.pi) / 32
     for i in range(33):
-        px = x + math.cos(i * theta_step) * radius
-        py = y + math.sin(i * theta_step) * radius
-        vertices.append((px, py))
+        point_x = x + math.cos(i * theta_step) * radius
+        point_y = y + math.sin(i * theta_step) * radius
+        vertices.append((point_x, point_y))
     for i in range(32):
         indices.append((0, i + 1, i + 2))
     batch = batch_for_shader(shader, 'TRIS', {"pos": vertices}, indices=indices)
@@ -214,18 +214,18 @@ def draw_arrow_head(start_point: float2, end_point: float2, color: RGBA, size: f
     dy = y2 - y1
     length = math.sqrt(dx*dx + dy*dy)
     if length < 0.001: return
-    ux = dx / length
-    uy = dy / length
-    tip_x = x2 - ux*retreat
-    tip_y = y2 - uy*retreat
-    base_x = tip_x - ux*size
-    base_y = tip_y - uy*size
-    perp_x = -uy
-    perp_y = ux
-    half_w = size * 0.5
+    dir_x = dx / length
+    dir_y = dy / length
+    tip_x = x2 - dir_x * retreat
+    tip_y = y2 - dir_y * retreat
+    base_x = tip_x - dir_x * size
+    base_y = tip_y - dir_y * size
+    normal_x = -dir_y
+    normal_y = dir_x
+    half_width = size * 0.5
     v1 = (tip_x, tip_y)
-    v2 = (base_x + perp_x*half_w, base_y + perp_y*half_w)
-    v3 = (base_x - perp_x*half_w, base_y - perp_y*half_w)
+    v2 = (base_x + normal_x * half_width, base_y + normal_y * half_width)
+    v3 = (base_x - normal_x * half_width, base_y - normal_y * half_width)
     vertices = [v1, v2, v3]
     batch = batch_for_shader(shader, 'TRIS', {"pos": vertices})
     shader.bind()
@@ -241,14 +241,14 @@ def wrap_text_pure(font_id: int, text: str, max_width: float):
             lines.append("")
             continue
         for char in para:
-            cw = blf.dimensions(font_id, char)[0]
-            if curr_w + cw > max_width and curr_line:
+            char_width = blf.dimensions(font_id, char)[0]
+            if curr_w + char_width > max_width and curr_line:
                 lines.append(curr_line)
                 curr_line = char
-                curr_w = cw
+                curr_w = char_width
             else:
                 curr_line += char
-                curr_w += cw
+                curr_w += char_width
         if curr_line: lines.append(curr_line)
     return lines
 
@@ -313,11 +313,11 @@ def _draw_text_note(node: Node, text, bg_color: RGBA, node_info: NodeInfo, txt_x
     blf.color(font_id, *node.na_text_color)
     blf.disable(font_id, blf.SHADOW)
     blf.size(font_id, fs)
-    py = txt_y + pad
-    lh = fs * 1.3
-    for i, l in enumerate(reversed(lines)):
-        blf.position(font_id, int(txt_x + pad), int(py + i*lh + fs*0.25), 0)
-        blf.draw(font_id, l)
+    line_y = txt_y + pad
+    line_height = fs * 1.3
+    for i, line in enumerate(reversed(lines)):
+        blf.position(font_id, int(txt_x + pad), int(line_y + i * line_height + fs * 0.25), 0)
+        blf.draw(font_id, line)
 
 def _draw_image_note(node: Node, img: Image, img_x: float, img_y: float, img_draw_w: float, img_draw_h: float, texture) -> None:
     """绘制图像笔记"""
@@ -336,20 +336,20 @@ def _calculate_node_position(node: Node, params: DrawParams) -> NodeInfo:
     logical_top_y = max(loc.y - (h_logical/2 + 9), loc.y + (h_logical/2 - 9)) if node.hide else loc.y
     logical_bottom_y = min(loc.y - (h_logical/2 + 9), loc.y + (h_logical/2 - 9)) if node.hide else (loc.y - h_logical)
 
-    sx, sy = view_to_region_scaled(loc.x, logical_top_y)
-    _, sy_b = view_to_region_scaled(loc.x, logical_bottom_y)
-    sx_r, _ = view_to_region_scaled(loc.x + node.width + 1.0, loc.y)
+    left_x, top_y = view_to_region_scaled(loc.x, logical_top_y)
+    _, bottom_y = view_to_region_scaled(loc.x, logical_bottom_y)
+    right_x, _ = view_to_region_scaled(loc.x + node.width + 1.0, loc.y)
 
-    node_w_px = sx_r - sx
-    node_h_px = sy - sy_b
+    node_width_px = right_x - left_x
+    node_height_px = top_y - bottom_y
 
     return NodeInfo(
-        top_y=sy,
-        bottom_y=sy_b,
-        left_x=sx,
-        right_x=sx_r,
-        width=node_w_px,
-        height=node_h_px,
+        top_y=top_y,
+        bottom_y=bottom_y,
+        left_x=left_x,
+        right_x=right_x,
+        width=node_width_px,
+        height=node_height_px,
         loc=loc,
         scaled_zoom=scaled_zoom,
     )
@@ -385,7 +385,7 @@ def _process_and_draw_text_and_image_note(node: Node, params: DrawParams, badge_
     # 计算文本和图像的尺寸
     scaled_zoom = node_info.scaled_zoom
     pad = PADDING_X * scaled_zoom
-    node_w_px = node_info.width
+    node_width_px = node_info.width
     loc = node_info.loc
 
     # 文本尺寸计算
@@ -408,7 +408,7 @@ def _process_and_draw_text_and_image_note(node: Node, params: DrawParams, badge_
             target_width_px = max_line_w + (pad*2)
         elif txt_width_mode == 'AUTO':
             min_w = view_to_region_scaled(loc[0] + MIN_AUTO_WIDTH, loc[1])[0] - node_info.left_x
-            target_width_px = max(node_w_px, min_w)
+            target_width_px = max(node_width_px, min_w)
         else:
             manual_w = getattr(node, "na_txt_bg_width", 200)
             target_width_px = view_to_region_scaled(loc[0] + manual_w, loc[1])[0] - node_info.left_x
@@ -429,17 +429,17 @@ def _process_and_draw_text_and_image_note(node: Node, params: DrawParams, badge_
     texture = None
     if img and show_img and visible_by_bg_color:
         img_width_mode = getattr(node, "na_img_width_mode", 'AUTO')
-        ref_w = max(node_w_px, (view_to_region_scaled(loc[0] + MIN_AUTO_WIDTH, loc[1])[0] - node_info.left_x))
+        ref_width = max(node_width_px, (view_to_region_scaled(loc[0] + MIN_AUTO_WIDTH, loc[1])[0] - node_info.left_x))
 
         if img_width_mode == 'ORIGINAL':
-            base_w = img.size[0] * scaled_zoom
+            base_width = img.size[0] * scaled_zoom
         elif img_width_mode == 'AUTO':
-            base_w = ref_w
+            base_width = ref_width
         else:
-            base_w = getattr(node, "na_img_width", 140) * scaled_zoom
+            base_width = getattr(node, "na_img_width", 140) * scaled_zoom
 
-        img_draw_w = base_w
-        img_draw_h = base_w * (img.size[1] / img.size[0]) if img.size[0] > 0 else 0
+        img_draw_w = base_width
+        img_draw_h = base_width * (img.size[1] / img.size[0]) if img.size[0] > 0 else 0
         texture = get_gpu_texture(img) if img.size[0] > 0 else None
 
     # 计算位置(应用堆叠逻辑)
@@ -458,28 +458,28 @@ def _process_and_draw_text_and_image_note(node: Node, params: DrawParams, badge_
             img_x, img_y = 0, 0
     else:
         # 堆叠情况：计算相对位置
-        inner_w, inner_h, inner_off = (target_width_px, text_layer_height, getattr(node, "na_txt_offset", (0, 0))) if not swap else (img_draw_w, img_draw_h, getattr(node, "na_img_offset", (0, 0)))
-        outer_w, outer_h, outer_off = (img_draw_w, img_draw_h, getattr(node, "na_img_offset", (0, 0))) if not swap else (target_width_px, text_layer_height, getattr(node, "na_txt_offset", (0, 0)))
+        inner_width, inner_height, inner_offset = (target_width_px, text_layer_height, getattr(node, "na_txt_offset", (0, 0))) if not swap else (img_draw_w, img_draw_h, getattr(node, "na_img_offset", (0, 0)))
+        outer_width, outer_height, outer_offset = (img_draw_w, img_draw_h, getattr(node, "na_img_offset", (0, 0))) if not swap else (target_width_px, text_layer_height, getattr(node, "na_txt_offset", (0, 0)))
 
-        inner_x, inner_y = _calculate_element_position(node_info, txt_align, inner_off, inner_w, inner_h, scaled_zoom)
+        inner_x, inner_y = _calculate_element_position(node_info, txt_align, inner_offset, inner_width, inner_height, scaled_zoom)
         outer_x, outer_y = inner_x, inner_y
 
-        ox_scaled = outer_off[0] * scaled_zoom
-        oy_scaled = outer_off[1] * scaled_zoom
+        offset_x_scaled = outer_offset[0] * scaled_zoom
+        offset_y_scaled = outer_offset[1] * scaled_zoom
         top_y = node_info.top_y
 
         if txt_align == 'TOP':
-            outer_x = inner_x + ox_scaled
-            outer_y = inner_y + inner_h + oy_scaled
+            outer_x = inner_x + offset_x_scaled
+            outer_y = inner_y + inner_height + offset_y_scaled
         elif txt_align == 'BOTTOM':
-            outer_x = inner_x + ox_scaled
-            outer_y = inner_y - outer_h + oy_scaled
+            outer_x = inner_x + offset_x_scaled
+            outer_y = inner_y - outer_height + offset_y_scaled
         elif txt_align == 'LEFT':
-            outer_x = inner_x - outer_w + ox_scaled
-            outer_y = top_y - outer_h + oy_scaled
+            outer_x = inner_x - outer_width + offset_x_scaled
+            outer_y = top_y - outer_height + offset_y_scaled
         elif txt_align == 'RIGHT':
-            outer_x = inner_x + inner_w + ox_scaled
-            outer_y = top_y - outer_h + oy_scaled
+            outer_x = inner_x + inner_width + offset_x_scaled
+            outer_y = top_y - outer_height + offset_y_scaled
 
         if not swap:
             txt_x, txt_y = inner_x, inner_y
@@ -496,7 +496,7 @@ def _process_and_draw_text_and_image_note(node: Node, params: DrawParams, badge_
     if img and show_img and visible_by_bg_color:
         # 居中校正
         if (is_stacked and txt_align in {'TOP', 'BOTTOM'}) or (not is_stacked and img_align in {'TOP', 'BOTTOM'}):
-            center_correction = (node_w_px - img_draw_w) / 2
+            center_correction = (node_width_px - img_draw_w) / 2
             img_x += center_correction
         _draw_image_note(node, img, img_x, img_y, img_draw_w, img_draw_h, texture)
 
@@ -523,14 +523,14 @@ def _draw_sequence_lines(badge_infos: dict[int, list[BadgeInfo]], params: DrawPa
     max_idx = max(sorted_indices)
     arrow_size = params.arrow_size
 
-    for idx_a in sorted_indices:
+    for current_idx in sorted_indices:
         target_idx = None
-        for next_idx in range(idx_a + 1, max_idx + 1):
+        for next_idx in range(current_idx + 1, max_idx + 1):
             if next_idx in badge_infos:
                 target_idx = next_idx
                 break
         if target_idx is not None:
-            for p1 in badge_infos[idx_a]:
+            for p1 in badge_infos[current_idx]:
                 for p2 in badge_infos[target_idx]:
                     line_points.append((p1.x, p1.y))
                     line_points.append((p2.x, p2.y))
@@ -571,29 +571,29 @@ def _draw_sequence_notes(badge_infos: dict[int, list[BadgeInfo]], params: DrawPa
 def _calculate_element_position(node_info: NodeInfo, alignment: str, offset_vec: float2, self_w: float, self_h: float,
                                 scaled_zoom: float) -> float2:
     """计算元素位置"""
-    sx = node_info.left_x
-    sy = node_info.top_y
-    sy_b = node_info.bottom_y
-    sx_r = node_info.right_x
+    base_x = node_info.left_x
+    base_y = node_info.top_y
+    bottom_y = node_info.bottom_y
+    right_x = node_info.right_x
 
-    bx, by = sx, sy
-    ox = offset_vec[0] * scaled_zoom
-    oy = offset_vec[1] * scaled_zoom
+    pos_x, pos_y = base_x, base_y
+    offset_x = offset_vec[0] * scaled_zoom
+    offset_y = offset_vec[1] * scaled_zoom
 
     if alignment == 'TOP':
-        bx = sx
-        by = sy + MARGIN_BOTTOM*scaled_zoom
+        pos_x = base_x
+        pos_y = base_y + MARGIN_BOTTOM * scaled_zoom
     elif alignment == 'BOTTOM':
-        bx = sx
-        by = sy_b - MARGIN_BOTTOM*scaled_zoom - self_h
+        pos_x = base_x
+        pos_y = bottom_y - MARGIN_BOTTOM * scaled_zoom - self_h
     elif alignment == 'LEFT':
-        bx = sx - MARGIN_BOTTOM*scaled_zoom - self_w
-        by = sy - self_h
+        pos_x = base_x - MARGIN_BOTTOM * scaled_zoom - self_w
+        pos_y = base_y - self_h
     elif alignment == 'RIGHT':
-        bx = sx_r + MARGIN_BOTTOM*scaled_zoom
-        by = sy - self_h
+        pos_x = right_x + MARGIN_BOTTOM * scaled_zoom
+        pos_y = base_y - self_h
 
-    return bx + ox, by + oy
+    return pos_x + offset_x, pos_y + offset_y
 
 def draw_callback_px() -> None:
     """主绘制回调函数"""
