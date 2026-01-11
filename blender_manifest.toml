@@ -1,11 +1,11 @@
 schema_version = "1.0.0"
-id = "NodeMemo"
+id = "node_note"
 version = "1.0.0"
-name = "Node Memory/节点随记"
+name = "Node Note/节点随记"
 tagline = "为节点思路设置清晰的路标和精准的导航"
 maintainer = "無東;W_Cloud"
 type = "add-on"
 permissions = []
 tags = ["Node"]
-blender_version_min = "5.0.0"
+blender_version_min = "4.2.0"
 license = ["SPDX:GPL-3.0-or-later"]

@@ -42,7 +42,7 @@ def inject_defaults_if_needed(node: Node):
     """如果节点未初始化，注入偏好设置的默认值"""
     from .preferences import pref
     prefs = pref()
-    if not node.note_is_initialized and prefs:
+    if not node.note_initialized and prefs:
         # 1. 注入文本相关默认值
         node.note_font_size = prefs.text_default_size
         node.note_text_color = prefs.text_default_color
@@ -53,10 +53,10 @@ def inject_defaults_if_needed(node: Node):
         node.note_txt_pos = prefs.text_default_align
 
         # 3. 注入序号颜色默认值
-        node.note_sequence_color = prefs.seq_bg_color
+        node.note_badge_color = prefs.badge_bg_color
 
         # 标记已初始化，以后不再覆盖
-        node.note_is_initialized = True
+        node.note_initialized = True
 
 # --- 属性初始化 ---
 
@@ -94,8 +94,8 @@ def init_props():
     Node.note_img_width = IntProperty(name="图像宽度", default=140, min=10, max=2000, update=update_manual_img_width)
     Node.note_swap_content_order = BoolProperty(name="互换位置", default=False, update=tag_redraw)
     Node.note_z_order_switch = BoolProperty(name="层级切换", description="交换图片与文字的前后层级", default=False, update=tag_redraw)
-    Node.note_seq_index = IntProperty(name="序号", default=0, min=0, update=tag_redraw, description="逻辑序号 (0为不显示)")
-    Node.note_sequence_color = FloatVectorProperty(name="序号颜色",
+    Node.note_badge_index = IntProperty(name="序号", default=0, min=0, update=tag_redraw, description="逻辑序号 (0为不显示)")
+    Node.note_badge_color = FloatVectorProperty(name="序号颜色",
                                                   subtype='COLOR',
                                                   size=4,
                                                   default=(0.8, 0.1, 0.1, 1.0),
@@ -105,19 +105,19 @@ def init_props():
     Node.note_image = PointerProperty(name="图像", type=bpy.types.Image, update=update_note_image) # type: ignore
     Node.note_show_txt = BoolProperty(name="显示文本", default=True, update=tag_redraw)
     Node.note_show_img = BoolProperty(name="显示图片", default=True, update=tag_redraw)
-    Node.note_show_seq = BoolProperty(name="显示序号", default=True, update=tag_redraw)
+    Node.note_show_badge = BoolProperty(name="显示序号", default=True, update=tag_redraw)
     align_items = [('TOP', "顶部", ""), ('BOTTOM', "底部", ""), ('LEFT', "左侧", ""), ('RIGHT', "右侧", "")]
     Node.note_txt_pos = EnumProperty(name="对齐", items=align_items, default='TOP', update=tag_redraw, description="文本位置")
     Node.note_txt_offset = IntVectorProperty(name="文本偏移", size=2, default=(0, 0), update=tag_redraw, subtype='XYZ', description="文本偏移")
     Node.note_img_pos = EnumProperty(name="图对齐", items=align_items, default='TOP', update=tag_redraw, description="图像位置")
     Node.note_img_offset = IntVectorProperty(name="图像偏移", size=2, default=(0, 0), update=tag_redraw, subtype='XYZ', description="图像偏移")
-    Node.note_is_initialized = BoolProperty(default=False)
+    Node.note_initialized = BoolProperty(default=False)
 
 def clear_props():
     props = [
         "note_text", "note_font_size", "note_txt_bg_color", "note_text_color", "note_txt_width_mode", "note_txt_bg_width", "note_swap_content_order",
-        "note_image", "note_img_width", "note_show_img", "note_show_seq", "note_img_width_mode", "note_txt_pos", "note_txt_offset", "note_z_order_switch",
-        "note_seq_index", "note_sequence_color", "note_img_pos", "note_img_offset", "note_show_txt", "note_is_initialized"
+        "note_image", "note_img_width", "note_show_img", "note_show_badge", "note_img_width_mode", "note_txt_pos", "note_txt_offset", "note_z_order_switch",
+        "note_badge_index", "note_badge_color", "note_img_pos", "note_img_offset", "note_show_txt", "note_initialized"
     ]
     for p in props:
         if hasattr(Node, p): delattr(Node, p)

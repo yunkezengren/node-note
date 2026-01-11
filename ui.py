@@ -135,37 +135,37 @@ def draw_ui_layout(layout: UILayout, context: Context):
 
     header, body = layout.panel("setting3", default_closed=True)
     header.label(text="", icon='EVENT_NDOF_BUTTON_1')
-    header.operator("node.note_show_select_seq", text="序号笔记", icon="HIDE_OFF" if node.note_show_seq else "HIDE_ON")
-    header.operator("node.note_clear_select_seq", text="", icon='TRASH')
+    header.operator("node.note_show_select_badge", text="序号笔记", icon="HIDE_OFF" if node.note_show_badge else "HIDE_ON")
+    header.operator("node.note_clear_select_badge", text="", icon='TRASH')
     if body:
-        body.active = node.note_show_seq
+        body.active = node.note_show_badge
         body_split = body.split(factor=0.01)
         body_split.label(text="")
-        seq_box = body_split.box()
-        split = seq_box.split(factor=0.5)
-        split.prop(node, "note_seq_index", text="序号")
-        split = seq_box.split(factor=0.5)
-        split.row().prop(prefs, "seq_font_color", text="文本色")
-        split.row().prop(prefs, "seq_bg_color", text="背景色")
+        badge_box = body_split.box()
+        split = badge_box.split(factor=0.5)
+        split.prop(node, "note_badge_index", text="序号")
+        split = badge_box.split(factor=0.5)
+        split.row().prop(prefs, "badge_font_color", text="文本色")
+        split.row().prop(prefs, "badge_bg_color", text="背景色")
 
-        row_set = seq_box.row()
-        row_set.operator("node.note_interactive_seq", text="交互编号", icon='BRUSH_DATA', depress=prefs.is_interactive_mode)
+        row_set = badge_box.row()
+        row_set.operator("node.note_interactive_badge", text="交互编号", icon='BRUSH_DATA', depress=prefs.is_interactive_mode)
 
-        row_set = seq_box.row(align=True)
-        row_set.prop(prefs, "seq_scale_mode", text="缩放模式")
-        if prefs.seq_scale_mode == 'ABSOLUTE':
-            row_set.prop(prefs, "seq_abs_scale", text="屏幕缩放")
+        row_set = badge_box.row(align=True)
+        row_set.prop(prefs, "badge_scale_mode", text="缩放")
+        if prefs.badge_scale_mode == 'ABSOLUTE':
+            row_set.prop(prefs, "badge_abs_scale", text="屏幕缩放")
         else:
-            row_set.prop(prefs, "seq_scale", text="相对缩放")
+            row_set.prop(prefs, "badge_rel_scale", text="相对缩放")
         
-        row_set = seq_box.split(factor=0.3)
-        row_set.prop(prefs, "show_sequence_lines", text="显示连线", icon='EMPTY_ARROWS')
-        row_set.row().prop(prefs, "seq_line_color", text="颜色")
-        row_set.prop(prefs, "seq_line_thickness", text="线宽")
+        row_set = badge_box.split(factor=0.3)
+        row_set.prop(prefs, "show_badgeuence_lines", text="显示连线", icon='EMPTY_ARROWS')
+        row_set.row().prop(prefs, "badge_line_color", text="颜色")
+        row_set.prop(prefs, "badge_line_thickness", text="线宽")
 
     header, body = layout.panel("setting4", default_closed=True)
     header.label(text="文本导航列表")
-    header.prop(prefs, "sort_by_sequence", text="按序号排列")
+    header.prop(prefs, "sort_by_badgeuence", text="按序号排列")
     if body:
         draw_search_list(body, context)
 
@@ -182,19 +182,19 @@ def draw_search_list(layout: UILayout, context: Context):
     tree: NodeTree = context.space_data.edit_tree
     for node in tree.nodes:
         has_text = hasattr(node, "note_text") and node.note_text.strip()
-        has_seq = hasattr(node, "note_seq_index") and node.note_seq_index > 0
+        has_badge = hasattr(node, "note_badge_index") and node.note_badge_index > 0
         
-        if has_text or has_seq:
+        if has_text or has_badge:
             all_notes_count += 1
             if search_key and has_text and (search_key not in node.note_text.lower()):
                 continue
             annotated_nodes.append(node)
     
     # 排序逻辑
-    if pref().sort_by_sequence:
+    if pref().sort_by_badgeuence:
         annotated_nodes.sort(key=lambda n: (
-            0 if getattr(n, "note_seq_index", 0) > 0 else 1,
-            getattr(n, "note_seq_index", 0),
+            0 if getattr(n, "note_badge_index", 0) > 0 else 1,
+            getattr(n, "note_badge_index", 0),
             getattr(n, "location", (0,0))[0]
         ))
     else:
@@ -211,7 +211,7 @@ def draw_search_list(layout: UILayout, context: Context):
         layout.label(text="暂无注记", icon='INFO')
         return
     
-    sort_icon = 'SORT_ASC' if pref().sort_by_sequence else 'GRID'
+    sort_icon = 'SORT_ASC' if pref().sort_by_badgeuence else 'GRID'
     if search_key: sort_icon = 'FILTER'
     
     layout.label(text=f"列表 ({len(annotated_nodes)}):", icon=sort_icon)
@@ -227,11 +227,11 @@ def draw_search_list(layout: UILayout, context: Context):
             split.label(text="", icon='QUESTION')
         
         display_text = ""
-        seq_idx = getattr(node, "note_seq_index", 0)
+        badge_idx = getattr(node, "note_badge_index", 0)
         txt_content = getattr(node, "note_text", "").strip()
         
-        if seq_idx > 0:
-            display_text += f"[{seq_idx}] "
+        if badge_idx > 0:
+            display_text += f"[{badge_idx}] "
         
         if txt_content:
             # todo 提示里完整显示

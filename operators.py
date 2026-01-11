@@ -17,7 +17,7 @@ class NODE_OT_reset_prefs(Operator):
     def execute(self, context):
         prefs = pref()
         if self.target_section == 'SEQ':
-            for p in ["seq_radius", "seq_bg_color", "seq_font_size", "seq_font_color"]:
+            for p in ["badge_radius", "badge_bg_color", "badge_font_size", "badge_font_color"]:
                 prefs.property_unset(p)
         elif self.target_section == 'TEXT':
             for p in ["text_default_size", "text_default_color", "bg_default_color", "text_default_fit", "text_default_align"]:
@@ -53,8 +53,8 @@ class NODE_OT_note_swap_order(Operator):
                 context.area.tag_redraw()
         return {'FINISHED'}
 
-class NODE_OT_interactive_seq(Operator):
-    bl_idname = "node.note_interactive_seq"
+class NODE_OT_interactive_badge(Operator):
+    bl_idname = "node.note_interactive_badge"
     bl_label = "交互式编号"
     bl_description = "画笔点选节点自动编号 (右键/ESC退出)"
     bl_options = {'REGISTER', 'UNDO'}
@@ -83,10 +83,10 @@ class NODE_OT_interactive_seq(Operator):
 
                     if node and node != self.last_node:
                         self.current_idx += 1
-                        node.note_seq_index = self.current_idx
+                        node.note_badge_index = self.current_idx
 
-                        if node.note_seq_index > 0:
-                            node.note_sequence_color = pref().seq_bg_color
+                        if node.note_badge_index > 0:
+                            node.note_badge_color = pref().badge_bg_color
 
                         self.last_node = node
 
@@ -115,8 +115,8 @@ class NODE_OT_interactive_seq(Operator):
             tree = context.space_data.edit_tree
             if tree:
                 for n in tree.nodes:
-                    if hasattr(n, "note_seq_index"):
-                        max_idx = max(max_idx, n.note_seq_index)
+                    if hasattr(n, "note_badge_index"):
+                        max_idx = max(max_idx, n.note_badge_index)
 
             self.current_idx = max_idx
             self.last_node = None
@@ -139,11 +139,11 @@ class NODE_OT_clear_select_all(Operator):
     def execute(self, context):
         nodes = context.selected_nodes if context.selected_nodes else [context.active_node]
         for node in nodes:
-            if node.note_text or node.note_image or node.note_seq_index:
+            if node.note_text or node.note_image or node.note_badge_index:
                 node.note_text = ""
                 node.note_image = None
-                node.note_seq_index = 0
-                node.note_is_initialized = False
+                node.note_badge_index = 0
+                node.note_initialized = False
         return {'FINISHED'}
 
 class NODE_OT_clear_select_txt(Operator):
@@ -157,8 +157,8 @@ class NODE_OT_clear_select_txt(Operator):
         for node in nodes:
             if not node.note_text: continue
             node.note_text = ""
-            if not node.note_image and not node.note_seq_index:
-                node.note_is_initialized = False
+            if not node.note_image and not node.note_badge_index:
+                node.note_initialized = False
         return {'FINISHED'}
 
 class NODE_OT_clear_select_img(Operator):
@@ -172,12 +172,12 @@ class NODE_OT_clear_select_img(Operator):
         for node in nodes:
             if not node.note_image: continue
             node.note_image = None
-            if not node.note_text and not node.note_seq_index:
-                node.note_is_initialized = False
+            if not node.note_text and not node.note_badge_index:
+                node.note_initialized = False
         return {'FINISHED'}
 
-class NODE_OT_clear_select_seq(Operator):
-    bl_idname = "node.note_clear_select_seq"
+class NODE_OT_clear_select_badge(Operator):
+    bl_idname = "node.note_clear_select_badge"
     bl_label = "删除序号"
     bl_description = "删除选中节点的序号笔记"
     bl_options = {'UNDO'}
@@ -185,10 +185,10 @@ class NODE_OT_clear_select_seq(Operator):
     def execute(self, context):
         nodes = context.selected_nodes if context.selected_nodes else [context.active_node]
         for node in nodes:
-            if not node.note_seq_index: continue
-            node.note_seq_index = 0
+            if not node.note_badge_index: continue
+            node.note_badge_index = 0
             if not node.note_text and not node.note_image:
-                node.note_is_initialized = False
+                node.note_initialized = False
         return {'FINISHED'}
 
 class NODE_OT_clear_all_scene_notes(Operator):
@@ -205,11 +205,11 @@ class NODE_OT_clear_all_scene_notes(Operator):
         edit_tree = context.space_data.edit_tree
         if not edit_tree: return {'CANCELLED'}
         for node in edit_tree.nodes:
-            if not node.note_text and not node.note_image and not node.note_seq_index: continue
+            if not node.note_text and not node.note_image and not node.note_badge_index: continue
             node.note_text = ""
             node.note_image = None
-            node.note_seq_index = 0
-            node.note_is_initialized = False
+            node.note_badge_index = 0
+            node.note_initialized = False
         return {'FINISHED'}
 
 class NODE_OT_show_select_txt(Operator):
@@ -244,8 +244,8 @@ class NODE_OT_show_select_img(Operator):
             node.note_show_img = new_value
         return {'FINISHED'}
 
-class NODE_OT_show_select_seq(Operator):
-    bl_idname = "node.note_show_select_seq"
+class NODE_OT_show_select_badge(Operator):
+    bl_idname = "node.note_show_select_badge"
     bl_label = "显示序号"
     bl_description = "显示选中节点的序号笔记"
     bl_options = {'UNDO'}
@@ -254,10 +254,10 @@ class NODE_OT_show_select_seq(Operator):
         active_node = context.active_node
         nodes = context.selected_nodes
         if not active_node: return {'CANCELLED'}
-        new_value = not active_node.note_show_seq
-        active_node.note_show_seq = new_value
+        new_value = not active_node.note_show_badge
+        active_node.note_show_badge = new_value
         for node in nodes:
-            node.note_show_seq = new_value
+            node.note_show_badge = new_value
         return {'FINISHED'}
 
 class NODE_OT_fix_prop(Operator):
@@ -370,7 +370,7 @@ class NODE_OT_copy_active_to_selected(Operator):
     def execute(self, context):
         act = context.active_node
         if not act: return {'CANCELLED'}
-        strict_sync_props = ["note_font_size", "note_text_color", "note_txt_bg_color", "note_sequence_color", "note_txt_width_mode", "note_txt_bg_width", "note_img_width_mode", "note_img_width"]
+        strict_sync_props = ["note_font_size", "note_text_color", "note_txt_bg_color", "note_badge_color", "note_txt_width_mode", "note_txt_bg_width", "note_img_width_mode", "note_img_width"]
         count = 0
         for n in context.selected_nodes:
             if n == act: continue
@@ -474,14 +474,14 @@ classes = [
     NODE_OT_clear_select_all,
     NODE_OT_clear_select_txt,
     NODE_OT_clear_select_img,
-    NODE_OT_clear_select_seq,
+    NODE_OT_clear_select_badge,
     NODE_OT_show_select_txt,
     NODE_OT_show_select_img,
-    NODE_OT_show_select_seq,
+    NODE_OT_show_select_badge,
     NODE_OT_fix_prop,
     NODE_OT_clear_all_scene_notes,
     NODE_OT_note_swap_order,
-    NODE_OT_interactive_seq,
+    NODE_OT_interactive_badge,
     NODE_OT_reset_prefs,
     
     # 从 edit_ops.py 移动的

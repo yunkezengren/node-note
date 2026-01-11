@@ -267,18 +267,18 @@ def _get_draw_params() -> DrawParams:
     if is_occlusion_enabled and context.selected_nodes:
         occluders = [get_node_screen_rect(n) for n in context.selected_nodes]
     # 序号样式参数
-    seq_scale = prefs.seq_scale
-    seq_scale_mode = prefs.seq_scale_mode
-    seq_abs_scale = prefs.seq_abs_scale
-    if seq_scale_mode == 'RELATIVE':
-        badge_radius = 7 * seq_scale * scaled_zoom
-        arrow_size = 8.0 * seq_scale * scaled_zoom
-        base_font_size = 8 * seq_scale * scaled_zoom
+    badge_rel_scale = prefs.badge_rel_scale
+    badge_scale_mode = prefs.badge_scale_mode
+    badge_abs_scale = prefs.badge_abs_scale
+    if badge_scale_mode == 'RELATIVE':
+        badge_radius = 7 * badge_rel_scale * scaled_zoom
+        arrow_size = 8.0 * badge_rel_scale * scaled_zoom
+        base_font_size = 8 * badge_rel_scale * scaled_zoom
     else:
         max_diameter = view_to_region_scaled(140, 0)[0] - view_to_region_scaled(0, 0)[0]
-        badge_radius = min(7 * 2, max_diameter / 2) * seq_abs_scale
-        arrow_size = min(16, max_diameter * 0.6) * seq_abs_scale
-        base_font_size = min(16, max_diameter / 2) * seq_abs_scale
+        badge_radius = min(7 * 2, max_diameter / 2) * badge_abs_scale
+        arrow_size = min(16, max_diameter * 0.6) * badge_abs_scale
+        base_font_size = min(16, max_diameter / 2) * badge_abs_scale
     return DrawParams(
         sys_ui_scale=sys_ui_scale,
         scaled_zoom=scaled_zoom,
@@ -355,17 +355,17 @@ def _process_and_draw_text_and_image_note(node: Node, params: DrawParams, badge_
     # 获取节点属性
     text = getattr(node, "note_text", "").strip()
     img = getattr(node, "note_image", None)
-    seq_idx = getattr(node, "note_seq_index", 0)
+    badge_idx = getattr(node, "note_badge_index", 0)
     show_txt = getattr(node, "note_show_txt", True)
     show_img = getattr(node, "note_show_img", True)
-    show_seq = getattr(node, "note_show_seq", True)
+    show_badge = getattr(node, "note_show_badge", True)
     # 跳过空注释
-    if not (text and show_txt) and not (img and show_img) and not (seq_idx > 0 and show_seq):
+    if not (text and show_txt) and not (img and show_img) and not (badge_idx > 0 and show_badge):
         return
     # 颜色可见性检查
     bg_color = getattr(node, "note_txt_bg_color", DefaultBg)
     visible_by_bg_color = check_color_visibility(bg_color)
-    if not visible_by_bg_color and seq_idx == 0:
+    if not visible_by_bg_color and badge_idx == 0:
         return
     # 计算位置和尺寸
     node_info = _calculate_node_position(node, params)
@@ -503,24 +503,24 @@ def _process_and_draw_text_and_image_note(node: Node, params: DrawParams, badge_
         _draw_image_note(texture, img_x, img_y, img_draw_w, img_draw_h)
 
     # 收集序号坐标
-    if seq_idx > 0 and show_seq:
-        _collect_sequence_coords(seq_idx, node_info, badge_infos, params)
+    if badge_idx > 0 and show_badge:
+        _collect_badgeuence_coords(badge_idx, node_info, badge_infos, params)
 
-def _collect_sequence_coords(seq_idx: int, node_info: NodeInfo, badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
+def _collect_badgeuence_coords(badge_idx: int, node_info: NodeInfo, badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
     """收集序号坐标"""
     badge_x = node_info.left_x
     badge_y = node_info.top_y
     badge_radius = params.badge_radius
 
-    if seq_idx not in badge_infos:
-        badge_infos[seq_idx] = []
-    badge_infos[seq_idx].append(BadgeInfo(x=badge_x, y=badge_y, radius=badge_radius))
+    if badge_idx not in badge_infos:
+        badge_infos[badge_idx] = []
+    badge_infos[badge_idx].append(BadgeInfo(x=badge_x, y=badge_y, radius=badge_radius))
 
-def _draw_sequence_lines(badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
+def _draw_badgeuence_lines(badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
     """绘制序号连线"""
-    if not pref().show_sequence_lines or len(badge_infos) < 2: return
+    if not pref().show_badgeuence_lines or len(badge_infos) < 2: return
     line_points = []
-    line_col: RGBA = pref().seq_line_color
+    line_col: RGBA = pref().badge_line_color
     sorted_indices = sorted(badge_infos.keys())
     max_idx = max(sorted_indices)
     arrow_size = params.arrow_size
@@ -539,25 +539,25 @@ def _draw_sequence_lines(badge_infos: dict[int, list[BadgeInfo]], params: DrawPa
                     retreat = p1.radius
                     draw_arrow_head((p1.x, p1.y), (p2.x, p2.y), line_col, size=arrow_size, retreat=retreat)
 
-    line_thickness = pref().seq_line_thickness
+    line_thickness = pref().badge_line_thickness
     draw_lines_batch(line_points, line_col, thickness=line_thickness)
 
-def _draw_sequence_badges(badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
+def _draw_badgeuence_badges(badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
     """绘制序号徽章(背景+文本)"""
     prefs = pref()
     badge_radius = params.badge_radius
     base_font_size = params.base_font_size
-    seq_font_col = list(prefs.seq_font_color) if prefs else (1.0, 1.0, 1.0, 1.0)
+    badge_font_col = list(prefs.badge_font_color) if prefs else (1.0, 1.0, 1.0, 1.0)
 
     # 绘制背景圆
     for idx in badge_infos:
         for badge in badge_infos[idx]:
-            draw_circle_batch(badge.x, badge.y, badge.radius, tuple(prefs.seq_bg_color))
+            draw_circle_batch(badge.x, badge.y, badge.radius, tuple(prefs.badge_bg_color))
 
     # 绘制数字文本
     font_id = 0
     blf.size(font_id, int(base_font_size))
-    blf.color(font_id, *seq_font_col)
+    blf.color(font_id, *badge_font_col)
     for idx in badge_infos:
         for badge in badge_infos[idx]:
             num_str = str(idx)
@@ -565,10 +565,10 @@ def _draw_sequence_badges(badge_infos: dict[int, list[BadgeInfo]], params: DrawP
             blf.position(font_id, int(badge.x - dims[0] / 2), int(badge.y - dims[1] / 2.5), 0)
             blf.draw(font_id, num_str)
 
-def _draw_sequence_notes(badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
+def _draw_badgeuence_notes(badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
     # 绘制序列连线
-    _draw_sequence_lines(badge_infos, params)
-    _draw_sequence_badges(badge_infos, params)
+    _draw_badgeuence_lines(badge_infos, params)
+    _draw_badgeuence_badges(badge_infos, params)
 
 def _calc_note_pos(node_info: NodeInfo, alignment: str, offset_vec: float2, self_width: float, self_height: float,
                    scaled_zoom: float) -> float2:
@@ -609,7 +609,7 @@ def draw_callback_px() -> None:
     badge_infos: dict[int, list[BadgeInfo]] = {}
     for node in tree.nodes:
         _process_and_draw_text_and_image_note(node, params, badge_infos)
-    _draw_sequence_notes(badge_infos, params)
+    _draw_badgeuence_notes(badge_infos, params)
 
 def register_draw_handler() -> None:
     global handler

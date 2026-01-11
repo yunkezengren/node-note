@@ -21,9 +21,9 @@ class NodeMemoAddonPreferences(AddonPreferences):
 
     # 1. 全局设置
     show_all_notes      : BoolProperty(name="显示所有", default=True, update=tag_redraw)
-    show_sequence_lines : BoolProperty(name="显示逻辑连线", default=False, update=tag_redraw, description="显示节点之间的序号连线")
+    show_badgeuence_lines : BoolProperty(name="显示逻辑连线", default=False, update=tag_redraw, description="显示节点之间的序号连线")
     is_interactive_mode : BoolProperty(name="交互模式", default=False, update=tag_redraw, description="点击节点即可编号，右键或ESC退出")
-    sort_by_sequence    : BoolProperty(name="按序号排序", default=False, update=tag_redraw, description="勾选后，有序号的节点将优先显示在列表顶部")
+    sort_by_badgeuence    : BoolProperty(name="按序号排序", default=False, update=tag_redraw, description="勾选后，有序号的节点将优先显示在列表顶部")
     use_occlusion       : BoolProperty(name="自动遮挡", default=False, update=tag_redraw)
     tag_mode_prepend    : BoolProperty(name="前缀模式", default=True, description="特殊字符添加到已有文本前")
     navigator_search    : StringProperty(name="搜索", default="")
@@ -36,34 +36,34 @@ class NodeMemoAddonPreferences(AddonPreferences):
     filter_other        : BoolProperty(name="过滤杂", default=True, update=tag_redraw)
 
     # 2. 序号设置区
-    seq_scale           : FloatProperty(name="序号缩放", default=1.0, min=0.1, max=20.0, update=tag_redraw)
-    seq_scale_mode      : EnumProperty(name="缩放模式",
+    badge_rel_scale           : FloatProperty(name="序号缩放", default=1.0, min=0.1, max=20.0, update=tag_redraw)
+    badge_scale_mode      : EnumProperty(name="缩放模式",
                                        items=[('RELATIVE', "相对缩放", "跟随节点编辑器缩放"), ('ABSOLUTE', "屏幕空间", "固定屏幕像素大小")],
                                        default='RELATIVE',
                                        update=tag_redraw)
-    seq_abs_scale       : FloatProperty(name="屏幕空间缩放", default=1.0, min=0.1, max=10.0, update=tag_redraw)
-    seq_bg_color        : FloatVectorProperty(name="圆背景色",
+    badge_abs_scale       : FloatProperty(name="屏幕空间缩放", default=1.0, min=0.1, max=10.0, update=tag_redraw)
+    badge_bg_color        : FloatVectorProperty(name="圆背景色",
                                               subtype='COLOR',
                                               size=4,
                                               default=(0.8, 0.1, 0.1, 1.0),
                                               min=0,
                                               max=1,
                                               update=tag_redraw)
-    seq_font_color      : FloatVectorProperty(name="数字颜色",
+    badge_font_color      : FloatVectorProperty(name="数字颜色",
                                               subtype='COLOR',
                                               size=4,
                                               default=(1.0, 1.0, 1.0, 1.0),
                                               min=0,
                                               max=1,
                                               update=tag_redraw)
-    seq_line_color      : FloatVectorProperty(name="连线颜色",
+    badge_line_color      : FloatVectorProperty(name="连线颜色",
                                               subtype='COLOR',
                                               size=4,
                                               default=(1.0, 0.8, 0.2, 0.8),
                                               min=0,
                                               max=1,
                                               update=tag_redraw)
-    seq_line_thickness  : IntProperty(name="连线宽度", default=4, min=1, max=40, update=tag_redraw)
+    badge_line_thickness  : IntProperty(name="连线宽度", default=4, min=1, max=40, update=tag_redraw)
 
     # 3. 文本设置区
     text_default_size   : IntProperty(name="默认字号", default=8, min=4, max=100)
@@ -134,8 +134,8 @@ class NodeMemoAddonPreferences(AddonPreferences):
 
         col.separator()
         col.prop(self, "show_all_notes", text="默认显示所有")
-        col.prop(self, "show_select_seq", text="默认显示序号")
-        col.prop(self, "show_sequence_lines", text="默认显示逻辑连线")
+        col.prop(self, "show_select_badge", text="默认显示序号")
+        col.prop(self, "show_badgeuence_lines", text="默认显示逻辑连线")
 
         # 2. 序号设置
         box = layout.box()
@@ -145,14 +145,14 @@ class NodeMemoAddonPreferences(AddonPreferences):
 
         col = box.column(align=True)
         split = col.split(factor=0.5)
-        split.prop(self, "seq_scale_mode")
-        if self.seq_scale_mode == 'ABSOLUTE':
-            split.prop(self, "seq_abs_scale")
+        split.prop(self, "badge_scale_mode")
+        if self.badge_scale_mode == 'ABSOLUTE':
+            split.prop(self, "badge_abs_scale")
         else:
-            split.prop(self, "seq_scale")
+            split.prop(self, "badge_rel_scale")
         split = col.split(factor=0.5)
-        split.row().prop(self, "seq_font_color", text="文本色")
-        split.row().prop(self, "seq_bg_color", text="背景色")
+        split.row().prop(self, "badge_font_color", text="文本色")
+        split.row().prop(self, "badge_bg_color", text="背景色")
 
         # 3. 文本设置
         box = layout.box()
