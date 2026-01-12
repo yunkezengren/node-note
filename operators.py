@@ -1,8 +1,9 @@
 import bpy
-from bpy.types import Operator, Context, Node
-from bpy.props import StringProperty, FloatVectorProperty, BoolProperty
+from bpy.types import Operator
+from bpy.props import StringProperty
 from .preferences import pref
-from .utils import ui_scale
+from .utils import ui_scale, paste_image_from_clipboard
+from .ui import draw_ui_layout
 from .node_properties import inject_defaults_if_needed, init_props
 
 # --- 从 __init__.py 移动的操作符 ---
@@ -78,25 +79,22 @@ class NODE_OT_interactive_badge(Operator):
 
         if event.type == 'LEFTMOUSE' and event.value == 'PRESS':
             if context.region.type == 'WINDOW':
-                try:
-                    bpy.ops.node.select(location=(event.mouse_region_x, event.mouse_region_y), extend=False)
-                    node = context.active_node
+                bpy.ops.node.select(location=(event.mouse_region_x, event.mouse_region_y), extend=False)
+                node = context.active_node
 
-                    if node and node != self.last_node:
-                        self.current_idx += 1
-                        node.note_badge_index = self.current_idx
+                if node and node != self.last_node:
+                    self.current_idx += 1
+                    node.note_badge_index = self.current_idx
 
-                        if node.note_badge_index > 0:
-                            node.note_badge_color = pref().default_badge_color
+                    if node.note_badge_index > 0:
+                        node.note_badge_color = pref().default_badge_color
 
-                        self.last_node = node
+                    self.last_node = node
 
-                        msg = f"交互式编号模式 [右键/ESC退出] | 已标记: {node.name} -> #{self.current_idx}"
-                        context.area.header_text_set(msg)
-                        context.area.tag_redraw()
-                    return {'RUNNING_MODAL'}
-                except Exception:
-                    pass
+                    msg = f"交互式编号模式 [右键/ESC退出] | 已标记: {node.name} -> #{self.current_idx}"
+                    context.area.header_text_set(msg)
+                    context.area.tag_redraw()
+                return {'RUNNING_MODAL'}
             else:
                 return {'PASS_THROUGH'}
 
@@ -201,7 +199,7 @@ class NODE_OT_clear_all_scene_notes(Operator):
     def invoke(self, context, event):
         return context.window_manager.invoke_confirm(self, event)
 
-    # todo: 是否递归节点组内
+    # todo: 是否递归删除节点组内
     def execute(self, context):
         edit_tree = context.space_data.edit_tree
         if not edit_tree: return {'CANCELLED'}
@@ -269,8 +267,6 @@ class NODE_OT_fix_prop(Operator):
         init_props()
         return {'FINISHED'}
 
-# --- 从 edit_ops.py 移动的操作符 ---
-
 class NODE_OT_reset_offset(Operator):
     bl_idname = "node.note_reset_offset"
     bl_label = "复位"
@@ -295,36 +291,7 @@ class NODE_OT_reset_img_offset(Operator):
         context.area.tag_redraw()
         return {'FINISHED'}
 
-class NODE_OT_open_image(Operator):
-    bl_idname = "node.note_open_image"
-    bl_label = "打开"
-    bl_options = {'REGISTER', 'UNDO'}
-    filepath: bpy.props.StringProperty(subtype="FILE_PATH")
-    filter_folder: bpy.props.BoolProperty(default=True, options={'HIDDEN'})
-    filter_image: bpy.props.BoolProperty(default=True, options={'HIDDEN'})
-
-    def execute(self, context):
-        try:
-            img = bpy.data.images.load(self.filepath)
-            img.colorspace_settings.name, img.alpha_mode, img.use_fake_user = 'Non-Color', 'STRAIGHT', True
-            context.active_node.note_image = img
-            context.active_node.note_show_img = True
-
-            # [注入] 图片默认对齐
-            prefs = pref()
-            if prefs:
-                context.active_node.note_img_pos = prefs.img_default_align
-
-            context.area.tag_redraw()
-        except Exception as e:
-            self.report({'ERROR'}, str(e))
-        return {'FINISHED'}
-
-    def invoke(self, context, event):
-        context.window_manager.fileselect_add(self)
-        return {'RUNNING_MODAL'}
-
-class NODE_OT_paste_image(bpy.types.Operator):
+class NODE_OT_paste_image(Operator):
     bl_idname = "node.note_paste_image"
     bl_label = "从剪贴板粘贴图像"
     bl_description = "从剪贴板粘贴图像"
@@ -338,11 +305,10 @@ class NODE_OT_paste_image(bpy.types.Operator):
     img_name: StringProperty(name="图片名", update=update_img_name)  # type: ignore
 
     def invoke(self, context, event):
-        from .utils import paste_image_from_clipboard
         path = paste_image_from_clipboard()
         if path:
             img = bpy.data.images.load(path)
-            img.colorspace_settings.name = 'Non-Color'
+            img.colorspace_settings.name = 'sRGB'
             img.alpha_mode = 'STRAIGHT'
             img.use_fake_user = True
             img.pack()
@@ -474,19 +440,24 @@ class NODE_OT_note_quick_edit(Operator):
         return context.window_manager.invoke_popup(self, width=220)
 
     def draw(self, context):
-        from .ui import draw_ui_layout
         layout = self.layout
         row = layout.row()
-        row.label(icon="TOOL_SETTINGS")
-        row.label(icon="FILE_TEXT")
-        row.label(icon="IMAGE_DATA")
-        row.label(icon="EVENT_NDOF_BUTTON_1")
-        draw_ui_layout(layout, context)
+        prefs = pref()
+        row.prop(prefs, "show_global", text="", icon="TOOL_SETTINGS")
+        row.prop(prefs, "show_text", text="", icon="FILE_TEXT")
+        row.prop(prefs, "show_image", text="", icon="IMAGE_DATA")
+        row.prop(prefs, "show_badge", text="", icon="EVENT_NDOF_BUTTON_1")
+        row.prop(prefs, "show_list", text="", icon="ALIGN_JUSTIFY")
+        draw_ui_layout(layout,
+                       context,
+                       show_global=prefs.show_global,
+                       show_text=prefs.show_text,
+                       show_image=prefs.show_image,
+                       show_badge=prefs.show_badge,
+                       show_list=prefs.show_list)
 
-# --- 注册 ---
 
 classes = [
-    # 从 __init__.py 移动的
     NODE_OT_clear_select_all,
     NODE_OT_clear_select_txt,
     NODE_OT_clear_select_img,
@@ -499,8 +470,6 @@ classes = [
     NODE_OT_note_swap_order,
     NODE_OT_interactive_badge,
     NODE_OT_reset_prefs,
-
-    # 从 edit_ops.py 移动的
     NODE_OT_reset_offset,
     NODE_OT_reset_img_offset,
     NODE_OT_paste_image,
@@ -508,18 +477,15 @@ classes = [
     NODE_OT_copy_active_to_selected,
     NODE_OT_add_quick_tag,
     NODE_OT_copy_node_label,
-    NODE_OT_open_image,
     NODE_OT_note_quick_edit,
-
-    # 从 search_ops.py 移动的
     NODE_OT_clear_search,
     NODE_OT_jump_to_note,
 ]
 
 def register():
-    for c in classes:
-        bpy.utils.register_class(c)
+    for cls in classes:
+        bpy.utils.register_class(cls)
 
 def unregister():
-    for c in classes:
-        bpy.utils.unregister_class(c)
+    for cls in classes:
+        bpy.utils.unregister_class(cls)

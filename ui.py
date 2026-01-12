@@ -16,7 +16,7 @@ class NODE_PT_node_note_gpu_panel(Panel):
         layout = self.layout
         draw_ui_layout(layout, context)
 
-def draw_ui_layout(layout: UILayout, context: Context):
+def draw_ui_layout(layout: UILayout, context: Context, show_global=True, show_text=True, show_image=True, show_badge=True, show_list=True):
     header: UILayout
     body: UILayout
     prefs = pref()
@@ -28,151 +28,156 @@ def draw_ui_layout(layout: UILayout, context: Context):
         if custom_lbl:
             def_labels[i] = custom_lbl
 
-    header, body = layout.panel("setting", default_closed=True)
-    header.label(text="全局设置", icon='TOOL_SETTINGS')
-    if body:
-        row_pos = body.row()
-        row_pos.operator("preferences.addon_show", text="偏好", icon='PREFERENCES').module = __package__
-        row_pos.prop(prefs, "show_all_notes", text="显示", icon='HIDE_OFF', toggle=True)
-        row_pos.operator("node.note_clear_all_scene_notes", text="全删", icon='TRASH')
-        # 还很不完善
-        # body.column().prop(prefs, "use_occlusion", text="被遮挡时自动隐藏")
+    if show_global:
+        header, body = layout.panel("setting", default_closed=True)
+        header.label(text="全局设置", icon='TOOL_SETTINGS')
+        if body:
+            row_pos = body.row()
+            row_pos.operator("preferences.addon_show", text="偏好", icon='PREFERENCES').module = __package__
+            row_pos.prop(prefs, "show_all_notes", text="显示", icon='HIDE_OFF', toggle=True)
+            row_pos.operator("node.note_clear_all_scene_notes", text="全删", icon='TRASH')
+            # 还很不完善
+            # body.column().prop(prefs, "use_occlusion", text="被遮挡时自动隐藏")
 
-        row_del = body.row(align=True)
-        # 暂时禁用这个
-        # row_del.operator("node.note_clear_select_all", text="删除选中笔记", icon='TRASH')
+            row_del = body.row(align=True)
+            # 暂时禁用这个
+            # row_del.operator("node.note_clear_select_all", text="删除选中笔记", icon='TRASH')
 
-        if prefs.show_all_notes:
-            body.label(text="按背景色显示文本和图片:", icon='FILTER')
-            split = body.split(factor=0.1, align=True)
-            split.label(text="    ")
-            split.prop(prefs, "filter_red", text=def_labels[0], toggle=True)
-            split.prop(prefs, "filter_green", text=def_labels[1], toggle=True)
-            split.prop(prefs, "filter_blue", text=def_labels[2], toggle=True)
-            split.prop(prefs, "filter_orange", text=def_labels[3], toggle=True)
-            split.prop(prefs, "filter_purple", text=def_labels[4], toggle=True)
-            split.prop(prefs, "filter_other", text=def_labels[5], toggle=True)
+            if prefs.show_all_notes:
+                body.label(text="按背景色显示文本和图片:", icon='FILTER')
+                split = body.split(factor=0.1, align=True)
+                split.label(text="    ")
+                split.prop(prefs, "filter_red", text=def_labels[0], toggle=True)
+                split.prop(prefs, "filter_green", text=def_labels[1], toggle=True)
+                split.prop(prefs, "filter_blue", text=def_labels[2], toggle=True)
+                split.prop(prefs, "filter_orange", text=def_labels[3], toggle=True)
+                split.prop(prefs, "filter_purple", text=def_labels[4], toggle=True)
+                split.prop(prefs, "filter_other", text=def_labels[5], toggle=True)
 
-        if len(context.selected_nodes) > 1:
-            body.row().operator("node.note_copy_to_selected", text="同步活动样式到选中", icon='DUPLICATE')
+            if len(context.selected_nodes) > 1:
+                body.row().operator("node.note_copy_to_selected", text="同步活动样式到选中", icon='DUPLICATE')
 
     node = context.active_node
     if not node:
         layout.label(text="需要活动节点", icon='INFO')
         return
 
-    header, body = layout.panel("setting1", default_closed=False)
-    header.label(text="", icon='FILE_TEXT')
-    h_split = header.row().split(factor=0.5)
-    h_split.operator("node.note_show_select_txt", text="文字笔记", icon="HIDE_OFF" if node.note_show_txt else "HIDE_ON")
-    h_split.prop(node, "note_text", text="")
-    header.operator("node.note_clear_select_txt", text="", icon='TRASH')
-    if body:
-        body.active = node.note_show_txt
-        body_split = body.split(factor=0.01)
-        body_split.label(text="")
-        txt_box = body_split.box()
-        col = txt_box.column(align=True)
-        col.prop(node, "note_text", text="描述: ")
+    if show_text:
+        header, body = layout.panel("setting1", default_closed=False)
+        header.label(text="", icon='FILE_TEXT')
+        h_split = header.row().split(factor=0.5)
+        h_split.operator("node.note_show_select_txt", text="文字笔记", icon="HIDE_OFF" if node.note_show_txt else "HIDE_ON")
+        h_split.prop(node, "note_text", text="")
+        header.operator("node.note_clear_select_txt", text="", icon='TRASH')
+        if body:
+            body.active = node.note_show_txt
+            body_split = body.split(factor=0.01)
+            body_split.label(text="")
+            txt_box = body_split.box()
+            col = txt_box.column(align=True)
+            col.prop(node, "note_text", text="描述: ")
 
-        row_pos = txt_box.column()
-        row_tag = row_pos.row(align=True)
-        row_tag.prop(pref(), "tag_mode_prepend", text="", icon='ALIGN_LEFT' if pref().tag_mode_prepend else 'ALIGN_RIGHT', toggle=True)
-        for tag in ["★", "⚠", "?", "!"]:
-            op = row_tag.operator("node.note_add_quick_tag", text=tag)
-            op.tag_text = tag
+            row_pos = txt_box.column()
+            row_tag = row_pos.row(align=True)
+            row_tag.prop(pref(), "tag_mode_prepend", text="", icon='ALIGN_LEFT' if pref().tag_mode_prepend else 'ALIGN_RIGHT', toggle=True)
+            for tag in ["★", "⚠", "?", "!"]:
+                op = row_tag.operator("node.note_add_quick_tag", text=tag)
+                op.tag_text = tag
 
-        txt_box.separator(factor=0.05)
-        split_txt = txt_box.split(factor=0.5)
-        split_txt.prop(node, "note_font_size", text="字号")
-        split_txt.prop(pref(), "line_separator", text="换行符")
+            txt_box.separator(factor=0.05)
+            split_txt = txt_box.split(factor=0.5)
+            split_txt.prop(node, "note_font_size", text="字号")
+            split_txt.prop(pref(), "line_separator", text="换行符")
 
-        split_color = txt_box.split(factor=0.5)
-        split_color.row().prop(node, "note_text_color", text="文本色")
-        split_color.row().prop(node, "note_txt_bg_color", text="背景色")
+            split_color = txt_box.split(factor=0.5)
+            split_color.row().prop(node, "note_text_color", text="文本色")
+            split_color.row().prop(node, "note_txt_bg_color", text="背景色")
 
-        row_pos = txt_box.row()
-        row_pos.label(text="背景:")
-        def_labels = ["红", "绿", "蓝", "橙", "紫", "无"]
-        for i in range(len(def_labels)):
-            split_color = row_pos.split(factor=0.1, align=True)
-            split_color.prop(pref(), f"col_preset_{i+1}", text="")
-            op = split_color.operator("node.note_apply_preset", text=def_labels[i])
-            op.bg_color = col_vals[i]
+            row_pos = txt_box.row()
+            row_pos.label(text="背景:")
+            def_labels = ["红", "绿", "蓝", "橙", "紫", "无"]
+            for i in range(len(def_labels)):
+                split_color = row_pos.split(factor=0.1, align=True)
+                split_color.prop(pref(), f"col_preset_{i+1}", text="")
+                op = split_color.operator("node.note_apply_preset", text=def_labels[i])
+                op.bg_color = col_vals[i]
 
-        width_row = txt_box.row(align=True)
-        width_row.prop(node, "note_txt_width_mode", text="宽度")
-        if node.note_txt_width_mode == 'MANUAL':
-            width_row.prop(node, "note_txt_bg_width", text="宽度")
+            width_row = txt_box.row(align=True)
+            width_row.prop(node, "note_txt_width_mode", text="宽度")
+            if node.note_txt_width_mode == 'MANUAL':
+                width_row.prop(node, "note_txt_bg_width", text="宽度")
 
-        row_pos = txt_box.row(align=True)
-        row_pos.prop(node, "note_txt_pos", text="")
-        row_pos.prop(node, "note_txt_offset", text="")
-        row_pos.operator("node.note_reset_offset", text="", icon='LOOP_BACK')
+            row_pos = txt_box.row(align=True)
+            row_pos.prop(node, "note_txt_pos", text="")
+            row_pos.prop(node, "note_txt_offset", text="")
+            row_pos.operator("node.note_reset_offset", text="", icon='LOOP_BACK')
 
-    header, body = layout.panel("setting2", default_closed=True)
-    header.label(text="", icon='IMAGE_DATA')
-    h_split = header.row().split(factor=0.5)
-    h_split.operator("node.note_show_select_img", text="图片笔记", icon="HIDE_OFF" if node.note_show_img else "HIDE_ON")
-    h_split.operator("node.note_paste_image", text="", icon='PASTEDOWN')
-    if node.note_show_txt and node.note_text and node.note_show_img and node.note_image:
-        h_split.operator("node.note_swap_order", text="⇅")
-    header.operator("node.note_clear_select_img", text="", icon='TRASH')
-    if body:
-        body.active = node.note_show_img
-        body_split = body.split(factor=0.01)
-        body_split.label(text="")
-        img_box = body_split.box()
-        img_split = img_box.split(factor=0.03)
-        img_split.label(text="")
-        img_preview = img_split.box()
-        # img_preview.scale_y = 2
-        img_preview.template_ID_preview(node, "note_image", open="image.open", rows=4, cols=4)
-        width_row = img_box.row(align=True)
-        width_row.prop(node, "note_img_width_mode", text="宽度")
-        if node.note_img_width_mode == 'MANUAL':
-            width_row.prop(node, "note_img_width", text="宽度")
+    if show_image:
+        header, body = layout.panel("setting2", default_closed=True)
+        header.label(text="", icon='IMAGE_DATA')
+        h_split = header.row().split(factor=0.5)
+        h_split.operator("node.note_show_select_img", text="图片笔记", icon="HIDE_OFF" if node.note_show_img else "HIDE_ON")
+        h_split.operator("node.note_paste_image", text="", icon='PASTEDOWN')
+        if node.note_show_txt and node.note_text and node.note_show_img and node.note_image:
+            h_split.operator("node.note_swap_order", text="⇅")
+        header.operator("node.note_clear_select_img", text="", icon='TRASH')
+        if body:
+            body.active = node.note_show_img
+            body_split = body.split(factor=0.01)
+            body_split.label(text="")
+            img_box = body_split.box()
+            img_split = img_box.split(factor=0.03)
+            img_split.label(text="")
+            img_preview = img_split.box()
+            # img_preview.scale_y = 2
+            img_preview.template_ID_preview(node, "note_image", open="image.open", rows=4, cols=4)
+            width_row = img_box.row(align=True)
+            width_row.prop(node, "note_img_width_mode", text="宽度")
+            if node.note_img_width_mode == 'MANUAL':
+                width_row.prop(node, "note_img_width", text="宽度")
 
-        row_pos = img_box.row(align=True)
-        row_pos.prop(node, "note_img_pos", text="")
-        row_pos.prop(node, "note_img_offset", text="")
-        row_pos.operator("node.note_reset_img_offset", text="", icon='LOOP_BACK')
+            row_pos = img_box.row(align=True)
+            row_pos.prop(node, "note_img_pos", text="")
+            row_pos.prop(node, "note_img_offset", text="")
+            row_pos.operator("node.note_reset_img_offset", text="", icon='LOOP_BACK')
 
-    header, body = layout.panel("setting3", default_closed=True)
-    header.label(text="", icon='EVENT_NDOF_BUTTON_1')
-    h_split = header.row().split(factor=0.5)
-    h_split.operator("node.note_show_select_badge", text="序号笔记", icon="HIDE_OFF" if node.note_show_badge else "HIDE_ON")
-    h_split.prop(node, "note_badge_index", text="序号")
-    header.operator("node.note_clear_select_badge", text="", icon='TRASH')
-    if body:
-        body.active = node.note_show_badge
-        body_split = body.split(factor=0.01)
-        body_split.label(text="")
-        badge_box = body_split.box()
-        split = badge_box.split(factor=0.5)
-        split.prop(node, "note_badge_index", text="序号")
-        split.operator("node.note_interactive_badge", text="交互编号", icon='BRUSH_DATA', depress=prefs.is_interactive_mode)
-        split = badge_box.split(factor=0.5)
-        split.row().prop(prefs, "badge_font_color", text="文本色")
-        split.row().prop(prefs, "default_badge_color", text="背景色")
+    if show_badge:
+        header, body = layout.panel("setting3", default_closed=True)
+        header.label(text="", icon='EVENT_NDOF_BUTTON_1')
+        h_split = header.row().split(factor=0.5)
+        h_split.operator("node.note_show_select_badge", text="序号笔记", icon="HIDE_OFF" if node.note_show_badge else "HIDE_ON")
+        h_split.prop(node, "note_badge_index", text="序号")
+        header.operator("node.note_clear_select_badge", text="", icon='TRASH')
+        if body:
+            body.active = node.note_show_badge
+            body_split = body.split(factor=0.01)
+            body_split.label(text="")
+            badge_box = body_split.box()
+            split = badge_box.split(factor=0.5)
+            split.prop(node, "note_badge_index", text="序号")
+            split.operator("node.note_interactive_badge", text="交互编号", icon='BRUSH_DATA', depress=prefs.is_interactive_mode)
+            split = badge_box.split(factor=0.5)
+            split.row().prop(prefs, "badge_font_color", text="文本色")
+            split.row().prop(prefs, "default_badge_color", text="背景色")
 
-        row_set = badge_box.row(align=True)
-        row_set.prop(prefs, "badge_scale_mode", text="缩放")
-        if prefs.badge_scale_mode == 'ABSOLUTE':
-            row_set.prop(prefs, "badge_abs_scale", text="屏幕缩放")
-        else:
-            row_set.prop(prefs, "badge_rel_scale", text="相对缩放")
+            row_set = badge_box.row(align=True)
+            row_set.prop(prefs, "badge_scale_mode", text="缩放")
+            if prefs.badge_scale_mode == 'ABSOLUTE':
+                row_set.prop(prefs, "badge_abs_scale", text="屏幕缩放")
+            else:
+                row_set.prop(prefs, "badge_rel_scale", text="相对缩放")
 
-        row_set = badge_box.split(factor=0.3)
-        row_set.prop(prefs, "show_badget_lines", text="显示连线", icon='EMPTY_ARROWS')
-        row_set.row().prop(prefs, "badge_line_color", text="颜色")
-        row_set.prop(prefs, "badge_line_thickness", text="线宽")
+            row_set = badge_box.split(factor=0.3)
+            row_set.prop(prefs, "show_badget_lines", text="显示连线", icon='EMPTY_ARROWS')
+            row_set.row().prop(prefs, "badge_line_color", text="颜色")
+            row_set.prop(prefs, "badge_line_thickness", text="线宽")
 
-    header, body = layout.panel("setting4", default_closed=True)
-    header.label(text="文本导航列表")
-    header.prop(prefs, "sort_by_badget", text="按序号排列")
-    if body:
-        draw_search_list(body, context)
+    if show_list:
+        header, body = layout.panel("setting4", default_closed=True)
+        header.label(text="笔记列表", icon="ALIGN_JUSTIFY")
+        header.prop(prefs, "sort_by_badget", text="按序号排列")
+        if body:
+            draw_search_list(body, context)
 
 def draw_search_list(layout: UILayout, context: Context):
     row = layout.row(align=True)
@@ -195,7 +200,6 @@ def draw_search_list(layout: UILayout, context: Context):
                 continue
             noted_nodes.append(node)
 
-    # 排序逻辑
     if pref().sort_by_badget:
         noted_nodes.sort(key=lambda n: (
             0 if getattr(n, "note_badge_index", 0) > 0 else 1,
@@ -222,7 +226,7 @@ def draw_search_list(layout: UILayout, context: Context):
     layout.label(text=f"列表 ({len(noted_nodes)}):", icon=sort_icon)
 
     col = layout.column()
-    header: UILayout 
+    header: UILayout
     body: UILayout
     for index, node in enumerate(noted_nodes):
         header, body = layout.panel(f"note_{index}_{node.name}", default_closed=True)
@@ -247,13 +251,12 @@ def draw_search_list(layout: UILayout, context: Context):
         display_text = ""
         split_lines: list[str] = []
         if txt_content:
-            # todo 提示里完整显示
             split_lines = text_split_lines(txt_content)
             display_text += split_lines[0]
         else:
             display_text += node.name
         if node == context.active_node:
-            display_text = "★★: " + display_text 
+            display_text = "★★: " + display_text
         op = split_text.operator("node.note_jump_to_note", text=display_text, icon='VIEW_ZOOM', emboss=True)
         op.node_name = node.name
 
@@ -275,9 +278,7 @@ def draw_search_list(layout: UILayout, context: Context):
                 img_split = note_col.split(factor=0.03)
                 img_split.label(text="")
                 img_box = img_split.box()
-                img_pre = img_box.template_ID_preview(node, "note_image", open="image.open", rows=10, cols=4)
-                img_pre.cover_scale = 2
-                img_pre.popup_scale = 2
+                img_box.template_ID_preview(node, "note_image", open="image.open", rows=10, cols=4)
 
             row_text = note_col.column()
             if split_lines:
@@ -287,7 +288,6 @@ def draw_search_list(layout: UILayout, context: Context):
                     row_text.label(text=" "*20 + line)
             else:
                 row_text.label(text="文本:  无", icon='FILE_TEXT')
-
 
 def draw_menu_func(self: Menu, context: Context):
     layout = self.layout

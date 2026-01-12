@@ -70,7 +70,7 @@ def is_rect_overlap(r1: Rect, r2: Rect) -> bool:
 def paste_image_from_clipboard():
     """从剪贴板粘贴图像的工具函数"""
     tmp = tempfile.gettempdir()
-    path = os.path.join(tmp, f"blender_paste_{int(time.time()*1000)}.png")
+    path = os.path.join(tmp, f"note_{int(time.time()*1000)}.png")
     import sys
     if sys.platform == "win32":
         cmd = [

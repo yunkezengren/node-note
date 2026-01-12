@@ -19,7 +19,7 @@ def text_split_lines(text: str) -> list[str]:
 class NodeMemoAddonPreferences(AddonPreferences):
     bl_idname = __package__
 
-    # 1. 全局设置
+# 1. 全局设置
     show_all_notes         : BoolProperty(name="显示所有", default=True, update=tag_redraw)
     show_badget_lines      : BoolProperty(name="显示逻辑连线", default=True, update=tag_redraw, description="显示节点之间的序号连线")
     is_interactive_mode    : BoolProperty(name="交互模式", default=False, update=tag_redraw, description="点击节点即可编号，右键或ESC退出")
@@ -27,6 +27,13 @@ class NodeMemoAddonPreferences(AddonPreferences):
     use_occlusion          : BoolProperty(name="自动遮挡", default=False, update=tag_redraw)
     tag_mode_prepend       : BoolProperty(name="前缀模式", default=True, description="特殊字符添加到已有文本前")
     navigator_search       : StringProperty(name="搜索", default="")
+
+    show_global      : BoolProperty(name="显示全局设置", default=True, update=tag_redraw)
+    show_text        : BoolProperty(name="显示文字笔记", default=True, update=tag_redraw)
+    show_image       : BoolProperty(name="显示图片笔记", default=True, update=tag_redraw)
+    show_badge       : BoolProperty(name="显示序号笔记", default=True, update=tag_redraw)
+    show_list        : BoolProperty(name="显示笔记列表", default=True, update=tag_redraw)
+
     # todo 根据已有笔记颜色动态显示按钮
     filter_red             : BoolProperty(name="过滤红", default=True, update=tag_redraw)
     filter_green           : BoolProperty(name="过滤绿", default=True, update=tag_redraw)
