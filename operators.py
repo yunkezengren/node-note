@@ -2,7 +2,7 @@ import bpy
 from bpy.types import Operator
 from bpy.props import StringProperty
 from .preferences import pref
-from .utils import ui_scale, paste_image_from_clipboard
+from .utils import ui_scale, get_image_from_clipboard
 from .ui import draw_ui_layout
 from .node_properties import inject_defaults_if_needed, init_props
 
@@ -297,39 +297,16 @@ class NODE_OT_paste_image(Operator):
     bl_description = "从剪贴板粘贴图像"
     bl_options = {'UNDO'}
 
-    def update_img_name(self, context):
-        img = context.active_node.note_image
-        if img and self.img_name:
-            img.name = self.img_name
-
-    img_name: StringProperty(name="图片名", update=update_img_name)  # type: ignore
-
     def invoke(self, context, event):
-        path = paste_image_from_clipboard()
-        if path:
-            img = bpy.data.images.load(path)
-            img.colorspace_settings.name = 'sRGB'
-            img.alpha_mode = 'STRAIGHT'
-            img.use_fake_user = True
-            img.pack()
+        image = get_image_from_clipboard()
+        if image:
             active_node = context.active_node
-            active_node.note_image = img
+            active_node.note_image = image
             active_node.note_show_img = True
-            self.img_name = img.name
-            self.report({'INFO'}, f"成功导入图片: {img.name}")
-            return context.window_manager.invoke_popup(self, width=int(200*ui_scale()))
+            self.img_name = image.name
+            self.report({'INFO'}, f"成功导入图片: {image.name}")
         self.report({'WARNING'}, "无图片")
         return {'CANCELLED'}
-
-    def draw(self, context):
-        layout = self.layout
-        layout.label(text="图片名(推荐重命名): ")
-        row = layout.row()
-        row.activate_init = True
-        row.prop(self, "img_name", text="", icon="IMAGE_DATA")
-
-    def execute(self, context):
-        return {'FINISHED'}
 
 class NODE_OT_apply_preset(Operator):
     bl_idname = "node.note_apply_preset"

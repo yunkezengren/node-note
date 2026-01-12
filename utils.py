@@ -1,11 +1,11 @@
 import math
 import os
-import subprocess
-import tempfile
-import time
+import numpy as np
 from .preferences import pref
 import bpy
 from bpy.types import Context, Node
+import PIL.Image
+import PIL.ImageGrab
 
 # ==================== 类型别名 ====================
 float2 = tuple[float, float]
@@ -40,7 +40,7 @@ def check_color_visibility(color: RGBA) -> bool:
     """检查背景颜色是否可见（用于过滤显示）"""
     prefs = pref()
     r, g, b, a = color
-    if a < 0.05: 
+    if a < 0.05:
         return False  # 完全透明
     if r > 0.5 and g < 0.2 and b < 0.2:  # 红色系
         return prefs.filter_red
@@ -67,21 +67,28 @@ def is_rect_overlap(r1: Rect, r2: Rect) -> bool:
     """检查两个矩形是否重叠"""
     return not (r1[2] < r2[0] or r1[0] > r2[2] or r1[3] < r2[1] or r1[1] > r2[3])
 
-def paste_image_from_clipboard():
-    """从剪贴板粘贴图像的工具函数"""
-    tmp = tempfile.gettempdir()
-    path = os.path.join(tmp, f"note_{int(time.time()*1000)}.png")
-    import sys
-    if sys.platform == "win32":
-        cmd = [
-            "powershell", "-WindowStyle", "Hidden", "-command",
-            f"Add-Type -AssemblyName System.Windows.Forms;$i=[System.Windows.Forms.Clipboard]::GetImage();if($i){{$i.Save('{path}',[System.Drawing.Imaging.ImageFormat]::Png);exit 0}}exit 1"
-        ]
-        subprocess.run(cmd)
-    elif sys.platform == "darwin":
-        subprocess.run(["pngpaste", path])
-    elif sys.platform.startswith("linux"):
-        with open(path, "wb") as f:
-            subprocess.run(["xclip", "-selection", "clipboard", "-t", "image/png", "-o"], stdout=f)
-    if os.path.exists(path) and os.path.getsize(path) > 0:
-        return path
+# 来自 来一点咖啡吗 的 RARA_Blender_Helper : https://space.bilibili.com/27284213
+def get_image_from_clipboard() -> bpy.types.Image | None:
+    clipboard = PIL.ImageGrab.grabclipboard()
+    if isinstance(clipboard, PIL.Image.Image):
+        # 1. 如果剪贴板是PIL.Image, 直接处理
+        if clipboard.mode != 'RGBA':
+            clipboard = clipboard.convert('RGBA')
+        clipboard_t = clipboard.transpose(PIL.Image.FLIP_TOP_BOTTOM)
+        img_name = "image_note"
+        width, height = clipboard_t.size
+        array = np.array(clipboard_t).astype(np.float32) / 255.0
+        array = array.flatten()
+        bl_image = bpy.data.images.new(img_name, width, height, alpha=True)
+        bl_image.pixels = array.tolist()
+        bl_image.pack()
+        return bl_image
+    elif isinstance(clipboard, list) and len(clipboard) > 0:
+        # 2. 如果剪贴板是文件路径列表, 且是图片文件, 直接加载
+        file_path = clipboard[0]
+        if os.path.isfile(file_path) and file_path.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tga', '.tif', '.tiff', '.exr')):
+            img_name = os.path.basename(file_path)
+            bl_image = bpy.data.images.load(file_path)
+            bl_image.pack()
+            return bl_image
+    return None

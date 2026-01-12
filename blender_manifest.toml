@@ -5,7 +5,14 @@ name = "Node Note/节点随记"
 tagline = "为节点思路设置清晰的路标和精准的导航"
 maintainer = "無東;W_Cloud"
 type = "add-on"
-permissions = []
 tags = ["Node"]
 blender_version_min = "4.2.0"
 license = ["SPDX:GPL-3.0-or-later"]
+wheels = [
+    "./wheels/pillow-12.1.0-cp311-cp311-win_amd64.whl",
+    "./wheels/pillow-12.1.0-cp311-cp311-macosx_11_0_arm64.whl",
+    "./wheels/pillow-12.1.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl"
+]
+[permissions]
+files = "Import image from disk"
+clipboard = "Paste image from the Clipboard"
