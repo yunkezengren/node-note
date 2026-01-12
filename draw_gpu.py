@@ -553,7 +553,7 @@ def _draw_badget_badges(badge_infos: dict[int, list[BadgeInfo]], params: DrawPar
     # 绘制背景圆
     for idx in badge_infos:
         for badge in badge_infos[idx]:
-            draw_circle_batch(badge.x, badge.y, badge.radius, tuple(prefs.badge_bg_color))
+            draw_circle_batch(badge.x, badge.y, badge.radius, tuple(prefs.default_badge_color))
 
     # 绘制数字文本
     font_id = 0

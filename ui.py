@@ -146,7 +146,7 @@ def draw_ui_layout(layout: UILayout, context: Context):
         split.prop(node, "note_badge_index", text="序号")
         split = badge_box.split(factor=0.5)
         split.row().prop(prefs, "badge_font_color", text="文本色")
-        split.row().prop(prefs, "badge_bg_color", text="背景色")
+        split.row().prop(prefs, "default_badge_color", text="背景色")
 
         row_set = badge_box.row()
         row_set.operator("node.note_interactive_badge", text="交互编号", icon='BRUSH_DATA', depress=prefs.is_interactive_mode)
@@ -267,10 +267,11 @@ def draw_search_list(layout: UILayout, context: Context):
             row_img.label(text=f"图片:  {image.name if image else '无'}", icon='IMAGE_DATA')
 
             if image:
-                img_split = note_col.split(factor=0.1)
+                img_split = note_col.split(factor=0.03)
                 img_split.label(text="")
                 img_box = img_split.box()
-                img_box.template_ID_preview(node, "note_image")
+                # img_box.scale_y = 2
+                img_box.template_ID_preview(node, "note_image", open="image.open", rows=4, cols=4)
 
             row_text = note_col.column()
             if split_lines:

@@ -17,10 +17,10 @@ class NODE_OT_reset_prefs(Operator):
     def execute(self, context):
         prefs = pref()
         if self.target_section == 'SEQ':
-            for p in ["badge_radius", "badge_bg_color", "badge_font_size", "badge_font_color"]:
+            for p in ["badge_radius", "default_badge_color", "badge_font_size", "badge_font_color"]:
                 prefs.property_unset(p)
         elif self.target_section == 'TEXT':
-            for p in ["text_default_size", "text_default_color", "bg_default_color", "text_default_fit", "text_default_align"]:
+            for p in ["default_font_size", "default_text_color", "default_txt_bg_color", "text_default_fit", "default_text_pos"]:
                 prefs.property_unset(p)
             for i in range(1, 7):
                 prefs.property_unset(f"col_preset_{i}")
@@ -86,7 +86,7 @@ class NODE_OT_interactive_badge(Operator):
                         node.note_badge_index = self.current_idx
 
                         if node.note_badge_index > 0:
-                            node.note_badge_color = pref().badge_bg_color
+                            node.note_badge_color = pref().default_badge_color
 
                         self.last_node = node
 

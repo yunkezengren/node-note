@@ -44,16 +44,16 @@ def inject_defaults_if_needed(node: Node):
     prefs = pref()
     if not node.note_initialized and prefs:
         # 1. 注入文本相关默认值
-        node.note_font_size = prefs.text_default_size
-        node.note_text_color = prefs.text_default_color
-        node.note_txt_bg_color = prefs.bg_default_color
+        node.note_font_size = prefs.default_font_size
+        node.note_text_color = prefs.default_text_color
+        node.note_txt_bg_color = prefs.default_txt_bg_color
 
         # 2. 注入逻辑开关
-        node.note_text_fit_content = prefs.text_default_fit
-        node.note_txt_pos = prefs.text_default_align
+        node.note_txt_width_mode = prefs.default_txt_width_mode
+        node.note_txt_pos = prefs.default_text_pos
 
         # 3. 注入序号颜色默认值
-        node.note_badge_color = prefs.badge_bg_color
+        node.note_badge_color = prefs.default_badge_color
 
         # 标记已初始化，以后不再覆盖
         node.note_initialized = True
