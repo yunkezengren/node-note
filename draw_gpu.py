@@ -98,8 +98,8 @@ def create_texture_from_pixels(image: Image) -> GPUTexture | None:
         # TODO 优化性能
         pixel_data = array.array('f', [0.0] * width * height * 4)
         image.pixels.foreach_get(pixel_data)
-        # texture = GPUTexture((width, height), format='SRGB8_A8', data=pixel_data)  # type: ignore
-        texture = GPUTexture((width, height), format='RGBA32F', data=pixel_data)  # type: ignore
+        texture = GPUTexture((width, height), format='SRGB8_A8', data=pixel_data)  # type: ignore
+        # texture = GPUTexture((width, height), format='RGBA32F', data=pixel_data)  # type: ignore
         _manual_texture_cache[cache_key] = texture
         return texture
     except:
@@ -424,7 +424,7 @@ def _process_and_draw_text_and_image_note(node: Node, params: DrawParams, badge_
     img_draw_w = 0
     img_draw_h = 0
     texture = None
-    if img and show_img and visible_by_bg_color:
+    if img and show_img and (not pref().hide_img_by_bg or visible_by_bg_color):
         img_width_mode = getattr(node, "note_img_width_mode", 'AUTO')
         ref_width = max(node_width_px, (view_to_region_scaled(loc[0] + MinAutoWidth, loc[1])[0] - node_info.left_x))
 
@@ -449,7 +449,7 @@ def _process_and_draw_text_and_image_note(node: Node, params: DrawParams, badge_
         else:
             txt_x, txt_y = 0, 0
 
-        if img and show_img and visible_by_bg_color:
+        if img and show_img and (not pref().hide_img_by_bg or visible_by_bg_color):
             img_off = getattr(node, "note_img_offset", (0, 0))
             img_x, img_y = _calc_note_pos(node_info, img_align, img_off, img_draw_w, img_draw_h, scaled_zoom)
         else:
@@ -497,7 +497,7 @@ def _process_and_draw_text_and_image_note(node: Node, params: DrawParams, badge_
         _draw_text_note(node, text, bg_color, node_info, txt_x, txt_y, note_width, text_note_height)
 
     # 绘制图像(包含居中校正)
-    if img and show_img and visible_by_bg_color:
+    if img and show_img and (not pref().hide_img_by_bg or visible_by_bg_color):
         # 居中校正
         if (is_stacked and txt_align in {'TOP', 'BOTTOM'}) or (not is_stacked and img_align in {'TOP', 'BOTTOM'}):
             center_correction = (node_width_px-img_draw_w) / 2

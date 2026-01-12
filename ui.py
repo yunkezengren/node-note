@@ -44,15 +44,16 @@ def draw_ui_layout(layout: UILayout, context: Context, show_global=True, show_te
             # row_del.operator("node.note_clear_select_all", text="删除选中笔记", icon='TRASH')
 
             if prefs.show_all_notes:
-                body.label(text="按背景色显示文本和图片:", icon='FILTER')
+                _txt = "和图片" if prefs.hide_img_by_bg else ""
+                body.prop(prefs, "hide_img_by_bg", text=f"按文本背景色显示文本{_txt}:", toggle=True, icon='FILTER')
                 split = body.split(factor=0.1, align=True)
                 split.label(text="    ")
-                split.prop(prefs, "filter_red", text=def_labels[0], toggle=True)
-                split.prop(prefs, "filter_green", text=def_labels[1], toggle=True)
-                split.prop(prefs, "filter_blue", text=def_labels[2], toggle=True)
-                split.prop(prefs, "filter_orange", text=def_labels[3], toggle=True)
-                split.prop(prefs, "filter_purple", text=def_labels[4], toggle=True)
-                split.prop(prefs, "filter_other", text=def_labels[5], toggle=True)
+                split.prop(prefs, "show_red", text=def_labels[0], toggle=True)
+                split.prop(prefs, "show_green", text=def_labels[1], toggle=True)
+                split.prop(prefs, "show_blue", text=def_labels[2], toggle=True)
+                split.prop(prefs, "show_orange", text=def_labels[3], toggle=True)
+                split.prop(prefs, "show_purple", text=def_labels[4], toggle=True)
+                split.prop(prefs, "show_other", text="其余", toggle=True)
 
             if len(context.selected_nodes) > 1:
                 body.row().operator("node.note_copy_to_selected", text="同步活动样式到选中", icon='DUPLICATE')
@@ -95,7 +96,6 @@ def draw_ui_layout(layout: UILayout, context: Context, show_global=True, show_te
 
             row_pos = txt_box.row()
             row_pos.label(text="背景:")
-            def_labels = ["红", "绿", "蓝", "橙", "紫", "无"]
             for i in range(len(def_labels)):
                 split_color = row_pos.split(factor=0.1, align=True)
                 split_color.prop(pref(), f"col_preset_{i+1}", text="")

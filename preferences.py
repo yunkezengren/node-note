@@ -37,12 +37,13 @@ class NodeMemoAddonPreferences(AddonPreferences):
     show_list        : BoolProperty(name="显示笔记列表", default=True, update=tag_redraw)
 
     # todo 根据已有笔记颜色动态显示按钮
-    filter_red             : BoolProperty(name="过滤红", default=True, update=tag_redraw)
-    filter_green           : BoolProperty(name="过滤绿", default=True, update=tag_redraw)
-    filter_blue            : BoolProperty(name="过滤蓝", default=True, update=tag_redraw)
-    filter_orange          : BoolProperty(name="过滤橙", default=True, update=tag_redraw)
-    filter_purple          : BoolProperty(name="过滤紫", default=True, update=tag_redraw)
-    filter_other           : BoolProperty(name="过滤杂", default=True, update=tag_redraw)
+    show_red             : BoolProperty(name="显示红", default=True, description="显示红", update=tag_redraw)
+    show_green           : BoolProperty(name="显示绿", default=True, description="显示绿", update=tag_redraw)
+    show_blue            : BoolProperty(name="显示蓝", default=True, description="显示蓝", update=tag_redraw)
+    show_orange          : BoolProperty(name="显示橙", default=True, description="显示橙", update=tag_redraw)
+    show_purple          : BoolProperty(name="显示紫", default=True, description="显示紫", update=tag_redraw)
+    show_other           : BoolProperty(name="显示杂", default=True, description="显示杂", update=tag_redraw)
+    hide_img_by_bg   : BoolProperty(name="同时过滤图片", default=True, description="过滤文本时是否同时过滤对应节点的图片", update=tag_redraw)
 
     # 2. 序号设置区
     badge_rel_scale        : FloatProperty(name="序号缩放", default=1.0, min=0.1, max=20.0, update=tag_redraw)
@@ -132,6 +133,7 @@ class NodeMemoAddonPreferences(AddonPreferences):
         col.prop(self, "show_all_notes", text="默认显示所有")
         col.prop(self, "show_select_badge", text="默认显示序号")
         col.prop(self, "show_badget_lines", text="默认显示逻辑连线")
+        col.prop(self, "hide_img_by_bg", text="过滤文本时同时过滤图片")
 
         # 2. 序号设置
         box = layout.box()
@@ -170,11 +172,11 @@ class NodeMemoAddonPreferences(AddonPreferences):
         col.label(text="背景颜色预设 (颜色与文字):")
 
         grid_col = col.grid_flow(row_major=True, columns=6, align=True)
-        for i in range(1, 7):
+        for i in range(1, 6):
             grid_col.prop(self, f"col_preset_{i}", text="")
 
         grid_lbl = col.grid_flow(row_major=True, columns=6, align=True)
-        for i in range(1, 7):
+        for i in range(1, 6):
             grid_lbl.prop(self, f"label_preset_{i}", text="")
 
         # 4. 图像设置

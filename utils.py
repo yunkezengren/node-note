@@ -35,25 +35,24 @@ def view_to_region_scaled(x: float, y: float) -> int2:
     """将节点编辑器坐标转换为屏幕坐标（考虑UI缩放）"""
     return bpy.context.region.view2d.view_to_region(x * ui_scale(), y * ui_scale(), clip=False)
 
-# todo 需要改进
+def _color_equal(c1: RGBA, c2: RGBA, tol: float = 0.001) -> bool:
+    return all(abs(a - b) < tol for a, b in zip(c1, c2))
+
 def check_color_visibility(color: RGBA) -> bool:
     """检查背景颜色是否可见（用于过滤显示）"""
     prefs = pref()
-    r, g, b, a = color
-    if a < 0.05:
-        return False  # 完全透明
-    if r > 0.5 and g < 0.2 and b < 0.2:  # 红色系
-        return prefs.filter_red
-    if g > 0.4 and r < 0.3 and b < 0.3:  # 绿色系
-        return prefs.filter_green
-    if b > 0.4 and r < 0.3 and g < 0.3:  # 蓝色系
-        return prefs.filter_blue
-    if r > 0.5 and g > 0.2 and b < 0.2:  # 橙色系
-        return prefs.filter_orange
-    if r > 0.3 and g < 0.2 and b > 0.4:  # 紫色系
-        return prefs.filter_purple
+    if _color_equal(color, prefs.col_preset_1):
+        return prefs.show_red
+    if _color_equal(color, prefs.col_preset_2):
+        return prefs.show_green
+    if _color_equal(color, prefs.col_preset_3):
+        return prefs.show_blue
+    if _color_equal(color, prefs.col_preset_4):
+        return prefs.show_orange
+    if _color_equal(color, prefs.col_preset_5):
+        return prefs.show_purple
 
-    return prefs.filter_other
+    return prefs.show_other
 
 def get_node_screen_rect(node: Node) -> Rect:
     """获取节点在屏幕空间中的矩形区域"""
