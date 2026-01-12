@@ -6,8 +6,6 @@ from .utils import ui_scale, get_image_from_clipboard
 from .ui import draw_ui_layout
 from .node_properties import inject_defaults_if_needed, init_props
 
-# --- 从 __init__.py 移动的操作符 ---
-
 class NODE_OT_reset_prefs(Operator):
     """重置当前页面的设置"""
     bl_idname = "node.note_reset_prefs"
@@ -297,16 +295,24 @@ class NODE_OT_paste_image(Operator):
     bl_description = "从剪贴板粘贴图像"
     bl_options = {'UNDO'}
 
-    def invoke(self, context, event):
-        image = get_image_from_clipboard()
+    def execute(self, context):
+        active_node = context.active_node
+        if not active_node:
+            return {'CANCELLED'}
+        image, error = get_image_from_clipboard()
         if image:
-            active_node = context.active_node
+            # image.colorspace_settings.name = 'Non-Color'
+            image.use_fake_user = True
             active_node.note_image = image
             active_node.note_show_img = True
-            self.img_name = image.name
             self.report({'INFO'}, f"成功导入图片: {image.name}")
-        self.report({'WARNING'}, "无图片")
-        return {'CANCELLED'}
+            return {'FINISHED'}
+        elif error:
+            self.report({'WARNING'}, error)
+            return {'CANCELLED'}
+        else:
+            self.report({'WARNING'}, "剪贴板无图像")
+            return {'CANCELLED'}
 
 class NODE_OT_apply_preset(Operator):
     bl_idname = "node.note_apply_preset"

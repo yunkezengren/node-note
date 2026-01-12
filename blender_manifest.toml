@@ -8,6 +8,9 @@ type = "add-on"
 tags = ["Node"]
 blender_version_min = "4.2.0"
 license = ["SPDX:GPL-3.0-or-later"]
+# Optional: list of supported platforms. If omitted, the extension will be available in all operating systems.
+# Other supported platforms: "windows-arm64", "macos-x64"
+platforms = ["windows-x64", "macos-arm64", "linux-x64"]
 wheels = [
     "./wheels/pillow-12.1.0-cp311-cp311-win_amd64.whl",
     "./wheels/pillow-12.1.0-cp311-cp311-macosx_11_0_arm64.whl",
@@ -16,3 +19,12 @@ wheels = [
 [permissions]
 files = "Import image from disk"
 clipboard = "Paste image from the Clipboard"
+[build]
+paths_exclude_pattern = [
+  "__pycache__/",
+  ".*",
+  "*.zip",
+  "*.log",
+  "nul",
+  "A*.md",
+]

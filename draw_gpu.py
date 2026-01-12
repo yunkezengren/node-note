@@ -98,6 +98,7 @@ def create_texture_from_pixels(image: Image) -> GPUTexture | None:
         # TODO 优化性能
         pixel_data = array.array('f', [0.0] * width * height * 4)
         image.pixels.foreach_get(pixel_data)
+        # texture = GPUTexture((width, height), format='SRGB8_A8', data=pixel_data)  # type: ignore
         texture = GPUTexture((width, height), format='RGBA32F', data=pixel_data)  # type: ignore
         _manual_texture_cache[cache_key] = texture
         return texture
