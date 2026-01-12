@@ -63,9 +63,9 @@ def draw_ui_layout(layout: UILayout, context: Context):
 
     header, body = layout.panel("setting1", default_closed=False)
     header.label(text="", icon='FILE_TEXT')
-    header.operator("node.note_show_select_txt", text="文字笔记", icon="HIDE_OFF" if node.note_show_txt else "HIDE_ON")
-    if node.note_show_txt and node.note_text and node.note_show_img and node.note_image:
-        header.operator("node.note_swap_order", text="⇅ 交换")
+    h_split = header.row().split(factor=0.5)
+    h_split.operator("node.note_show_select_txt", text="文字笔记", icon="HIDE_OFF" if node.note_show_txt else "HIDE_ON")
+    h_split.prop(node, "note_text", text="")
     header.operator("node.note_clear_select_txt", text="", icon='TRASH')
     if body:
         body.active = node.note_show_txt
@@ -112,17 +112,22 @@ def draw_ui_layout(layout: UILayout, context: Context):
 
     header, body = layout.panel("setting2", default_closed=True)
     header.label(text="", icon='IMAGE_DATA')
-    header.operator("node.note_show_select_img", text="图片笔记", icon="HIDE_OFF" if node.note_show_img else "HIDE_ON")
+    h_split = header.row().split(factor=0.5)
+    h_split.operator("node.note_show_select_img", text="图片笔记", icon="HIDE_OFF" if node.note_show_img else "HIDE_ON")
+    h_split.operator("node.note_paste_image", text="", icon='PASTEDOWN')
+    if node.note_show_txt and node.note_text and node.note_show_img and node.note_image:
+        h_split.operator("node.note_swap_order", text="⇅")
     header.operator("node.note_clear_select_img", text="", icon='TRASH')
     if body:
         body.active = node.note_show_img
         body_split = body.split(factor=0.01)
         body_split.label(text="")
         img_box = body_split.box()
-        split = img_box.split(factor=0.75)
-        split.template_ID(node, "note_image", open="image.open")
-        split.operator("node.note_paste_image", text="粘贴", icon='PASTEDOWN')
-
+        img_split = img_box.split(factor=0.03)
+        img_split.label(text="")
+        img_preview = img_split.box()
+        # img_preview.scale_y = 2
+        img_preview.template_ID_preview(node, "note_image", open="image.open", rows=4, cols=4)
         width_row = img_box.row(align=True)
         width_row.prop(node, "note_img_width_mode", text="宽度")
         if node.note_img_width_mode == 'MANUAL':
@@ -135,7 +140,9 @@ def draw_ui_layout(layout: UILayout, context: Context):
 
     header, body = layout.panel("setting3", default_closed=True)
     header.label(text="", icon='EVENT_NDOF_BUTTON_1')
-    header.operator("node.note_show_select_badge", text="序号笔记", icon="HIDE_OFF" if node.note_show_badge else "HIDE_ON")
+    h_split = header.row().split(factor=0.5)
+    h_split.operator("node.note_show_select_badge", text="序号笔记", icon="HIDE_OFF" if node.note_show_badge else "HIDE_ON")
+    h_split.prop(node, "note_badge_index", text="序号")
     header.operator("node.note_clear_select_badge", text="", icon='TRASH')
     if body:
         body.active = node.note_show_badge
@@ -144,12 +151,10 @@ def draw_ui_layout(layout: UILayout, context: Context):
         badge_box = body_split.box()
         split = badge_box.split(factor=0.5)
         split.prop(node, "note_badge_index", text="序号")
+        split.operator("node.note_interactive_badge", text="交互编号", icon='BRUSH_DATA', depress=prefs.is_interactive_mode)
         split = badge_box.split(factor=0.5)
         split.row().prop(prefs, "badge_font_color", text="文本色")
         split.row().prop(prefs, "default_badge_color", text="背景色")
-
-        row_set = badge_box.row()
-        row_set.operator("node.note_interactive_badge", text="交互编号", icon='BRUSH_DATA', depress=prefs.is_interactive_mode)
 
         row_set = badge_box.row(align=True)
         row_set.prop(prefs, "badge_scale_mode", text="缩放")
@@ -270,8 +275,9 @@ def draw_search_list(layout: UILayout, context: Context):
                 img_split = note_col.split(factor=0.03)
                 img_split.label(text="")
                 img_box = img_split.box()
-                # img_box.scale_y = 2
-                img_box.template_ID_preview(node, "note_image", open="image.open", rows=4, cols=4)
+                img_pre = img_box.template_ID_preview(node, "note_image", open="image.open", rows=10, cols=4)
+                img_pre.cover_scale = 2
+                img_pre.popup_scale = 2
 
             row_text = note_col.column()
             if split_lines:
