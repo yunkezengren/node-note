@@ -16,6 +16,9 @@ Rect = tuple[float, float, float, float]
 
 # ==================== 工具函数 ====================
 
+def ui_scale():
+    return bpy.context.preferences.system.ui_scale
+
 def nd_abs_loc(node: Node):
     if hasattr(node, "location_absolute"):
         return node.location_absolute
@@ -30,8 +33,7 @@ def get_region_zoom(context: Context) -> float:
 
 def view_to_region_scaled(x: float, y: float) -> int2:
     """将节点编辑器坐标转换为屏幕坐标（考虑UI缩放）"""
-    ui_scale = bpy.context.preferences.system.ui_scale
-    return bpy.context.region.view2d.view_to_region(x * ui_scale, y * ui_scale, clip=False)
+    return bpy.context.region.view2d.view_to_region(x * ui_scale(), y * ui_scale(), clip=False)
 
 # todo 需要改进
 def check_color_visibility(color: RGBA) -> bool:

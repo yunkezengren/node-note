@@ -2,6 +2,7 @@ import bpy
 from bpy.types import Operator, Context, Node
 from bpy.props import StringProperty, FloatVectorProperty, BoolProperty
 from .preferences import pref
+from .utils import ui_scale
 from .node_properties import inject_defaults_if_needed, init_props
 
 # --- 从 __init__.py 移动的操作符 ---
@@ -323,31 +324,46 @@ class NODE_OT_open_image(Operator):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
-class NODE_OT_paste_image(Operator):
+class NODE_OT_paste_image(bpy.types.Operator):
     bl_idname = "node.note_paste_image"
     bl_label = "从剪贴板粘贴图像"
     bl_description = "从剪贴板粘贴图像"
     bl_options = {'UNDO'}
 
-    def execute(self, context):
+    def update_img_name(self, context):
+        img = context.active_node.note_image
+        if img and self.img_name:
+            img.name = self.img_name
+
+    img_name: StringProperty(name="图片名", update=update_img_name)  # type: ignore
+
+    def invoke(self, context, event):
         from .utils import paste_image_from_clipboard
         path = paste_image_from_clipboard()
         if path:
             img = bpy.data.images.load(path)
-            img.colorspace_settings.name, img.alpha_mode, img.use_fake_user = 'Non-Color', 'STRAIGHT', True
+            img.colorspace_settings.name = 'Non-Color'
+            img.alpha_mode = 'STRAIGHT'
+            img.use_fake_user = True
             img.pack()
-            context.active_node.note_image = img
-            context.active_node.note_show_img = True
-
-            # [注入] 图片默认对齐
-            prefs = pref()
-            if prefs:
-                context.active_node.note_img_pos = prefs.img_default_align
-
+            active_node = context.active_node
+            active_node.note_image = img
+            active_node.note_show_img = True
+            self.img_name = img.name
             self.report({'INFO'}, f"成功导入图片: {img.name}")
-            return {'FINISHED'}
+            return context.window_manager.invoke_popup(self, width=int(200*ui_scale()))
         self.report({'WARNING'}, "无图片")
         return {'CANCELLED'}
+
+    def draw(self, context):
+        layout = self.layout
+        layout.label(text="图片名(推荐重命名): ")
+        row = layout.row()
+        row.activate_init = True
+        row.prop(self, "img_name", text="", icon="IMAGE_DATA")
+
+    def execute(self, context):
+        return {'FINISHED'}
 
 class NODE_OT_apply_preset(Operator):
     bl_idname = "node.note_apply_preset"
@@ -419,13 +435,13 @@ class NODE_OT_jump_to_note(Operator):
     bl_idname = "node.note_jump_to_note"
     bl_label = "跳转到注记"
     bl_description = "聚焦视图到该节点"
-    
+
     node_name: bpy.props.StringProperty()
 
     def execute(self, context):
         tree = context.space_data.edit_tree
         if not tree: return {'CANCELLED'}
-        
+
         target_node = tree.nodes.get(self.node_name)
         if target_node:
             for n in tree.nodes:
@@ -434,7 +450,7 @@ class NODE_OT_jump_to_note(Operator):
             tree.nodes.active = target_node
             bpy.ops.node.view_selected()
             return {'FINISHED'}
-        
+
         self.report({'WARNING'}, f"节点 {self.node_name} 未找到")
         return {'CANCELLED'}
 
@@ -483,7 +499,7 @@ classes = [
     NODE_OT_note_swap_order,
     NODE_OT_interactive_badge,
     NODE_OT_reset_prefs,
-    
+
     # 从 edit_ops.py 移动的
     NODE_OT_reset_offset,
     NODE_OT_reset_img_offset,
@@ -494,7 +510,7 @@ classes = [
     NODE_OT_copy_node_label,
     NODE_OT_open_image,
     NODE_OT_note_quick_edit,
-    
+
     # 从 search_ops.py 移动的
     NODE_OT_clear_search,
     NODE_OT_jump_to_note,
