@@ -47,6 +47,7 @@ class DrawParams:
 @dataclass
 class NodeInfo:
     """屏幕空间节点位置信息"""
+    node: Node
     top_y: float
     bottom_y: float
     left_x: float
@@ -60,6 +61,7 @@ class BadgeInfo:
     x: float
     y: float
     radius: float
+    note_badge_color: RGBA
 
 def get_shader(name: str) -> GPUShader | None:
     if name not in _shader_cache:
@@ -343,12 +345,13 @@ def _calculate_node_position(node: Node, params: DrawParams) -> NodeInfo:
     right_x, _ = view_to_region_scaled(loc.x + node.width + 1.0, loc.y)
 
     return NodeInfo(
-        top_y=top_y,
-        bottom_y=bottom_y,
-        left_x=left_x,
-        right_x=right_x,
-        loc=loc,
-        scaled_zoom=scaled_zoom,
+        node,
+        top_y,
+        bottom_y,
+        left_x,
+        right_x,
+        loc,
+        scaled_zoom,
     )
 
 def _process_and_draw_text_and_image_note(node: Node, params: DrawParams, badge_infos: dict[int, list[BadgeInfo]]) -> None:
@@ -516,7 +519,7 @@ def _collect_badget_coords(badge_idx: int, node_info: NodeInfo, badge_infos: dic
 
     if badge_idx not in badge_infos:
         badge_infos[badge_idx] = []
-    badge_infos[badge_idx].append(BadgeInfo(x=badge_x, y=badge_y, radius=badge_radius))
+    badge_infos[badge_idx].append(BadgeInfo(badge_x, badge_y, badge_radius, node_info.node.note_badge_color))
 
 def _draw_badget_lines(badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
     """绘制序号连线"""
@@ -554,7 +557,7 @@ def _draw_badget_badges(badge_infos: dict[int, list[BadgeInfo]], params: DrawPar
     # 绘制背景圆
     for idx in badge_infos:
         for badge in badge_infos[idx]:
-            draw_circle_batch(badge.x, badge.y, badge.radius, tuple(prefs.default_badge_color))
+            draw_circle_batch(badge.x, badge.y, badge.radius, badge.note_badge_color)
 
     # 绘制数字文本
     font_id = 0

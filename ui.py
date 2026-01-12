@@ -144,9 +144,10 @@ def draw_ui_layout(layout: UILayout, context: Context, show_global=True, show_te
     if show_badge:
         header, body = layout.panel("setting3", default_closed=True)
         header.label(text="", icon='EVENT_NDOF_BUTTON_1')
-        h_split = header.row().split(factor=0.5)
+        h_split = header.row().split(factor=0.5, align=True)
         h_split.operator("node.note_show_select_badge", text="序号笔记", icon="HIDE_OFF" if node.note_show_badge else "HIDE_ON")
-        h_split.prop(node, "note_badge_index", text="序号")
+        h_split.prop(node, "note_badge_index", text="")
+        h_split.operator("node.note_interactive_badge", text="", icon='BRUSH_DATA', depress=prefs.is_interactive_mode)
         header.operator("node.note_clear_select_badge", text="", icon='TRASH')
         if body:
             body.active = node.note_show_badge
@@ -155,10 +156,10 @@ def draw_ui_layout(layout: UILayout, context: Context, show_global=True, show_te
             badge_box = body_split.box()
             split = badge_box.split(factor=0.5)
             split.prop(node, "note_badge_index", text="序号")
-            split.operator("node.note_interactive_badge", text="交互编号", icon='BRUSH_DATA', depress=prefs.is_interactive_mode)
+            split.row().prop(node, "note_badge_color", text="背景色")
             split = badge_box.split(factor=0.5)
+            split.label(text="序号全局设置:")
             split.row().prop(prefs, "badge_font_color", text="文本色")
-            split.row().prop(prefs, "default_badge_color", text="背景色")
 
             row_set = badge_box.row(align=True)
             row_set.prop(prefs, "badge_scale_mode", text="缩放")

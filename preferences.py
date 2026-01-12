@@ -65,6 +65,7 @@ class NodeMemoAddonPreferences(AddonPreferences):
                                               default=(1.0, 1.0, 1.0, 1.0),
                                               min=0,
                                               max=1,
+                                              description="所有序号的数字颜色",
                                               update=tag_redraw)
     badge_line_color       : FloatVectorProperty(name="连线颜色",
                                               subtype='COLOR',
