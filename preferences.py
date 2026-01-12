@@ -2,6 +2,8 @@ import bpy
 from bpy.types import AddonPreferences
 from bpy.props import BoolProperty, StringProperty, FloatProperty, FloatVectorProperty, IntProperty, EnumProperty
 
+align_items = [('TOP', "顶部", ""), ('BOTTOM', "底部", ""), ('LEFT', "左侧", ""), ('RIGHT', "右侧", "")]
+
 def tag_redraw(self, context: bpy.types.Context):
     for window in context.window_manager.windows:
         for area in window.screen.areas:
@@ -19,7 +21,7 @@ def text_split_lines(text: str) -> list[str]:
 class NodeMemoAddonPreferences(AddonPreferences):
     bl_idname = __package__
 
-# 1. 全局设置
+    # 1. 全局设置
     show_all_notes         : BoolProperty(name="显示所有", default=True, update=tag_redraw)
     show_badget_lines      : BoolProperty(name="显示逻辑连线", default=True, update=tag_redraw, description="显示节点之间的序号连线")
     is_interactive_mode    : BoolProperty(name="交互模式", default=False, update=tag_redraw, description="点击节点即可编号，右键或ESC退出")
@@ -80,9 +82,7 @@ class NodeMemoAddonPreferences(AddonPreferences):
 
     txt_width_items_1 = [('AUTO', "跟随节点", "宽度自动跟随节点宽度"), ('FIT', "适应内容", "宽度自动适应文本内容"), ('MANUAL', "手动设置", "手动设置宽度")]
     default_txt_width_mode : EnumProperty(name="宽度模式", items=txt_width_items_1, default=0, update=tag_redraw)
-    default_text_pos       : EnumProperty(name="默认对齐",
-                                       items=[('TOP', "顶部", ""), ('BOTTOM', "底部", ""), ('LEFT', "左侧", ""), ('RIGHT', "右侧", "")],
-                                       default='TOP')
+    default_text_pos       : EnumProperty(name="默认对齐", items=align_items, default='TOP')
 
     # 预设颜色
     col_preset_1           : FloatVectorProperty(name="预设红", subtype='COLOR', size=4, default=(0.6, 0.1, 0.1, 0.9), min=0, max=1)
@@ -101,19 +101,7 @@ class NodeMemoAddonPreferences(AddonPreferences):
     label_preset_6         : StringProperty(name="标签6", default="无", maxlen=8)
 
     # 4. 图像设置区
-    img_default_align      : EnumProperty(name="默认对齐",
-                                       items=[('TOP', "顶部", ""), ('BOTTOM', "底部", ""), ('LEFT', "左侧", ""), ('RIGHT', "右侧", "")],
-                                       default='TOP')
-    img_max_res            : EnumProperty(name="纹理分辨率限制",
-                                       description="限制显示的纹理最大尺寸以提升性能",
-                                       items=[
-                                            ('0', "原图 (最清晰)", ""),
-                                            ('2048', "2048 px", ""),
-                                            ('1024', "1024 px (推荐)", ""),
-                                            ('512', "512 px (极速)", ""),
-                                        ],
-                                       default='1024',
-                                       update=tag_redraw)
+    img_default_align      : EnumProperty(name="默认对齐", items=align_items, default='TOP')
 
     def draw(self, context):
         layout = self.layout
@@ -197,8 +185,6 @@ class NodeMemoAddonPreferences(AddonPreferences):
 
         col = box.column(align=True)
         col.prop(self, "img_default_align", text="默认对齐")
-        col.prop(self, "img_max_res")
-        col.label(text="* 分辨率限制将在下次加载图片或重启时生效", icon='INFO')
 
 def pref() -> NodeMemoAddonPreferences:
     assert __package__ is not None

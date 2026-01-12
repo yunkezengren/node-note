@@ -5,7 +5,7 @@ import tempfile
 import time
 from .preferences import pref
 import bpy
-from bpy.types import Context, Scene, Node
+from bpy.types import Context, Node
 
 # ==================== 类型别名 ====================
 float2 = tuple[float, float]

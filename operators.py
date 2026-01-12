@@ -28,7 +28,7 @@ class NODE_OT_reset_prefs(Operator):
                 prefs.property_unset(f"col_preset_{i}")
                 prefs.property_unset(f"label_preset_{i}")
         elif self.target_section == 'IMG':
-            for p in ["img_max_res", "img_default_align"]:
+            for p in ["img_default_align"]:
                 prefs.property_unset(p)
         return {'FINISHED'}
 

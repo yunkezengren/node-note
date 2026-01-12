@@ -1,7 +1,7 @@
 import bpy
 from bpy.types import Node
 from bpy.props import StringProperty, IntProperty, FloatVectorProperty, BoolProperty, PointerProperty, FloatProperty, EnumProperty, IntVectorProperty
-from .preferences import tag_redraw
+from .preferences import tag_redraw, align_items
 
 # --- 属性更新回调 ---
 
@@ -106,7 +106,6 @@ def init_props():
     Node.note_show_txt = BoolProperty(name="显示文本", default=True, update=tag_redraw)
     Node.note_show_img = BoolProperty(name="显示图片", default=True, update=tag_redraw)
     Node.note_show_badge = BoolProperty(name="显示序号", default=True, update=tag_redraw)
-    align_items = [('TOP', "顶部", ""), ('BOTTOM', "底部", ""), ('LEFT', "左侧", ""), ('RIGHT', "右侧", "")]
     Node.note_txt_pos = EnumProperty(name="对齐", items=align_items, default='TOP', update=tag_redraw, description="文本位置")
     Node.note_txt_offset = IntVectorProperty(name="文本偏移", size=2, default=(0, 0), update=tag_redraw, subtype='XYZ', description="文本偏移")
     Node.note_img_pos = EnumProperty(name="图对齐", items=align_items, default='TOP', update=tag_redraw, description="图像位置")
