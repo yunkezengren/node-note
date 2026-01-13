@@ -18,12 +18,12 @@ class NodeNoteAddonPreferences(AddonPreferences):
 
     # 1. 全局设置
     cursor_warp_x          : IntProperty(default=0, min=1, max=500, description="快捷键唤出面板时鼠标偏移")
-    show_all_notes         : BoolProperty(name="显示所有", default=True, update=tag_redraw)
-    show_badge_lines       : BoolProperty(name="显示逻辑连线", default=True, update=tag_redraw, description="显示节点之间的序号连线")
-    is_interactive_mode    : BoolProperty(name="交互模式", default=False, update=tag_redraw, description="点击节点即可编号，右键或ESC退出")
-    sort_by_badge          : BoolProperty(name="按序号排序", default=True, update=tag_redraw, description="勾选后，有序号的节点将优先显示在列表顶部")
+    show_all_notes         : BoolProperty(name="显示所有", default=True)
+    show_badge_lines       : BoolProperty(name="显示逻辑连线", default=True, description="显示节点之间的序号连线")
+    is_interactive_mode    : BoolProperty(name="交互模式", default=False, description="点击节点即可编号，右键或ESC退出")
+    sort_by_badge          : BoolProperty(name="按序号排序", default=True, description="勾选后，有序号的节点将优先显示在列表顶部")
     # todo 实现这个
-    use_occlusion          : BoolProperty(name="自动遮挡", default=False, update=tag_redraw)
+    use_occlusion          : BoolProperty(name="自动遮挡", default=False)
     tag_mode_prepend       : BoolProperty(name="前缀模式", default=True, description="特殊字符添加到已有文本前")
     navigator_search       : StringProperty(name="搜索", default="")
     line_separator         : StringProperty(name="换行符", default=";|\\", description="文本中用于换行的分隔符，支持多个（用 | 分隔），如 : ;|\\ ")
@@ -33,23 +33,23 @@ class NodeNoteAddonPreferences(AddonPreferences):
     default_text_color     : FloatVectorProperty(name="默认字色", subtype='COLOR', size=4, default=(1.0, 1.0, 1.0, 1.0), min=0, max=1)
     default_txt_bg_color   : FloatVectorProperty(name="默认背景色", subtype='COLOR', size=4, default=(0.2, 0.3, 0.5, 0.9), min=0, max=1)
 
-    default_txt_width_mode : EnumProperty(name="宽度模式", items=txt_width_items, default=0, update=tag_redraw)
+    default_txt_width_mode : EnumProperty(name="宽度模式", items=txt_width_items, default=0)
     default_txt_bg_width   : IntProperty(name="默认文本背景宽度", default=200, min=50, max=2000)
     default_txt_pos       : EnumProperty(name="默认对齐", items=align_items, default='TOP')
 
     # 3. 图像设置区
-    default_img_width_mode : EnumProperty(name="宽度模式", items=img_width_items, default=0, update=tag_redraw)
+    default_img_width_mode : EnumProperty(name="宽度模式", items=img_width_items, default=0)
     default_img_width      : IntProperty(name="默认图像宽度", default=140, min=10, max=2000)
     default_img_pos      : EnumProperty(name="默认对齐", items=align_items, default='TOP')
 
     # 4. 序号设置区
-    default_badge_color    : FloatVectorProperty(name="圆背景色", subtype='COLOR', size=4, default=(0.8, 0.1, 0.1, 1.0), min=0, max=1, update=tag_redraw)
-    badge_scale_mode       : EnumProperty(name="缩放模式", items=badge_width_items, default='ABSOLUTE', update=tag_redraw)
-    badge_rel_scale        : FloatProperty(name="序号缩放", default=1.0, min=0.1, max=20.0, update=tag_redraw)
-    badge_abs_scale        : FloatProperty(name="屏幕空间缩放", default=1.0, min=0.1, max=10.0, update=tag_redraw)
-    badge_font_color       : FloatVectorProperty(name="数字颜色", subtype='COLOR', size=4, default=(1.0, 1.0, 1.0, 1.0), min=0, max=1, description="所有序号的数字颜色", update=tag_redraw)
-    badge_line_color       : FloatVectorProperty(name="连线颜色", subtype='COLOR', size=4, default=(1.0, 0.8, 0.2, 0.8), min=0, max=1, update=tag_redraw)
-    badge_line_thickness   : IntProperty(name="连线宽度", default=4, min=1, max=40, update=tag_redraw)
+    default_badge_color    : FloatVectorProperty(name="圆背景色", subtype='COLOR', size=4, default=(0.8, 0.1, 0.1, 1.0), min=0, max=1)
+    badge_scale_mode       : EnumProperty(name="缩放模式", items=badge_width_items, default='ABSOLUTE')
+    badge_rel_scale        : FloatProperty(name="序号缩放", default=1.0, min=0.1, max=20.0)
+    badge_abs_scale        : FloatProperty(name="屏幕空间缩放", default=1.0, min=0.1, max=10.0)
+    badge_font_color       : FloatVectorProperty(name="数字颜色", subtype='COLOR', size=4, default=(1.0, 1.0, 1.0, 1.0), min=0, max=1, description="所有序号的数字颜色")
+    badge_line_color       : FloatVectorProperty(name="连线颜色", subtype='COLOR', size=4, default=(1.0, 0.8, 0.2, 0.8), min=0, max=1)
+    badge_line_thickness   : IntProperty(name="连线宽度", default=4, min=1, max=40)
 
     # 预设颜色
     col_preset_1           : FloatVectorProperty(name="预设红", subtype='COLOR', size=4, default=(0.6, 0.1, 0.1, 0.9), min=0, max=1)
@@ -67,19 +67,19 @@ class NodeNoteAddonPreferences(AddonPreferences):
     label_preset_5         : StringProperty(name="标签5", default="紫")
     label_preset_6         : StringProperty(name="标签6", default="无")
 
-    show_global      : BoolProperty(name="显示全局设置", default=True, update=tag_redraw)
-    show_text        : BoolProperty(name="显示文字笔记", default=True, update=tag_redraw)
-    show_image       : BoolProperty(name="显示图片笔记", default=True, update=tag_redraw)
-    show_badge       : BoolProperty(name="显示序号笔记", default=True, update=tag_redraw)
-    show_list        : BoolProperty(name="显示笔记列表", default=True, update=tag_redraw)
+    show_global      : BoolProperty(name="显示全局设置", default=True)
+    show_text        : BoolProperty(name="显示文字笔记", default=True)
+    show_image       : BoolProperty(name="显示图片笔记", default=True)
+    show_badge       : BoolProperty(name="显示序号笔记", default=True)
+    show_list        : BoolProperty(name="显示笔记列表", default=True)
 
-    show_red             : BoolProperty(name="显示红", default=True, description="显示红", update=tag_redraw)
-    show_green           : BoolProperty(name="显示绿", default=True, description="显示绿", update=tag_redraw)
-    show_blue            : BoolProperty(name="显示蓝", default=True, description="显示蓝", update=tag_redraw)
-    show_orange          : BoolProperty(name="显示橙", default=True, description="显示橙", update=tag_redraw)
-    show_purple          : BoolProperty(name="显示紫", default=True, description="显示紫", update=tag_redraw)
-    show_other           : BoolProperty(name="显示杂", default=True, description="显示杂", update=tag_redraw)
-    hide_img_by_bg       : BoolProperty(name="同时过滤图片", default=True, description="过滤文本时是否同时过滤对应节点的图片", update=tag_redraw)
+    show_red             : BoolProperty(name="显示红", default=True, description="显示红")
+    show_green           : BoolProperty(name="显示绿", default=True, description="显示绿")
+    show_blue            : BoolProperty(name="显示蓝", default=True, description="显示蓝")
+    show_orange          : BoolProperty(name="显示橙", default=True, description="显示橙")
+    show_purple          : BoolProperty(name="显示紫", default=True, description="显示紫")
+    show_other           : BoolProperty(name="显示杂", default=True, description="显示杂")
+    hide_img_by_bg       : BoolProperty(name="同时过滤图片", default=True, description="过滤文本时是否同时过滤对应节点的图片")
 
 
     def draw(self, context):
