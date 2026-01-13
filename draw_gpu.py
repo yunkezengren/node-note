@@ -379,24 +379,14 @@ def draw_texture_batch(texture: GPUTexture | None, x: float, y: float, width: fl
     batch.draw(shader)
     gpu.state.blend_set('NONE')
 
-def draw_missing_placeholder(x: float, y: float, width: float, height: float) -> None:
-    shader = get_shader('UNIFORM_COLOR')
-    if not shader: return
-    vertices = ((x, y), (x + width, y), (x + width, y + height), (x, y + height))
-    batch_box = batch_for_shader(shader, 'LINE_LOOP', {"pos": vertices})
-    shader.bind()
-    shader.uniform_float("color", (1.0, 0.0, 0.0, 1.0))
-    gpu.state.blend_set('ALPHA')
-    batch_box.draw(shader)
-    vertices_x = ((x, y), (x + width, y + height), (x, y + height), (x + width, y))
-    batch_x = batch_for_shader(shader, 'LINES', {"pos": vertices_x})
-    batch_x.draw(shader)
+def draw_image_error_placeholder(x: float, y: float, width: float, height: float) -> None:
+    draw_rounded_rect_batch(x, y, max(width, 70), max(height, 70), (1, 0, 0, 1))
 
 # region 核心绘制函数
 
 def _draw_text_note(node: Node, text, bg_color: RGBA, node_info: NodeInfo, txt_x: float, txt_y: float, note_width: float,
                     text_note_height: float) -> None:
-    """绘制文本笔记(文本+背景)"""
+    """绘制 文本+背景"""
     scaled_zoom = node_info.scaled_zoom
     pad = PaddingX * scaled_zoom
     # 计算文本尺寸
@@ -419,12 +409,10 @@ def _draw_text_note(node: Node, text, bg_color: RGBA, node_info: NodeInfo, txt_x
         blf.draw(font_id, line)
 
 def _draw_image_note(texture: GPUTexture | None, img_x: float, img_y: float, img_draw_w: float, img_draw_h: float) -> None:
-    """绘制图像笔记"""
-    # 绘制
     if texture:
         draw_texture_batch(texture, img_x, img_y, img_draw_w, img_draw_h)
     else:
-        draw_missing_placeholder(img_x, img_y, img_draw_w, img_draw_h)
+        draw_image_error_placeholder(img_x, img_y, img_draw_w, img_draw_h)
 
 def _collect_badge_coords(badge_idx: int, node_info: NodeInfo, badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
     """收集序号坐标"""
