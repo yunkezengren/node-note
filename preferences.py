@@ -61,21 +61,6 @@ class NodeNoteAddonPreferences(AddonPreferences):
     badge_line_color       : FloatVectorProperty(name="连线颜色", subtype='COLOR', size=4, default=(1.0, 0.8, 0.2, 0.8), min=0, max=1, update=tag_redraw)
     badge_line_thickness   : IntProperty(name="连线宽度", default=4, min=1, max=40, update=tag_redraw)
 
-
-    show_global      : BoolProperty(name="显示全局设置", default=True, update=tag_redraw)
-    show_text        : BoolProperty(name="显示文字笔记", default=True, update=tag_redraw)
-    show_image       : BoolProperty(name="显示图片笔记", default=True, update=tag_redraw)
-    show_badge       : BoolProperty(name="显示序号笔记", default=True, update=tag_redraw)
-    show_list        : BoolProperty(name="显示笔记列表", default=True, update=tag_redraw)
-
-    show_red             : BoolProperty(name="显示红", default=True, description="显示红", update=tag_redraw)
-    show_green           : BoolProperty(name="显示绿", default=True, description="显示绿", update=tag_redraw)
-    show_blue            : BoolProperty(name="显示蓝", default=True, description="显示蓝", update=tag_redraw)
-    show_orange          : BoolProperty(name="显示橙", default=True, description="显示橙", update=tag_redraw)
-    show_purple          : BoolProperty(name="显示紫", default=True, description="显示紫", update=tag_redraw)
-    show_other           : BoolProperty(name="显示杂", default=True, description="显示杂", update=tag_redraw)
-    hide_img_by_bg       : BoolProperty(name="同时过滤图片", default=True, description="过滤文本时是否同时过滤对应节点的图片", update=tag_redraw)
-
     # 预设颜色
     col_preset_1           : FloatVectorProperty(name="预设红", subtype='COLOR', size=4, default=(0.6, 0.1, 0.1, 0.9), min=0, max=1)
     col_preset_2           : FloatVectorProperty(name="预设绿", subtype='COLOR', size=4, default=(0.2, 0.5, 0.2, 0.9), min=0, max=1)
@@ -91,6 +76,21 @@ class NodeNoteAddonPreferences(AddonPreferences):
     label_preset_4         : StringProperty(name="标签4", default="橙")
     label_preset_5         : StringProperty(name="标签5", default="紫")
     label_preset_6         : StringProperty(name="标签6", default="无")
+
+    show_global      : BoolProperty(name="显示全局设置", default=True, update=tag_redraw)
+    show_text        : BoolProperty(name="显示文字笔记", default=True, update=tag_redraw)
+    show_image       : BoolProperty(name="显示图片笔记", default=True, update=tag_redraw)
+    show_badge       : BoolProperty(name="显示序号笔记", default=True, update=tag_redraw)
+    show_list        : BoolProperty(name="显示笔记列表", default=True, update=tag_redraw)
+
+    show_red             : BoolProperty(name="显示红", default=True, description="显示红", update=tag_redraw)
+    show_green           : BoolProperty(name="显示绿", default=True, description="显示绿", update=tag_redraw)
+    show_blue            : BoolProperty(name="显示蓝", default=True, description="显示蓝", update=tag_redraw)
+    show_orange          : BoolProperty(name="显示橙", default=True, description="显示橙", update=tag_redraw)
+    show_purple          : BoolProperty(name="显示紫", default=True, description="显示紫", update=tag_redraw)
+    show_other           : BoolProperty(name="显示杂", default=True, description="显示杂", update=tag_redraw)
+    hide_img_by_bg       : BoolProperty(name="同时过滤图片", default=True, description="过滤文本时是否同时过滤对应节点的图片", update=tag_redraw)
+
 
     def draw(self, context):
         layout = self.layout
@@ -119,17 +119,15 @@ class NodeNoteAddonPreferences(AddonPreferences):
 
         # ============================================================================================
         txt_box = layout.box()
-        row = txt_box.row()
-        row.label(text="文本笔记默认设置", icon='FILE_TEXT')
-        row.operator("node.note_reset_prefs", text="", icon='LOOP_BACK').target_section  = 'TEXT'
+        txt_box.label(text="文本笔记默认设置", icon='FILE_TEXT')
 
         split_txt = txt_box.split(factor=0.5)
-        split_txt.prop(self, "note_font_size", text="字号")
+        split_txt.prop(self, "default_font_size", text="字号")
         split_txt.prop(pref(), "line_separator", text="换行符")
 
         split_color = txt_box.split(factor=0.5)
-        split_color.row().prop(self, "note_text_color", text="文本色")
-        split_color.row().prop(self, "note_txt_bg_color", text="背景色")
+        split_color.row().prop(self, "default_text_color", text="文本色")
+        split_color.row().prop(self, "default_txt_bg_color", text="背景色")
 
         row = txt_box.row()
         row.prop(self, "default_txt_width_mode", text="宽度")
@@ -152,9 +150,7 @@ class NodeNoteAddonPreferences(AddonPreferences):
 
         # ============================================================================================
         box = layout.box()
-        row = box.row()
-        row.label(text="图像笔记默认设置", icon='IMAGE_DATA')
-        row.operator("node.note_reset_prefs", text="", icon='LOOP_BACK').target_section = 'IMG'
+        box.label(text="图像笔记默认设置", icon='IMAGE_DATA')
         
         col = box.column()
         row = col.row()
@@ -166,9 +162,7 @@ class NodeNoteAddonPreferences(AddonPreferences):
 
         # ============================================================================================
         badge_box = layout.box()
-        row = badge_box.row()
-        row.label(text="序号笔记默认设置", icon='EVENT_NDOF_BUTTON_1')
-        row.operator("node.note_reset_prefs", text="", icon='LOOP_BACK').target_section = 'SEQ'
+        badge_box.label(text="序号笔记默认设置", icon='EVENT_NDOF_BUTTON_1')
 
         split = badge_box.split(factor=0.5)
         split.row().prop(self, "default_badge_color", text="背景色")
@@ -185,7 +179,6 @@ class NodeNoteAddonPreferences(AddonPreferences):
         row_set.prop(self, "show_badge_lines", text="显示连线", icon='EMPTY_ARROWS')
         row_set.row().prop(self, "badge_line_color", text="颜色")
         row_set.prop(self, "badge_line_thickness", text="线宽")
-        
 
 def pref() -> NodeNoteAddonPreferences:
     assert __package__ is not None

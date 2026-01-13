@@ -14,12 +14,11 @@ classes = [
 ]
 
 def register():
-    node_properties.init_props()
-    
     for cls in classes:
         bpy.utils.register_class(cls)
     operators.register()
     draw_gpu.register_draw_handler()
+    node_properties.init_props()
     
     kc = bpy.context.window_manager.keyconfigs.addon
     if kc:
@@ -42,5 +41,5 @@ def unregister():
     operators.unregister()
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
-
     node_properties.clear_props()
+

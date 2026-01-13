@@ -23,28 +23,21 @@ def update_note_image(self, context: Context):
     tag_redraw(self, context)
 
 # --- 核心逻辑注入 ---
-def inject_defaults_if_needed(node: Node):
-    """根据三种笔记是否有内容来决定是否注入默认值"""
+def set_defaults(node: Node):
+    """根据三种笔记是否有内容来决定是否设置默认值"""
     prefs = pref()
-    if not prefs:
-        return
-
-    has_text = bool(node.note_text and node.note_text.strip())
-    has_image = bool(node.note_image)
-    has_badge = bool(node.note_badge_index > 0)
-
-    if not has_text:
+    if len(node.note_text) == 0:
         node.note_font_size = prefs.default_font_size
         node.note_text_color = prefs.default_text_color
         node.note_txt_bg_color = prefs.default_txt_bg_color
         node.note_txt_width_mode = prefs.default_txt_width_mode
         node.note_txt_bg_width = prefs.default_txt_bg_width
         node.note_txt_pos = prefs.default_text_pos
-    if not has_image:
+    if node.note_image:
         node.note_img_width_mode = prefs.default_img_width_mode
         node.note_img_width = prefs.default_img_width
         node.note_img_pos = prefs.default_img_pos
-    if not has_badge:
+    if node.note_badge_index == 0:
         node.note_badge_color = prefs.default_badge_color
 
 def init_props():
@@ -54,17 +47,19 @@ def init_props():
     Node.note_swap_order     = BoolProperty(default=False, description="交换图片与文字的顺序")
     Node.note_text           = StringProperty(default="", options={'TEXTEDIT_UPDATE'})
     Node.note_image          = PointerProperty(type=bpy.types.Image, update=update_note_image)  # type: ignore
+    Node.note_badge_index    = IntProperty(default=0, min=0, description="徽章序号 (0为不显示)")
+    
     Node.note_text_color     = FloatVectorProperty(subtype='COLOR', size=4, default=(1.0, 1.0, 1.0, 1.0), min=0.0, max=1.0)
     Node.note_txt_bg_color   = FloatVectorProperty(subtype='COLOR', size=4, default=(0.2, 0.3, 0.5, 0.9), min=0.0, max=1.0)
     Node.note_badge_color    = FloatVectorProperty(subtype='COLOR', size=4, default=(0.8, 0.1, 0.1, 1.0), min=0.0, max=1.0)
     Node.note_font_size      = IntProperty(default=10, min=4, max=500)
     Node.note_txt_bg_width   = IntProperty(default=200, min=1, max=2000)
     Node.note_img_width      = IntProperty(default=140, min=10, max=2000)
-    Node.note_badge_index    = IntProperty(default=0, min=0, description="徽章序号 (0为不显示)")
     Node.note_txt_width_mode = EnumProperty(items=get_txt_width_items, default=0)
     Node.note_img_width_mode = EnumProperty(items=get_img_width_items, default=0)
     Node.note_txt_pos        = EnumProperty(items=align_items, default='TOP', description="文本位置")
     Node.note_img_pos        = EnumProperty(items=align_items, default='TOP', description="图像位置")
+    
     Node.note_txt_offset     = IntVectorProperty(size=2, default=(0, 0), subtype='XYZ', description="文本偏移")
     Node.note_img_offset     = IntVectorProperty(size=2, default=(0, 0), subtype='XYZ', description="图像偏移")
 

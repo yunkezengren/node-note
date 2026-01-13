@@ -5,30 +5,6 @@ from .preferences import pref
 from .utils import get_image_from_clipboard
 from .ui import draw_panel_for_shortcut
 
-class NODE_OT_note_reset_prefs(Operator):
-    """重置当前页面的设置"""
-    bl_idname = "node.note_reset_prefs"
-    bl_label = "重置为默认"
-    bl_options = {'INTERNAL'}
-
-    target_section: StringProperty()
-
-    def execute(self, context):
-        prefs = pref()
-        if self.target_section == 'SEQ':
-            for p in ["badge_radius", "default_badge_color", "badge_font_size", "badge_font_color"]:
-                prefs.property_unset(p)
-        elif self.target_section == 'TEXT':
-            for p in ["default_font_size", "default_text_color", "default_txt_bg_color", "text_default_fit", "default_text_pos"]:
-                prefs.property_unset(p)
-            for i in range(1, 7):
-                prefs.property_unset(f"col_preset_{i}")
-                prefs.property_unset(f"label_preset_{i}")
-        elif self.target_section == 'IMG':
-            for p in ["default_img_pos"]:
-                prefs.property_unset(p)
-        return {'FINISHED'}
-
 class NODE_OT_note_note_swap_order(Operator):
     bl_idname = "node.note_swap_order"
     bl_label = "交换图文位置"
@@ -423,7 +399,6 @@ classes = [
     NODE_OT_note_delete_all_notes,
     NODE_OT_note_note_swap_order,
     NODE_OT_note_interactive_badge,
-    NODE_OT_note_reset_prefs,
     NODE_OT_note_reset_offset,
     NODE_OT_note_reset_img_offset,
     NODE_OT_note_paste_image,
