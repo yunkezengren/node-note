@@ -20,7 +20,7 @@ from .utils import (
     get_node_screen_rect,
 )
 
-# ==================== 常量 ====================
+# region 常量
 PaddingX = 2
 MarginBottom = 2
 MinAutoWidth = 101
@@ -32,7 +32,8 @@ handler = None
 _shader_cache: dict[str, GPUShader] = {}
 _manual_texture_cache: dict[str, GPUTexture] = {}
 
-# ==================== 数据类 ====================
+# region 数据类
+
 @dataclass
 class DrawParams:
     """绘制参数"""
@@ -61,6 +62,8 @@ class BadgeInfo:
     pos: float2
     note_badge_color: RGBA
 
+# region 基础工具函数
+
 def get_shader(name: str) -> GPUShader | None:
     if name not in _shader_cache:
         try:
@@ -73,6 +76,44 @@ def get_shader(name: str) -> GPUShader | None:
                     pass
             return None
     return _shader_cache.get(name)
+
+def get_image_shader() -> GPUShader:
+    shader_name = "NODENOTE_IMAGE_SHADER"
+    if shader_name in _shader_cache:
+        return _shader_cache[shader_name]
+
+    # 参考: references_overlays\references_overlays.py
+    vert_out = gpu.types.GPUStageInterfaceInfo("node_note_interface") # type: ignore
+    vert_out.smooth('VEC2', "uv")
+
+    shader_info = gpu.types.GPUShaderCreateInfo()
+    shader_info.sampler(0, 'FLOAT_2D', "image")
+    shader_info.vertex_in(0, 'VEC2', "pos")
+    shader_info.vertex_in(1, 'VEC2', "texCoord")
+    shader_info.vertex_out(vert_out)
+
+    shader_info.push_constant('MAT4', "ModelViewProjectionMatrix")
+    shader_info.fragment_out(0, 'VEC4', "fragColor")
+
+    shader_info.vertex_source(
+        "void main()"
+        "{"
+        "   uv = texCoord;"
+        "   gl_Position = ModelViewProjectionMatrix * vec4(pos, 0.0, 1.0);"
+        "}"
+    )
+
+    shader_info.fragment_source(
+        "void main()"
+        "{"
+        "  vec4 color = texture(image, uv);"
+        "  fragColor = vec4(color.rgb, color.a);"
+        "}"
+    )
+
+    shader = gpu.shader.create_from_info(shader_info)
+    _shader_cache[shader_name] = shader
+    return shader
 
 def get_gpu_texture(image: Image) -> GPUTexture | None:
     if not image: return None
@@ -104,6 +145,121 @@ def create_texture_from_pixels(image: Image) -> GPUTexture | None:
         return texture
     except:
         return None
+
+def _wrap_text_pure(font_id: int, text: str, max_width: float):
+    lines: list[str] = []
+    for para in text_split_lines(text):
+        curr_line, curr_w = "", 0
+        if not para:
+            lines.append("")
+            continue
+        for char in para:
+            char_width = blf.dimensions(font_id, char)[0]
+            if curr_w + char_width > max_width and curr_line:
+                lines.append(curr_line)
+                curr_line = char
+                curr_w = char_width
+            else:
+                curr_line += char
+                curr_w += char_width
+        if curr_line: lines.append(curr_line)
+    return lines
+
+def _get_draw_params() -> DrawParams:
+    """获取绘制参数"""
+    context = bpy.context
+    prefs = pref()
+    # 缩放计算
+    sys_ui_scale = context.preferences.system.ui_scale
+    zoom = get_region_zoom(context)
+    prefs_ui_scale = context.preferences.view.ui_scale
+    scaled_zoom = zoom * prefs_ui_scale
+    # 遮挡检测
+    is_occlusion_enabled = prefs.use_occlusion
+    occluders = []
+    if is_occlusion_enabled and context.selected_nodes:
+        occluders = [get_node_screen_rect(n) for n in context.selected_nodes]
+    # 序号样式参数
+    badge_rel_scale = prefs.badge_rel_scale
+    badge_scale_mode = prefs.badge_scale_mode
+    badge_abs_scale = prefs.badge_abs_scale
+    if badge_scale_mode == 'RELATIVE':
+        badge_radius = 7 * badge_rel_scale * scaled_zoom
+        arrow_size = 8.0 * badge_rel_scale * scaled_zoom
+        badge_font_size = 8 * badge_rel_scale * scaled_zoom
+    else:
+        max_diameter = view_to_region_scaled(140, 0)[0] - view_to_region_scaled(0, 0)[0]
+        badge_radius = min(7 * 2, max_diameter / 2) * badge_abs_scale
+        arrow_size = min(16, max_diameter * 0.6) * badge_abs_scale
+        badge_font_size = min(16, max_diameter / 2) * badge_abs_scale
+    return DrawParams(
+        sys_ui_scale,
+        scaled_zoom,
+        is_occlusion_enabled,
+        occluders,
+        badge_radius,
+        arrow_size,
+        badge_font_size,
+    )
+
+def _wrap_text(font_id: int, text: str, txt_width_mode: str, note_width: float, pad: float) -> list:
+    """文本换行处理"""
+    if txt_width_mode == 'FIT':
+        return text_split_lines(text)
+    else:
+        return _wrap_text_pure(font_id, text, max(1, note_width - pad*2))
+
+def _calculate_node_position(node: Node, params: DrawParams) -> NodeInfo:
+    """计算节点位置信息"""
+    scaled_zoom = params.scaled_zoom
+    sys_ui_scale = params.sys_ui_scale
+    loc = nd_abs_loc(node)
+    h_logical = node.dimensions.y / sys_ui_scale
+    logical_top_y = max(loc.y - (h_logical/2 + 9), loc.y + (h_logical/2 - 9)) if node.hide else loc.y
+    logical_bottom_y = min(loc.y - (h_logical/2 + 9), loc.y + (h_logical/2 - 9)) if node.hide else (loc.y - h_logical)
+
+    left_x, top_y = view_to_region_scaled(loc.x, logical_top_y)
+    _, bottom_y = view_to_region_scaled(loc.x, logical_bottom_y)
+    right_x, _ = view_to_region_scaled(loc.x + node.width + 1.0, loc.y)
+
+    return NodeInfo(
+        node,
+        top_y,
+        bottom_y,
+        left_x,
+        right_x,
+        loc,
+        scaled_zoom,
+    )
+
+def _calc_note_pos(node_info: NodeInfo, alignment: str, offset_vec: float2, self_width: float, self_height: float,
+                   scaled_zoom: float) -> float2:
+    """计算元素位置"""
+    base_x = node_info.left_x
+    base_y = node_info.top_y
+    bottom_y = node_info.bottom_y
+    right_x = node_info.right_x
+
+    pos_x, pos_y = base_x, base_y
+    offset_x = offset_vec[0] * scaled_zoom
+    offset_y = offset_vec[1] * scaled_zoom
+
+    if alignment == 'TOP':
+        pos_x = base_x
+        pos_y = base_y + MarginBottom*scaled_zoom
+    elif alignment == 'BOTTOM':
+        pos_x = base_x
+        pos_y = bottom_y - MarginBottom*scaled_zoom - self_height
+    elif alignment == 'LEFT':
+        pos_x = base_x - MarginBottom*scaled_zoom - self_width
+        pos_y = base_y - self_height
+    elif alignment == 'RIGHT':
+        pos_x = right_x + MarginBottom*scaled_zoom
+        pos_y = base_y - self_height
+
+    return pos_x + offset_x, pos_y + offset_y
+
+# region 基础绘制函数
 
 def draw_rounded_rect_batch(x: float, y: float, width: float, height: float, color: RGBA, radius: float = 3.0) -> None:
     shader = get_shader('UNIFORM_COLOR')
@@ -181,71 +337,6 @@ def draw_lines_batch(points: list[float2], thickness: int) -> None:
     gpu.state.blend_set('ALPHA')
     batch.draw(shader)
 
-def _get_image_shader() -> GPUShader:
-    shader_name = "NODENOTE_IMAGE_SHADER"
-    if shader_name in _shader_cache:
-        return _shader_cache[shader_name]
-
-    # 参考: references_overlays\references_overlays.py
-    vert_out = gpu.types.GPUStageInterfaceInfo("node_note_interface") # type: ignore
-    vert_out.smooth('VEC2', "uv")
-
-    shader_info = gpu.types.GPUShaderCreateInfo()
-    shader_info.sampler(0, 'FLOAT_2D', "image")
-    shader_info.vertex_in(0, 'VEC2', "pos")
-    shader_info.vertex_in(1, 'VEC2', "texCoord")
-    shader_info.vertex_out(vert_out)
-
-    shader_info.push_constant('MAT4', "ModelViewProjectionMatrix")
-    shader_info.fragment_out(0, 'VEC4', "fragColor")
-
-    shader_info.vertex_source(
-        "void main()"
-        "{"
-        "   uv = texCoord;"
-        "   gl_Position = ModelViewProjectionMatrix * vec4(pos, 0.0, 1.0);"
-        "}"
-    )
-
-    shader_info.fragment_source(
-        "void main()"
-        "{"
-        "  vec4 color = texture(image, uv);"
-        "  fragColor = vec4(color.rgb, color.a);"
-        "}"
-    )
-
-    shader = gpu.shader.create_from_info(shader_info)
-    _shader_cache[shader_name] = shader
-    return shader
-
-def draw_texture_batch(texture: GPUTexture | None, x: float, y: float, width: float, height: float) -> None:
-    if not texture: return
-
-    shader = _get_image_shader()
-    vertices = ((x, y), (x + width, y), (x + width, y + height), (x, y + height))
-    uvs = ((0, 0), (1, 0), (1, 1), (0, 1))
-    indices = ((0, 1, 2), (2, 3, 0))
-    batch = batch_for_shader(shader, 'TRIS', {"pos": vertices, "texCoord": uvs}, indices=indices)
-    shader.bind()
-    shader.uniform_sampler("image", texture)
-    gpu.state.blend_set('ALPHA')
-    batch.draw(shader)
-    gpu.state.blend_set('NONE')
-
-def draw_missing_placeholder(x: float, y: float, width: float, height: float) -> None:
-    shader = get_shader('UNIFORM_COLOR')
-    if not shader: return
-    vertices = ((x, y), (x + width, y), (x + width, y + height), (x, y + height))
-    batch_box = batch_for_shader(shader, 'LINE_LOOP', {"pos": vertices})
-    shader.bind()
-    shader.uniform_float("color", (1.0, 0.0, 0.0, 1.0))
-    gpu.state.blend_set('ALPHA')
-    batch_box.draw(shader)
-    vertices_x = ((x, y), (x + width, y + height), (x, y + height), (x + width, y))
-    batch_x = batch_for_shader(shader, 'LINES', {"pos": vertices_x})
-    batch_x.draw(shader)
-
 def draw_arrow_head(start_point: float2, end_point: float2, size: float, retreat: float) -> None:
     shader = get_shader('UNIFORM_COLOR')
     if not shader: return
@@ -274,68 +365,34 @@ def draw_arrow_head(start_point: float2, end_point: float2, size: float, retreat
     gpu.state.blend_set('ALPHA')
     batch.draw(shader)
 
-def wrap_text_pure(font_id: int, text: str, max_width: float):
-    lines: list[str] = []
-    for para in text_split_lines(text):
-        curr_line, curr_w = "", 0
-        if not para:
-            lines.append("")
-            continue
-        for char in para:
-            char_width = blf.dimensions(font_id, char)[0]
-            if curr_w + char_width > max_width and curr_line:
-                lines.append(curr_line)
-                curr_line = char
-                curr_w = char_width
-            else:
-                curr_line += char
-                curr_w += char_width
-        if curr_line: lines.append(curr_line)
-    return lines
+def draw_texture_batch(texture: GPUTexture | None, x: float, y: float, width: float, height: float) -> None:
+    if not texture: return
 
-def _get_draw_params() -> DrawParams:
-    """获取绘制参数"""
-    context = bpy.context
-    prefs = pref()
-    # 缩放计算
-    sys_ui_scale = context.preferences.system.ui_scale
-    zoom = get_region_zoom(context)
-    prefs_ui_scale = context.preferences.view.ui_scale
-    scaled_zoom = zoom * prefs_ui_scale
-    # 遮挡检测
-    is_occlusion_enabled = prefs.use_occlusion
-    occluders = []
-    if is_occlusion_enabled and context.selected_nodes:
-        occluders = [get_node_screen_rect(n) for n in context.selected_nodes]
-    # 序号样式参数
-    badge_rel_scale = prefs.badge_rel_scale
-    badge_scale_mode = prefs.badge_scale_mode
-    badge_abs_scale = prefs.badge_abs_scale
-    if badge_scale_mode == 'RELATIVE':
-        badge_radius = 7 * badge_rel_scale * scaled_zoom
-        arrow_size = 8.0 * badge_rel_scale * scaled_zoom
-        badge_font_size = 8 * badge_rel_scale * scaled_zoom
-    else:
-        max_diameter = view_to_region_scaled(140, 0)[0] - view_to_region_scaled(0, 0)[0]
-        badge_radius = min(7 * 2, max_diameter / 2) * badge_abs_scale
-        arrow_size = min(16, max_diameter * 0.6) * badge_abs_scale
-        badge_font_size = min(16, max_diameter / 2) * badge_abs_scale
-    return DrawParams(
-        sys_ui_scale=sys_ui_scale,
-        scaled_zoom=scaled_zoom,
-        is_occlusion_enabled=is_occlusion_enabled,
-        occluders=occluders,
-        badge_radius=badge_radius,
-        arrow_size=arrow_size,
-        badge_font_size=badge_font_size,
-    )
+    shader = get_image_shader()
+    vertices = ((x, y), (x + width, y), (x + width, y + height), (x, y + height))
+    uvs = ((0, 0), (1, 0), (1, 1), (0, 1))
+    indices = ((0, 1, 2), (2, 3, 0))
+    batch = batch_for_shader(shader, 'TRIS', {"pos": vertices, "texCoord": uvs}, indices=indices)
+    shader.bind()
+    shader.uniform_sampler("image", texture)
+    gpu.state.blend_set('ALPHA')
+    batch.draw(shader)
+    gpu.state.blend_set('NONE')
 
-def _wrap_text(font_id: int, text: str, txt_width_mode: str, note_width: float, pad: float) -> list:
-    """文本换行处理"""
-    if txt_width_mode == 'FIT':
-        return text_split_lines(text)
-    else:
-        return wrap_text_pure(font_id, text, max(1, note_width - pad*2))
+def draw_missing_placeholder(x: float, y: float, width: float, height: float) -> None:
+    shader = get_shader('UNIFORM_COLOR')
+    if not shader: return
+    vertices = ((x, y), (x + width, y), (x + width, y + height), (x, y + height))
+    batch_box = batch_for_shader(shader, 'LINE_LOOP', {"pos": vertices})
+    shader.bind()
+    shader.uniform_float("color", (1.0, 0.0, 0.0, 1.0))
+    gpu.state.blend_set('ALPHA')
+    batch_box.draw(shader)
+    vertices_x = ((x, y), (x + width, y + height), (x, y + height), (x + width, y))
+    batch_x = batch_for_shader(shader, 'LINES', {"pos": vertices_x})
+    batch_x.draw(shader)
+
+# region 核心绘制函数
 
 def _draw_text_note(node: Node, text, bg_color: RGBA, node_info: NodeInfo, txt_x: float, txt_y: float, note_width: float,
                     text_note_height: float) -> None:
@@ -369,28 +426,49 @@ def _draw_image_note(texture: GPUTexture | None, img_x: float, img_y: float, img
     else:
         draw_missing_placeholder(img_x, img_y, img_draw_w, img_draw_h)
 
-def _calculate_node_position(node: Node, params: DrawParams) -> NodeInfo:
-    """计算节点位置信息"""
-    scaled_zoom = params.scaled_zoom
-    sys_ui_scale = params.sys_ui_scale
-    loc = nd_abs_loc(node)
-    h_logical = node.dimensions.y / sys_ui_scale
-    logical_top_y = max(loc.y - (h_logical/2 + 9), loc.y + (h_logical/2 - 9)) if node.hide else loc.y
-    logical_bottom_y = min(loc.y - (h_logical/2 + 9), loc.y + (h_logical/2 - 9)) if node.hide else (loc.y - h_logical)
+def _collect_badge_coords(badge_idx: int, node_info: NodeInfo, badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
+    """收集序号坐标"""
+    badge_pos = (node_info.left_x, node_info.top_y)
 
-    left_x, top_y = view_to_region_scaled(loc.x, logical_top_y)
-    _, bottom_y = view_to_region_scaled(loc.x, logical_bottom_y)
-    right_x, _ = view_to_region_scaled(loc.x + node.width + 1.0, loc.y)
+    if badge_idx not in badge_infos:
+        badge_infos[badge_idx] = []
+    badge_infos[badge_idx].append(BadgeInfo(badge_pos, node_info.node.note_badge_color))
 
-    return NodeInfo(
-        node,
-        top_y,
-        bottom_y,
-        left_x,
-        right_x,
-        loc,
-        scaled_zoom,
-    )
+def _draw_badge_notes(badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
+    def _draw_badge_lines(badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
+        """绘制序号连线"""
+        if not pref().show_badge_lines or len(badge_infos) < 2: return
+        line_points: list[float2] = []
+        indices = sorted(badge_infos.keys())
+
+        for i in range(len(indices) - 1):
+            for badge1 in badge_infos[indices[i]]:
+                for badge2 in badge_infos[indices[i+1]]:
+                    line_points.append(badge1.pos)
+                    line_points.append(badge2.pos)
+                    draw_arrow_head(badge1.pos, badge2.pos, params.arrow_size, params.badge_radius)
+
+        draw_lines_batch(line_points, pref().badge_line_thickness)
+
+    def _draw_badge_badges(badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
+        """绘制序号徽章(背景+文本)"""
+        font_id = 0
+        blf.size(font_id, params.badge_font_size)
+        blf.color(font_id, *pref().badge_font_color)
+        for i in badge_infos:
+            for badge in badge_infos[i]:
+                # 绘制背景圆
+                draw_circle_batch(badge.pos, params.badge_radius, badge.note_badge_color)
+                # 绘制数字文本
+                num_str = str(i)
+                dims = blf.dimensions(font_id, num_str)
+                x = badge.pos[0] - dims[0] / 2
+                y = badge.pos[1] - dims[1] / 2.5
+                blf.position(font_id, x, y, 0)
+                blf.draw(font_id, num_str)
+
+    _draw_badge_lines(badge_infos, params)
+    _draw_badge_badges(badge_infos, params)
 
 def _process_and_draw_text_and_image_note(node: Node, params: DrawParams, badge_infos: dict[int, list[BadgeInfo]]) -> None:
     """处理单个节点的注释绘制"""
@@ -549,76 +627,7 @@ def _process_and_draw_text_and_image_note(node: Node, params: DrawParams, badge_
     if badge_idx > 0 and show_badge:
         _collect_badge_coords(badge_idx, node_info, badge_infos, params)
 
-def _collect_badge_coords(badge_idx: int, node_info: NodeInfo, badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
-    """收集序号坐标"""
-    badge_pos = (node_info.left_x, node_info.top_y)
-
-    if badge_idx not in badge_infos:
-        badge_infos[badge_idx] = []
-    badge_infos[badge_idx].append(BadgeInfo(badge_pos, node_info.node.note_badge_color))
-
-def _draw_badge_lines(badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
-    """绘制序号连线"""
-    if not pref().show_badge_lines or len(badge_infos) < 2: return
-    line_points: list[float2] = []
-    indices = sorted(badge_infos.keys())
-
-    for i in range(len(indices) - 1):
-        for badge1 in badge_infos[indices[i]]:
-            for badge2 in badge_infos[indices[i+1]]:
-                line_points.append(badge1.pos)
-                line_points.append(badge2.pos)
-                draw_arrow_head(badge1.pos, badge2.pos, params.arrow_size, params.badge_radius)
-
-    draw_lines_batch(line_points, pref().badge_line_thickness)
-
-def _draw_badge_badges(badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
-    """绘制序号徽章(背景+文本)"""
-    font_id = 0
-    blf.size(font_id, params.badge_font_size)
-    blf.color(font_id, *pref().badge_font_color)
-    for i in badge_infos:
-        for badge in badge_infos[i]:
-            # 绘制背景圆
-            draw_circle_batch(badge.pos, params.badge_radius, badge.note_badge_color)
-            # 绘制数字文本
-            num_str = str(i)
-            dims = blf.dimensions(font_id, num_str)
-            x = badge.pos[0] - dims[0] / 2
-            y = badge.pos[1] - dims[1] / 2.5
-            blf.position(font_id, x, y, 0)
-            blf.draw(font_id, num_str)
-
-def _draw_badge_notes(badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
-    _draw_badge_lines(badge_infos, params)
-    _draw_badge_badges(badge_infos, params)
-
-def _calc_note_pos(node_info: NodeInfo, alignment: str, offset_vec: float2, self_width: float, self_height: float,
-                   scaled_zoom: float) -> float2:
-    """计算元素位置"""
-    base_x = node_info.left_x
-    base_y = node_info.top_y
-    bottom_y = node_info.bottom_y
-    right_x = node_info.right_x
-
-    pos_x, pos_y = base_x, base_y
-    offset_x = offset_vec[0] * scaled_zoom
-    offset_y = offset_vec[1] * scaled_zoom
-
-    if alignment == 'TOP':
-        pos_x = base_x
-        pos_y = base_y + MarginBottom*scaled_zoom
-    elif alignment == 'BOTTOM':
-        pos_x = base_x
-        pos_y = bottom_y - MarginBottom*scaled_zoom - self_height
-    elif alignment == 'LEFT':
-        pos_x = base_x - MarginBottom*scaled_zoom - self_width
-        pos_y = base_y - self_height
-    elif alignment == 'RIGHT':
-        pos_x = right_x + MarginBottom*scaled_zoom
-        pos_y = base_y - self_height
-
-    return pos_x + offset_x, pos_y + offset_y
+# region 主入口和注册函数
 
 def draw_callback_px() -> None:
     """主绘制回调函数"""
