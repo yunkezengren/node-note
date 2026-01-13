@@ -4,13 +4,13 @@ from . import draw_gpu
 from . import operators
 from . import ui
 from . import node_properties
-from .preferences import NodeMemoAddonPreferences
+from .preferences import NodeNoteAddonPreferences
 
 addon_keymaps = []
 
 classes = [
     ui.NODE_PT_node_note_gpu_panel,
-    NodeMemoAddonPreferences,
+    NodeNoteAddonPreferences,
 ]
 
 def register():

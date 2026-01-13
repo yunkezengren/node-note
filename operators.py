@@ -408,8 +408,8 @@ class NODE_OT_notenote_quick_edit(Operator):
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        if context.active_node:
-            inject_defaults_if_needed(context.active_node)
+        # if context.active_node:
+        #     inject_defaults_if_needed(context.active_node)
 
         context.window.cursor_warp(event.mouse_x + 100, event.mouse_y)
         return context.window_manager.invoke_popup(self, width=220)

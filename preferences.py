@@ -18,7 +18,7 @@ def text_split_lines(text: str) -> list[str]:
         text = text.replace(sep, "\n")
     return text.splitlines()
 
-class NodeMemoAddonPreferences(AddonPreferences):
+class NodeNoteAddonPreferences(AddonPreferences):
     bl_idname = __package__
 
     # 1. 全局设置
@@ -189,6 +189,6 @@ class NodeMemoAddonPreferences(AddonPreferences):
         col = box.column(align=True)
         col.prop(self, "img_default_align", text="默认对齐")
 
-def pref() -> NodeMemoAddonPreferences:
+def pref() -> NodeNoteAddonPreferences:
     assert __package__ is not None
     return bpy.context.preferences.addons[__package__].preferences
