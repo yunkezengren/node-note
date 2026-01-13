@@ -108,8 +108,10 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
 
                 row_pos = txt_box.row(align=True)
                 row_pos.prop(node, "note_txt_pos", text="")
+                if node.note_txt_pos in ('TOP', 'BOTTOM'):
+                    row_pos.prop(node, "note_txt_center", text="居中", toggle=True)
                 row_pos.prop(node, "note_txt_offset", text="")
-                row_pos.operator("node.note_reset_offset", text="", icon='LOOP_BACK')
+                row_pos.operator("node.note_reset_txt_offset", text="", icon='LOOP_BACK')
 
         if show_image:
             header, body = layout.panel("setting2", default_closed=True)
@@ -137,6 +139,8 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
 
                 row_pos = img_box.row(align=True)
                 row_pos.prop(node, "note_img_pos", text="")
+                if node.note_img_pos in ('TOP', 'BOTTOM'):
+                    row_pos.prop(node, "note_img_center", text="居中", toggle=True)
                 row_pos.prop(node, "note_img_offset", text="")
                 row_pos.operator("node.note_reset_img_offset", text="", icon='LOOP_BACK')
 

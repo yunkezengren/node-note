@@ -232,15 +232,14 @@ class NODE_OT_note_show_select_badge(Operator):
             node.note_show_badge = new_value
         return {'FINISHED'}
 
-class NODE_OT_note_reset_offset(Operator):
-    bl_idname = "node.note_reset_offset"
-    bl_label = "复位"
+class NODE_OT_note_reset_txt_offset(Operator):
+    bl_idname = "node.note_reset_txt_offset"
+    bl_label = "复位文本偏移"
     bl_options = {'UNDO'}
 
     def execute(self, context):
         node = context.active_node
         if hasattr(node, "note_txt_offset"): node.note_txt_offset = (0, 0)
-        if hasattr(node, "note_txt_pos"): node.note_txt_pos = 'TOP'
         context.area.tag_redraw()
         return {'FINISHED'}
 
@@ -252,7 +251,6 @@ class NODE_OT_note_reset_img_offset(Operator):
     def execute(self, context):
         node = context.active_node
         if hasattr(node, "note_img_offset"): node.note_img_offset = (0, 0)
-        if hasattr(node, "note_img_pos"): node.note_img_pos = 'TOP'
         context.area.tag_redraw()
         return {'FINISHED'}
 
@@ -399,7 +397,7 @@ classes = [
     NODE_OT_note_delete_all_notes,
     NODE_OT_note_note_swap_order,
     NODE_OT_note_interactive_badge,
-    NODE_OT_note_reset_offset,
+    NODE_OT_note_reset_txt_offset,
     NODE_OT_note_reset_img_offset,
     NODE_OT_note_paste_image,
     NODE_OT_note_apply_preset,

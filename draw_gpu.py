@@ -617,14 +617,18 @@ def _process_and_draw_text_and_image_note(node: Node, params: DrawParams, badge_
 
     # 绘制文本
     if text and show_txt and visible_by_bg_color:
+        txt_center = getattr(node, "note_txt_center", False)
+        if txt_center and txt_align in {'TOP', 'BOTTOM'}:
+            center_offset = (node_width_px - note_width) / 2
+            txt_x += center_offset
         _draw_text_note(node, text, bg_color, node_info, txt_x, txt_y, note_width, text_note_height)
 
-    # 绘制图像(包含居中校正)
+    # 绘制图像
     if img and show_img and (not pref().hide_img_by_bg or visible_by_bg_color):
-        # 居中校正
-        if (is_stacked and txt_align in {'TOP', 'BOTTOM'}) or (not is_stacked and img_align in {'TOP', 'BOTTOM'}):
-            center_correction = (node_width_px-img_draw_w) / 2
-            img_x += center_correction
+        img_center = getattr(node, "note_img_center", True)
+        if img_center and img_align in {'TOP', 'BOTTOM'}:
+            center_offset = (node_width_px - img_draw_w) / 2
+            img_x += center_offset
         _draw_image_note(texture, img_x, img_y, img_draw_w, img_draw_h)
 
     # 收集序号坐标

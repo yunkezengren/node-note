@@ -60,6 +60,8 @@ def init_props():
     Node.note_img_width_mode = EnumProperty(items=get_img_width_items, default=enum_to_int(prefs.default_img_width_mode))
     Node.note_txt_pos        = EnumProperty(items=align_items, default=prefs.default_txt_pos, description="文本位置")
     Node.note_img_pos        = EnumProperty(items=align_items, default=prefs.default_img_pos, description="图像位置")
+    Node.note_txt_center     = BoolProperty(default=False, description="顶/底对齐时居中")
+    Node.note_img_center     = BoolProperty(default=True, description="顶/底对齐时居中")
 
     Node.note_txt_offset     = IntVectorProperty(size=2, default=(0, 0), subtype='XYZ', description="文本偏移")
     Node.note_img_offset     = IntVectorProperty(size=2, default=(0, 0), subtype='XYZ', description="图像偏移")
@@ -83,6 +85,8 @@ def clear_props():
         "note_img_width_mode",
         "note_txt_pos",
         "note_img_pos",
+        "note_txt_center",
+        "note_img_center",
         "note_txt_offset",
         "note_img_offset",
     ]
