@@ -257,14 +257,6 @@ class NODE_OT_noteshow_select_badge(Operator):
             node.note_show_badge = new_value
         return {'FINISHED'}
 
-class NODE_OT_notefix_prop(Operator):
-    bl_idname = "node.note_fix_prop"
-    bl_label = "修复属性"
-
-    def execute(self, context):
-        init_props()
-        return {'FINISHED'}
-
 class NODE_OT_notereset_offset(Operator):
     bl_idname = "node.note_reset_offset"
     bl_label = "复位"
@@ -448,7 +440,6 @@ classes = [
     NODE_OT_noteshow_select_txt,
     NODE_OT_noteshow_select_img,
     NODE_OT_noteshow_select_badge,
-    NODE_OT_notefix_prop,
     NODE_OT_noteclear_all_scene_notes,
     NODE_OT_notenote_swap_order,
     NODE_OT_noteinteractive_badge,
