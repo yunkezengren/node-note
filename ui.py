@@ -169,14 +169,14 @@ def draw_ui_layout(layout: UILayout, context: Context, show_global=True, show_te
                 row_set.prop(prefs, "badge_rel_scale", text="相对缩放")
 
             row_set = badge_box.split(factor=0.3)
-            row_set.prop(prefs, "show_badget_lines", text="显示连线", icon='EMPTY_ARROWS')
+            row_set.prop(prefs, "show_badge_lines", text="显示连线", icon='EMPTY_ARROWS')
             row_set.row().prop(prefs, "badge_line_color", text="颜色")
             row_set.prop(prefs, "badge_line_thickness", text="线宽")
 
     if show_list:
         header, body = layout.panel("setting4", default_closed=True)
         header.label(text="笔记列表", icon="ALIGN_JUSTIFY")
-        header.prop(prefs, "sort_by_badget", text="按序号排列")
+        header.prop(prefs, "sort_by_badge", text="按序号排列")
         if body:
             draw_search_list(body, context)
 
@@ -201,7 +201,7 @@ def draw_search_list(layout: UILayout, context: Context):
                 continue
             noted_nodes.append(node)
 
-    if pref().sort_by_badget:
+    if pref().sort_by_badge:
         noted_nodes.sort(key=lambda n: (
             0 if getattr(n, "note_badge_index", 0) > 0 else 1,
             getattr(n, "note_badge_index", 0),
@@ -221,7 +221,7 @@ def draw_search_list(layout: UILayout, context: Context):
         layout.label(text="暂无注记", icon='INFO')
         return
 
-    sort_icon = 'SORT_ASC' if pref().sort_by_badget else 'GRID'
+    sort_icon = 'SORT_ASC' if pref().sort_by_badge else 'GRID'
     if search_key: sort_icon = 'FILTER'
 
     layout.label(text=f"列表 ({len(noted_nodes)}):", icon=sort_icon)

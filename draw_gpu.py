@@ -42,7 +42,7 @@ class DrawParams:
     occluders: list
     badge_radius: float
     arrow_size: float
-    base_font_size: float
+    badge_font_size: float
 
 @dataclass
 class NodeInfo:
@@ -58,9 +58,7 @@ class NodeInfo:
 @dataclass
 class BadgeInfo:
     """序号徽章坐标"""
-    x: float
-    y: float
-    radius: float
+    pos: float2
     note_badge_color: RGBA
 
 def get_shader(name: str) -> GPUShader | None:
@@ -152,32 +150,34 @@ def draw_rounded_rect_batch(x: float, y: float, width: float, height: float, col
     gpu.state.blend_set('ALPHA')
     batch.draw(shader)
 
-def draw_circle_batch(x: float, y: float, radius: float, color: RGBA) -> None:
+def draw_circle_batch(pos: float2, radius: float, color: RGBA) -> None:
+    """ Screen Space """
     shader = get_shader('UNIFORM_COLOR')
     if not shader: return
-    vertices: list[float2] = [(x, y)]
+    vertices: list[float2] = [pos]
     indices: list[int3] = []
-    theta_step = (2 * math.pi) / 32
+    step = (2 * math.pi) / 32
     for i in range(33):
-        point_x = x + math.cos(i * theta_step) * radius
-        point_y = y + math.sin(i * theta_step) * radius
+        # 点 33 与点 1 重合（都是 0° 和 360°），确保圆闭合
+        point_x = pos[0] + math.cos(i * step) * radius
+        point_y = pos[1] + math.sin(i * step) * radius
         vertices.append((point_x, point_y))
     for i in range(32):
-        indices.append((0, i + 1, i + 2))
+        indices.append((0, i + 1, i + 2))   # vertices 索引
     batch = batch_for_shader(shader, 'TRIS', {"pos": vertices}, indices=indices)
     shader.bind()
     shader.uniform_float("color", color)
     gpu.state.blend_set('ALPHA')
     batch.draw(shader)
 
-def draw_lines_batch(points: list[float2], color: RGBA, thickness: float = 2.0) -> None:
+def draw_lines_batch(points: list[float2], thickness: int) -> None:
     if len(points) < 2: return
     shader = get_shader('UNIFORM_COLOR')
     if not shader: return
     gpu.state.line_width_set(thickness)
     batch = batch_for_shader(shader, 'LINES', {"pos": points})
     shader.bind()
-    shader.uniform_float("color", color)
+    shader.uniform_float("color", pref().badge_line_color)
     gpu.state.blend_set('ALPHA')
     batch.draw(shader)
 
@@ -189,16 +189,16 @@ def _get_image_shader() -> GPUShader:
     # 参考: references_overlays\references_overlays.py
     vert_out = gpu.types.GPUStageInterfaceInfo("node_note_interface") # type: ignore
     vert_out.smooth('VEC2', "uv")
-    
+
     shader_info = gpu.types.GPUShaderCreateInfo()
     shader_info.sampler(0, 'FLOAT_2D', "image")
     shader_info.vertex_in(0, 'VEC2', "pos")
     shader_info.vertex_in(1, 'VEC2', "texCoord")
     shader_info.vertex_out(vert_out)
-    
+
     shader_info.push_constant('MAT4', "ModelViewProjectionMatrix")
     shader_info.fragment_out(0, 'VEC4', "fragColor")
-    
+
     shader_info.vertex_source(
         "void main()"
         "{"
@@ -206,7 +206,7 @@ def _get_image_shader() -> GPUShader:
         "   gl_Position = ModelViewProjectionMatrix * vec4(pos, 0.0, 1.0);"
         "}"
     )
-    
+
     shader_info.fragment_source(
         "void main()"
         "{"
@@ -214,7 +214,7 @@ def _get_image_shader() -> GPUShader:
         "  fragColor = vec4(color.rgb, color.a);"
         "}"
     )
-    
+
     shader = gpu.shader.create_from_info(shader_info)
     _shader_cache[shader_name] = shader
     return shader
@@ -246,7 +246,7 @@ def draw_missing_placeholder(x: float, y: float, width: float, height: float) ->
     batch_x = batch_for_shader(shader, 'LINES', {"pos": vertices_x})
     batch_x.draw(shader)
 
-def draw_arrow_head(start_point: float2, end_point: float2, color: RGBA, size: float = 10.0, retreat: float = 8.0) -> None:
+def draw_arrow_head(start_point: float2, end_point: float2, size: float, retreat: float) -> None:
     shader = get_shader('UNIFORM_COLOR')
     if not shader: return
     x1, y1 = start_point
@@ -270,7 +270,7 @@ def draw_arrow_head(start_point: float2, end_point: float2, color: RGBA, size: f
     vertices = [v1, v2, v3]
     batch = batch_for_shader(shader, 'TRIS', {"pos": vertices})
     shader.bind()
-    shader.uniform_float("color", color)
+    shader.uniform_float("color", pref().badge_line_color)
     gpu.state.blend_set('ALPHA')
     batch.draw(shader)
 
@@ -314,12 +314,12 @@ def _get_draw_params() -> DrawParams:
     if badge_scale_mode == 'RELATIVE':
         badge_radius = 7 * badge_rel_scale * scaled_zoom
         arrow_size = 8.0 * badge_rel_scale * scaled_zoom
-        base_font_size = 8 * badge_rel_scale * scaled_zoom
+        badge_font_size = 8 * badge_rel_scale * scaled_zoom
     else:
         max_diameter = view_to_region_scaled(140, 0)[0] - view_to_region_scaled(0, 0)[0]
         badge_radius = min(7 * 2, max_diameter / 2) * badge_abs_scale
         arrow_size = min(16, max_diameter * 0.6) * badge_abs_scale
-        base_font_size = min(16, max_diameter / 2) * badge_abs_scale
+        badge_font_size = min(16, max_diameter / 2) * badge_abs_scale
     return DrawParams(
         sys_ui_scale=sys_ui_scale,
         scaled_zoom=scaled_zoom,
@@ -327,7 +327,7 @@ def _get_draw_params() -> DrawParams:
         occluders=occluders,
         badge_radius=badge_radius,
         arrow_size=arrow_size,
-        base_font_size=base_font_size,
+        badge_font_size=badge_font_size,
     )
 
 def _wrap_text(font_id: int, text: str, txt_width_mode: str, note_width: float, pad: float) -> list:
@@ -547,71 +547,51 @@ def _process_and_draw_text_and_image_note(node: Node, params: DrawParams, badge_
 
     # 收集序号坐标
     if badge_idx > 0 and show_badge:
-        _collect_badget_coords(badge_idx, node_info, badge_infos, params)
+        _collect_badge_coords(badge_idx, node_info, badge_infos, params)
 
-def _collect_badget_coords(badge_idx: int, node_info: NodeInfo, badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
+def _collect_badge_coords(badge_idx: int, node_info: NodeInfo, badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
     """收集序号坐标"""
-    badge_x = node_info.left_x
-    badge_y = node_info.top_y
-    badge_radius = params.badge_radius
+    badge_pos = (node_info.left_x, node_info.top_y)
 
     if badge_idx not in badge_infos:
         badge_infos[badge_idx] = []
-    badge_infos[badge_idx].append(BadgeInfo(badge_x, badge_y, badge_radius, node_info.node.note_badge_color))
+    badge_infos[badge_idx].append(BadgeInfo(badge_pos, node_info.node.note_badge_color))
 
-def _draw_badget_lines(badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
+def _draw_badge_lines(badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
     """绘制序号连线"""
-    if not pref().show_badget_lines or len(badge_infos) < 2: return
-    line_points = []
-    line_col: RGBA = pref().badge_line_color
-    sorted_indices = sorted(badge_infos.keys())
-    max_idx = max(sorted_indices)
-    arrow_size = params.arrow_size
+    if not pref().show_badge_lines or len(badge_infos) < 2: return
+    line_points: list[float2] = []
+    indices = sorted(badge_infos.keys())
 
-    for current_idx in sorted_indices:
-        target_idx = None
-        for next_idx in range(current_idx + 1, max_idx + 1):
-            if next_idx in badge_infos:
-                target_idx = next_idx
-                break
-        if target_idx is not None:
-            for p1 in badge_infos[current_idx]:
-                for p2 in badge_infos[target_idx]:
-                    line_points.append((p1.x, p1.y))
-                    line_points.append((p2.x, p2.y))
-                    retreat = p1.radius
-                    draw_arrow_head((p1.x, p1.y), (p2.x, p2.y), line_col, size=arrow_size, retreat=retreat)
+    for i in range(len(indices) - 1):
+        for badge1 in badge_infos[indices[i]]:
+            for badge2 in badge_infos[indices[i+1]]:
+                line_points.append(badge1.pos)
+                line_points.append(badge2.pos)
+                draw_arrow_head(badge1.pos, badge2.pos, params.arrow_size, params.badge_radius)
 
-    line_thickness = pref().badge_line_thickness
-    draw_lines_batch(line_points, line_col, thickness=line_thickness)
+    draw_lines_batch(line_points, pref().badge_line_thickness)
 
-def _draw_badget_badges(badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
+def _draw_badge_badges(badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
     """绘制序号徽章(背景+文本)"""
-    prefs = pref()
-    badge_radius = params.badge_radius
-    base_font_size = params.base_font_size
-    badge_font_col = list(prefs.badge_font_color) if prefs else (1.0, 1.0, 1.0, 1.0)
-
-    # 绘制背景圆
-    for idx in badge_infos:
-        for badge in badge_infos[idx]:
-            draw_circle_batch(badge.x, badge.y, badge.radius, badge.note_badge_color)
-
-    # 绘制数字文本
     font_id = 0
-    blf.size(font_id, int(base_font_size))
-    blf.color(font_id, *badge_font_col)
-    for idx in badge_infos:
-        for badge in badge_infos[idx]:
-            num_str = str(idx)
+    blf.size(font_id, params.badge_font_size)
+    blf.color(font_id, *pref().badge_font_color)
+    for i in badge_infos:
+        for badge in badge_infos[i]:
+            # 绘制背景圆
+            draw_circle_batch(badge.pos, params.badge_radius, badge.note_badge_color)
+            # 绘制数字文本
+            num_str = str(i)
             dims = blf.dimensions(font_id, num_str)
-            blf.position(font_id, int(badge.x - dims[0] / 2), int(badge.y - dims[1] / 2.5), 0)
+            x = badge.pos[0] - dims[0] / 2
+            y = badge.pos[1] - dims[1] / 2.5
+            blf.position(font_id, x, y, 0)
             blf.draw(font_id, num_str)
 
-def _draw_badget_notes(badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
-    # 绘制序列连线
-    _draw_badget_lines(badge_infos, params)
-    _draw_badget_badges(badge_infos, params)
+def _draw_badge_notes(badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
+    _draw_badge_lines(badge_infos, params)
+    _draw_badge_badges(badge_infos, params)
 
 def _calc_note_pos(node_info: NodeInfo, alignment: str, offset_vec: float2, self_width: float, self_height: float,
                    scaled_zoom: float) -> float2:
@@ -652,7 +632,7 @@ def draw_callback_px() -> None:
     badge_infos: dict[int, list[BadgeInfo]] = {}
     for node in tree.nodes:
         _process_and_draw_text_and_image_note(node, params, badge_infos)
-    _draw_badget_notes(badge_infos, params)
+    _draw_badge_notes(badge_infos, params)
 
 def register_draw_handler() -> None:
     global handler
