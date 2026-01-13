@@ -24,26 +24,30 @@ def update_note_image(self, context: Context):
 
 # --- 核心逻辑注入 ---
 def inject_defaults_if_needed(node: Node):
-    """如果节点未初始化，注入偏好设置的默认值"""
+    """根据三种笔记是否有内容来决定是否注入默认值"""
     prefs = pref()
-    if not node.note_initialized and prefs:
-        # 1. 注入文本相关默认值
+    if not prefs:
+        return
+
+    has_text = bool(node.note_text and node.note_text.strip())
+    has_image = bool(node.note_image)
+    has_badge = bool(node.note_badge_index > 0)
+
+    if not has_text:
         node.note_font_size = prefs.default_font_size
         node.note_text_color = prefs.default_text_color
         node.note_txt_bg_color = prefs.default_txt_bg_color
-
-        # 2. 注入逻辑开关
         node.note_txt_width_mode = prefs.default_txt_width_mode
+        node.note_txt_bg_width = prefs.default_txt_bg_width
         node.note_txt_pos = prefs.default_text_pos
-
-        # 3. 注入序号颜色默认值
+    if not has_image:
+        node.note_img_width_mode = prefs.default_img_width_mode
+        node.note_img_width = prefs.default_img_width
+        node.note_img_pos = prefs.default_img_pos
+    if not has_badge:
         node.note_badge_color = prefs.default_badge_color
 
-        # 标记已初始化，以后不再覆盖
-        node.note_initialized = True
-
 def init_props():
-    Node.note_initialized    = BoolProperty(default=False)
     Node.note_show_txt       = BoolProperty(default=True)
     Node.note_show_img       = BoolProperty(default=True)
     Node.note_show_badge     = BoolProperty(default=True)
@@ -66,7 +70,6 @@ def init_props():
 
 def clear_props():
     props = [
-        "note_initialized",
         "note_text",
         "note_image",
         "note_font_size",
