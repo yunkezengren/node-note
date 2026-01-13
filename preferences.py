@@ -7,16 +7,6 @@ txt_width_items = [('AUTO', "跟随节点", "宽度自动跟随节点宽度"), (
 img_width_items = [('AUTO', "跟随节点", "宽度自动跟随节点宽度"), ('ORIGINAL', "原始宽度", "显示图像原始宽度"), ('MANUAL', "手动设置", "手动设置宽度")]
 badge_width_items = [('RELATIVE', "相对缩放", "跟随节点编辑器缩放"), ('ABSOLUTE', "屏幕空间", "固定屏幕像素大小")]
 
-def get_txt_width_items(self, context):
-    if self.bl_idname == "NodeReroute":
-        return txt_width_items[1:]
-    return txt_width_items
-
-def get_img_width_items(self, context):
-    if self.bl_idname == "NodeReroute":
-        return img_width_items[1:]
-    return img_width_items
-
 def tag_redraw(self, context: Context):
     for window in context.window_manager.windows:
         for area in window.screen.areas:
@@ -45,7 +35,7 @@ class NodeNoteAddonPreferences(AddonPreferences):
 
     default_txt_width_mode : EnumProperty(name="宽度模式", items=txt_width_items, default=0, update=tag_redraw)
     default_txt_bg_width   : IntProperty(name="默认文本背景宽度", default=200, min=50, max=2000)
-    default_text_pos       : EnumProperty(name="默认对齐", items=align_items, default='TOP')
+    default_txt_pos       : EnumProperty(name="默认对齐", items=align_items, default='TOP')
 
     # 3. 图像设置区
     default_img_width_mode : EnumProperty(name="宽度模式", items=img_width_items, default=0, update=tag_redraw)
@@ -117,7 +107,8 @@ class NodeNoteAddonPreferences(AddonPreferences):
             else:
                 split1.label(text="快捷键未注册", icon='ERROR')
 
-        # ============================================================================================
+        layout.label(text="部分属性更改后重启Blender后生效:", icon='INFO')
+        # region 文本笔记
         txt_box = layout.box()
         txt_box.label(text="文本笔记默认设置", icon='FILE_TEXT')
 
@@ -133,7 +124,7 @@ class NodeNoteAddonPreferences(AddonPreferences):
         row.prop(self, "default_txt_width_mode", text="宽度")
         if self.default_txt_width_mode == 'MANUAL':
             row.prop(self, "default_txt_bg_width", text="")
-        row.prop(self, "default_text_pos", text="对齐")
+        row.prop(self, "default_txt_pos", text="对齐")
 
         txt_box.label(text="背景颜色预设:")
         box_preset = txt_box.box()
@@ -147,8 +138,9 @@ class NodeNoteAddonPreferences(AddonPreferences):
         grid_label = split_preset.grid_flow(row_major=True, columns=6, align=True)
         for i in range(1, 7):
             grid_label.prop(self, f"label_preset_{i}", text="")
+        # endregion
 
-        # ============================================================================================
+        # region 图像笔记
         box = layout.box()
         box.label(text="图像笔记默认设置", icon='IMAGE_DATA')
         
@@ -159,8 +151,9 @@ class NodeNoteAddonPreferences(AddonPreferences):
         if self.default_img_width_mode == 'MANUAL':
             row.prop(self, "default_img_width", text="")
         row.prop(self, "default_img_pos", text="对齐")
+        # endregion
 
-        # ============================================================================================
+        # region 序号笔记
         badge_box = layout.box()
         badge_box.label(text="序号笔记默认设置", icon='EVENT_NDOF_BUTTON_1')
 
@@ -179,6 +172,7 @@ class NodeNoteAddonPreferences(AddonPreferences):
         row_set.prop(self, "show_badge_lines", text="显示连线", icon='EMPTY_ARROWS')
         row_set.row().prop(self, "badge_line_color", text="颜色")
         row_set.prop(self, "badge_line_thickness", text="线宽")
+        # endregion
 
 def pref() -> NodeNoteAddonPreferences:
     assert __package__ is not None
