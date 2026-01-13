@@ -90,8 +90,8 @@ def init_props():
         return width_item_auto + img_width_items1
     Node.note_txt_width_mode = EnumProperty(name="宽度模式", items=get_txt_width_items, default=0, update=tag_redraw)
     Node.note_img_width_mode = EnumProperty(name="图宽模式", items=get_img_width_items, default=0, update=tag_redraw)
-    Node.note_txt_bg_width = IntProperty(name="背景宽度", default=200, min=1, max=2000, update=update_manual_text_width)
-    Node.note_img_width = IntProperty(name="图像宽度", default=140, min=10, max=2000, update=update_manual_img_width)
+    Node.note_txt_bg_width = IntProperty(name="背景宽度", default=200, min=1, max=2000, update=tag_redraw)
+    Node.note_img_width = IntProperty(name="图像宽度", default=140, min=10, max=2000, update=tag_redraw)
     Node.note_swap_content_order = BoolProperty(name="互换位置", default=False, update=tag_redraw)
     Node.note_z_order_switch = BoolProperty(name="层级切换", description="交换图片与文字的前后层级", default=False, update=tag_redraw)
     Node.note_badge_index = IntProperty(name="序号", default=0, min=0, update=tag_redraw, description="逻辑序号 (0为不显示)")
@@ -118,7 +118,6 @@ def clear_props():
         "note_image", "note_img_width", "note_show_img", "note_show_badge", "note_img_width_mode", "note_txt_pos", "note_txt_offset", "note_z_order_switch",
         "note_badge_index", "note_badge_color", "note_img_pos", "note_img_offset", "note_show_txt", "note_initialized"
     ]
-    for p in props:
-        if hasattr(Node, p): delattr(Node, p)
-    for p in dir(bpy.types.Scene):
-        if p.startswith("note_"): delattr(bpy.types.Scene, p)
+    for prop in props:
+        if hasattr(Node, prop):
+            delattr(Node, prop)
