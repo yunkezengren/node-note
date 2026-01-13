@@ -181,10 +181,48 @@ def draw_lines_batch(points: list[float2], color: RGBA, thickness: float = 2.0) 
     gpu.state.blend_set('ALPHA')
     batch.draw(shader)
 
+def _get_image_shader() -> GPUShader:
+    shader_name = "NODENOTE_IMAGE_SHADER"
+    if shader_name in _shader_cache:
+        return _shader_cache[shader_name]
+
+    # 参考: references_overlays\references_overlays.py
+    vert_out = gpu.types.GPUStageInterfaceInfo("node_note_interface") # type: ignore
+    vert_out.smooth('VEC2', "uv")
+    
+    shader_info = gpu.types.GPUShaderCreateInfo()
+    shader_info.sampler(0, 'FLOAT_2D', "image")
+    shader_info.vertex_in(0, 'VEC2', "pos")
+    shader_info.vertex_in(1, 'VEC2', "texCoord")
+    shader_info.vertex_out(vert_out)
+    
+    shader_info.push_constant('MAT4', "ModelViewProjectionMatrix")
+    shader_info.fragment_out(0, 'VEC4', "fragColor")
+    
+    shader_info.vertex_source(
+        "void main()"
+        "{"
+        "   uv = texCoord;"
+        "   gl_Position = ModelViewProjectionMatrix * vec4(pos, 0.0, 1.0);"
+        "}"
+    )
+    
+    shader_info.fragment_source(
+        "void main()"
+        "{"
+        "  vec4 color = texture(image, uv);"
+        "  fragColor = vec4(color.rgb, color.a);"
+        "}"
+    )
+    
+    shader = gpu.shader.create_from_info(shader_info)
+    _shader_cache[shader_name] = shader
+    return shader
+
 def draw_texture_batch(texture: GPUTexture | None, x: float, y: float, width: float, height: float) -> None:
     if not texture: return
-    shader = get_shader('2D_IMAGE')
-    if not shader: return
+
+    shader = _get_image_shader()
     vertices = ((x, y), (x + width, y), (x + width, y + height), (x, y + height))
     uvs = ((0, 0), (1, 0), (1, 1), (0, 1))
     indices = ((0, 1, 2), (2, 3, 0))
