@@ -3,18 +3,19 @@ import bpy
 import blf
 import gpu
 from gpu_extras.batch import batch_for_shader
-from bpy.types import Image, Node, NodeTree, Context
+from bpy.types import Image, Node, NodeTree
 from gpu.types import GPUShader, GPUTexture
 from mathutils import Vector as Vec2
 import array
 import math
-from .preferences import pref, text_split_lines
+from .preferences import pref
 from .utils import (
     float2,
     int3,
     RGBA,
     nd_abs_loc,
     get_region_zoom,
+    text_split_lines,
     view_to_region_scaled,
     check_color_visibility,
     get_node_screen_rect,
@@ -481,7 +482,7 @@ def _process_and_draw_text_and_image_note(node: Node, params: DrawParams, badge_
     # 获取对齐和交换属性
     txt_align = getattr(node, "note_txt_pos", 'TOP')
     img_align = getattr(node, "note_img_pos", 'TOP')
-    swap = getattr(node, "note_swap_content_order", False)
+    swap = getattr(node, "note_swap_order", False)
 
     # 检查是否堆叠
     is_stacked = (txt_align == img_align)

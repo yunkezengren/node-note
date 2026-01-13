@@ -3,7 +3,7 @@ from bpy.types import Operator
 from bpy.props import StringProperty
 from .preferences import pref
 from .utils import get_image_from_clipboard
-from .ui import draw_ui_layout
+from .ui import draw_panel_for_shortcut
 
 class NODE_OT_note_reset_prefs(Operator):
     """重置当前页面的设置"""
@@ -47,8 +47,8 @@ class NODE_OT_note_note_swap_order(Operator):
                     node.note_txt_pos = align_img
                     node.note_img_pos = align_txt
                 else:
-                    if hasattr(node, "note_swap_content_order"):
-                        node.note_swap_content_order = not node.note_swap_content_order
+                    if hasattr(node, "note_swap_order"):
+                        node.note_swap_order = not node.note_swap_order
                 context.area.tag_redraw()
         return {'FINISHED'}
 
@@ -410,22 +410,7 @@ class NODE_OT_note_note_quick_edit(Operator):
         return context.window_manager.invoke_popup(self, width=220)
 
     def draw(self, context):
-        layout = self.layout
-        row = layout.row()
-        prefs = pref()
-        row.prop(prefs, "show_global", text="", icon="TOOL_SETTINGS")
-        row.prop(prefs, "show_text", text="", icon="FILE_TEXT")
-        row.prop(prefs, "show_image", text="", icon="IMAGE_DATA")
-        row.prop(prefs, "show_badge", text="", icon="EVENT_NDOF_BUTTON_1")
-        row.prop(prefs, "show_list", text="", icon="ALIGN_JUSTIFY")
-        draw_ui_layout(layout,
-                       context,
-                       show_global=prefs.show_global,
-                       show_text=prefs.show_text,
-                       show_image=prefs.show_image,
-                       show_badge=prefs.show_badge,
-                       show_list=prefs.show_list)
-
+        draw_panel_for_shortcut(self.layout, context)
 
 classes = [
     NODE_OT_note_clear_select_all,

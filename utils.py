@@ -27,6 +27,15 @@ def nd_abs_loc(node: Node):
         return node.location_absolute
     return node.location + nd_abs_loc(node.parent) if node.parent else node.location
 
+def text_split_lines(text: str) -> list[str]:
+    """使用偏好设置中的分隔符将文本转换为换行"""
+    separator: str = pref().line_separator
+    if not separator:
+        return text.splitlines()
+    for sep in separator.split('|'):
+        text = text.replace(sep, "\n")
+    return text.splitlines()
+
 def get_region_zoom(context: Context) -> float:
     """获取节点编辑器的缩放比例"""
     view2d = context.region.view2d

@@ -1,22 +1,27 @@
 import bpy
-from bpy.types import AddonPreferences
+from bpy.types import AddonPreferences, Context
 from bpy.props import BoolProperty, StringProperty, FloatProperty, FloatVectorProperty, IntProperty, EnumProperty
 
 align_items = [('TOP', "顶部", ""), ('BOTTOM', "底部", ""), ('LEFT', "左侧", ""), ('RIGHT', "右侧", "")]
+txt_width_items = [('AUTO', "跟随节点", "宽度自动跟随节点宽度"), ('FIT', "适应内容", "宽度自动适应文本内容"), ('MANUAL', "手动设置", "手动设置宽度")]
+img_width_items = [('AUTO', "跟随节点", "宽度自动跟随节点宽度"), ('ORIGINAL', "原始宽度", "显示图像原始宽度"), ('MANUAL', "手动设置", "手动设置宽度")]
+badge_width_items = [('RELATIVE', "相对缩放", "跟随节点编辑器缩放"), ('ABSOLUTE', "屏幕空间", "固定屏幕像素大小")]
 
-def tag_redraw(self, context: bpy.types.Context):
+def get_txt_width_items(self, context):
+    if self.bl_idname == "NodeReroute":
+        return txt_width_items[1:]
+    return txt_width_items
+
+def get_img_width_items(self, context):
+    if self.bl_idname == "NodeReroute":
+        return img_width_items[1:]
+    return img_width_items
+
+def tag_redraw(self, context: Context):
     for window in context.window_manager.windows:
         for area in window.screen.areas:
-            if area.type == 'NODE_EDITOR': area.tag_redraw()
-
-def text_split_lines(text: str) -> list[str]:
-    """使用偏好设置中的分隔符将文本转换为换行"""
-    separator: str = pref().line_separator
-    if not separator:
-        return text.splitlines()
-    for sep in separator.split('|'):
-        text = text.replace(sep, "\n")
-    return text.splitlines()
+            if area.type == 'NODE_EDITOR':
+                area.tag_redraw()
 
 class NodeNoteAddonPreferences(AddonPreferences):
     bl_idname = __package__
@@ -27,6 +32,7 @@ class NodeNoteAddonPreferences(AddonPreferences):
     show_badge_lines       : BoolProperty(name="显示逻辑连线", default=True, update=tag_redraw, description="显示节点之间的序号连线")
     is_interactive_mode    : BoolProperty(name="交互模式", default=False, update=tag_redraw, description="点击节点即可编号，右键或ESC退出")
     sort_by_badge          : BoolProperty(name="按序号排序", default=True, update=tag_redraw, description="勾选后，有序号的节点将优先显示在列表顶部")
+    # todo 实现这个
     use_occlusion          : BoolProperty(name="自动遮挡", default=False, update=tag_redraw)
     tag_mode_prepend       : BoolProperty(name="前缀模式", default=True, description="特殊字符添加到已有文本前")
     navigator_search       : StringProperty(name="搜索", default="")
@@ -37,7 +43,6 @@ class NodeNoteAddonPreferences(AddonPreferences):
     show_badge       : BoolProperty(name="显示序号笔记", default=True, update=tag_redraw)
     show_list        : BoolProperty(name="显示笔记列表", default=True, update=tag_redraw)
 
-    # todo 根据已有笔记颜色动态显示按钮
     show_red             : BoolProperty(name="显示红", default=True, description="显示红", update=tag_redraw)
     show_green           : BoolProperty(name="显示绿", default=True, description="显示绿", update=tag_redraw)
     show_blue            : BoolProperty(name="显示蓝", default=True, description="显示蓝", update=tag_redraw)
@@ -46,46 +51,26 @@ class NodeNoteAddonPreferences(AddonPreferences):
     show_other           : BoolProperty(name="显示杂", default=True, description="显示杂", update=tag_redraw)
     hide_img_by_bg       : BoolProperty(name="同时过滤图片", default=True, description="过滤文本时是否同时过滤对应节点的图片", update=tag_redraw)
 
-    # 2. 序号设置区
-    badge_rel_scale        : FloatProperty(name="序号缩放", default=1.0, min=0.1, max=20.0, update=tag_redraw)
-    badge_scale_mode       : EnumProperty(name="缩放模式",
-                                       items=[('RELATIVE', "相对缩放", "跟随节点编辑器缩放"), ('ABSOLUTE', "屏幕空间", "固定屏幕像素大小")],
-                                       default='ABSOLUTE',
-                                       update=tag_redraw)
-    badge_abs_scale        : FloatProperty(name="屏幕空间缩放", default=1.0, min=0.1, max=10.0, update=tag_redraw)
-    default_badge_color    : FloatVectorProperty(name="圆背景色",
-                                              subtype='COLOR',
-                                              size=4,
-                                              default=(0.8, 0.1, 0.1, 1.0),
-                                              min=0,
-                                              max=1,
-                                              update=tag_redraw)
-    badge_font_color       : FloatVectorProperty(name="数字颜色",
-                                              subtype='COLOR',
-                                              size=4,
-                                              default=(1.0, 1.0, 1.0, 1.0),
-                                              min=0,
-                                              max=1,
-                                              description="所有序号的数字颜色",
-                                              update=tag_redraw)
-    badge_line_color       : FloatVectorProperty(name="连线颜色",
-                                              subtype='COLOR',
-                                              size=4,
-                                              default=(1.0, 0.8, 0.2, 0.8),
-                                              min=0,
-                                              max=1,
-                                              update=tag_redraw)
-    badge_line_thickness   : IntProperty(name="连线宽度", default=4, min=1, max=40, update=tag_redraw)
-
-    # 3. 文本设置区
+    # 2. 文本设置区
     default_font_size      : IntProperty(name="默认字号", default=8, min=4, max=100)
     default_text_color     : FloatVectorProperty(name="默认字色", subtype='COLOR', size=4, default=(1.0, 1.0, 1.0, 1.0), min=0, max=1)
     default_txt_bg_color   : FloatVectorProperty(name="默认背景色", subtype='COLOR', size=4, default=(0.2, 0.3, 0.5, 0.9), min=0, max=1)
     line_separator         : StringProperty(name="换行符", default=";|\\", description="文本中用于换行的分隔符，支持多个（用 | 分隔），如 : ;|\\ ")
 
-    txt_width_items_1 = [('AUTO', "跟随节点", "宽度自动跟随节点宽度"), ('FIT', "适应内容", "宽度自动适应文本内容"), ('MANUAL', "手动设置", "手动设置宽度")]
-    default_txt_width_mode : EnumProperty(name="宽度模式", items=txt_width_items_1, default=0, update=tag_redraw)
+    default_txt_width_mode : EnumProperty(name="宽度模式", items=txt_width_items, default=0, update=tag_redraw)
     default_text_pos       : EnumProperty(name="默认对齐", items=align_items, default='TOP')
+
+    # 3. 图像设置区
+    img_default_align      : EnumProperty(name="默认对齐", items=align_items, default='TOP')
+
+    # 4. 序号设置区
+    badge_rel_scale        : FloatProperty(name="序号缩放", default=1.0, min=0.1, max=20.0, update=tag_redraw)
+    badge_scale_mode       : EnumProperty(name="缩放模式", items=badge_width_items, default='ABSOLUTE', update=tag_redraw)
+    badge_abs_scale        : FloatProperty(name="屏幕空间缩放", default=1.0, min=0.1, max=10.0, update=tag_redraw)
+    default_badge_color    : FloatVectorProperty(name="圆背景色", subtype='COLOR', size=4, default=(0.8, 0.1, 0.1, 1.0), min=0, max=1, update=tag_redraw)
+    badge_font_color       : FloatVectorProperty(name="数字颜色", subtype='COLOR', size=4, default=(1.0, 1.0, 1.0, 1.0), min=0, max=1, description="所有序号的数字颜色", update=tag_redraw)
+    badge_line_color       : FloatVectorProperty(name="连线颜色", subtype='COLOR', size=4, default=(1.0, 0.8, 0.2, 0.8), min=0, max=1, update=tag_redraw)
+    badge_line_thickness   : IntProperty(name="连线宽度", default=4, min=1, max=40, update=tag_redraw)
 
     # 预设颜色
     col_preset_1           : FloatVectorProperty(name="预设红", subtype='COLOR', size=4, default=(0.6, 0.1, 0.1, 0.9), min=0, max=1)
@@ -95,16 +80,13 @@ class NodeNoteAddonPreferences(AddonPreferences):
     col_preset_5           : FloatVectorProperty(name="预设紫", subtype='COLOR', size=4, default=(0.4, 0.1, 0.5, 0.9), min=0, max=1)
     col_preset_6           : FloatVectorProperty(name="预设无", subtype='COLOR', size=4, default=(0.0, 0.0, 0.0, 0.0), min=0, max=1)
 
-    # 预设标签 (maxlen=8)
-    label_preset_1         : StringProperty(name="标签1", default="红", maxlen=8)
-    label_preset_2         : StringProperty(name="标签2", default="绿", maxlen=8)
-    label_preset_3         : StringProperty(name="标签3", default="蓝", maxlen=8)
-    label_preset_4         : StringProperty(name="标签4", default="橙", maxlen=8)
-    label_preset_5         : StringProperty(name="标签5", default="紫", maxlen=8)
-    label_preset_6         : StringProperty(name="标签6", default="无", maxlen=8)
-
-    # 4. 图像设置区
-    img_default_align      : EnumProperty(name="默认对齐", items=align_items, default='TOP')
+    # 预设标签
+    label_preset_1         : StringProperty(name="标签1", default="红")
+    label_preset_2         : StringProperty(name="标签2", default="绿")
+    label_preset_3         : StringProperty(name="标签3", default="蓝")
+    label_preset_4         : StringProperty(name="标签4", default="橙")
+    label_preset_5         : StringProperty(name="标签5", default="紫")
+    label_preset_6         : StringProperty(name="标签6", default="无")
 
     def draw(self, context):
         layout = self.layout
@@ -131,19 +113,44 @@ class NodeNoteAddonPreferences(AddonPreferences):
             else:
                 split1.label(text="快捷键未注册", icon='ERROR')
 
-        col.separator()
-        col.prop(self, "use_occlusion", text="默认开启自动遮挡")
-
-        col.separator()
-        col.prop(self, "show_all_notes", text="默认显示所有")
-        col.prop(self, "show_select_badge", text="默认显示序号")
-        col.prop(self, "show_badge_lines", text="默认显示逻辑连线")
-        col.prop(self, "hide_img_by_bg", text="过滤文本时同时过滤图片")
-
-        # 2. 序号设置
+        # ============================================================================================
         box = layout.box()
         row = box.row()
-        row.label(text="序号样式设置", icon='LINENUMBERS_ON')
+        row.label(text="文本笔记默认设置", icon='FILE_TEXT')
+        row.operator("node.note_reset_prefs", text="", icon='LOOP_BACK').target_section = 'TEXT'
+
+        col = box.column(align=True)
+        row = col.row(align=True)
+        row.prop(self, "default_font_size")
+        row.prop(self, "default_text_color", text="")
+        row.prop(self, "default_txt_bg_color", text="")
+
+        row = col.row(align=True)
+        row.prop(self, "text_default_fit", text="默认适应文本")
+        row.prop(self, "default_text_pos", text="默认对齐模式")
+
+        col.separator()
+        col.label(text="文本背景颜色预设:")
+        grid_color = col.grid_flow(row_major=True, columns=6, align=True)
+        for i in range(1, 6):
+            grid_color.prop(self, f"col_preset_{i}", text="")
+
+        grid_label = col.grid_flow(row_major=True, columns=6, align=True)
+        for i in range(1, 6):
+            grid_label.prop(self, f"label_preset_{i}", text="")
+
+        # ============================================================================================
+        box = layout.box()
+        row = box.row()
+        row.label(text="图像笔记默认设置", icon='IMAGE_DATA')
+        row.operator("node.note_reset_prefs", text="", icon='LOOP_BACK').target_section = 'IMG'
+        col = box.column(align=True)
+        col.prop(self, "img_default_align", text="默认对齐模式")
+
+        # ============================================================================================
+        box = layout.box()
+        row = box.row()
+        row.label(text="序号笔记默认设置", icon='EVENT_NDOF_BUTTON_1')
         row.operator("node.note_reset_prefs", text="", icon='LOOP_BACK').target_section = 'SEQ'
 
         col = box.column(align=True)
@@ -156,42 +163,6 @@ class NodeNoteAddonPreferences(AddonPreferences):
         split = col.split(factor=0.5)
         split.row().prop(self, "badge_font_color", text="文本色")
         split.row().prop(self, "default_badge_color", text="背景色")
-
-        # 3. 文本设置
-        box = layout.box()
-        row = box.row()
-        row.label(text="文本与背景默认值", icon='TEXT')
-        row.operator("node.note_reset_prefs", text="", icon='LOOP_BACK').target_section = 'TEXT'
-
-        col = box.column(align=True)
-        row = col.row(align=True)
-        row.prop(self, "default_font_size")
-        row.prop(self, "default_text_color", text="")
-        row.prop(self, "default_txt_bg_color", text="")
-
-        row = col.row(align=True)
-        row.prop(self, "text_default_fit", text="默认适应文本")
-        row.prop(self, "default_text_pos", text="")
-
-        col.separator()
-        col.label(text="背景颜色预设 (颜色与文字):")
-
-        grid_col = col.grid_flow(row_major=True, columns=6, align=True)
-        for i in range(1, 6):
-            grid_col.prop(self, f"col_preset_{i}", text="")
-
-        grid_lbl = col.grid_flow(row_major=True, columns=6, align=True)
-        for i in range(1, 6):
-            grid_lbl.prop(self, f"label_preset_{i}", text="")
-
-        # 4. 图像设置
-        box = layout.box()
-        row = box.row()
-        row.label(text="图像默认值 & 性能", icon='IMAGE_DATA')
-        row.operator("node.note_reset_prefs", text="", icon='LOOP_BACK').target_section = 'IMG'
-
-        col = box.column(align=True)
-        col.prop(self, "img_default_align", text="默认对齐")
 
 def pref() -> NodeNoteAddonPreferences:
     assert __package__ is not None

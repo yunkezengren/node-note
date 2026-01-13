@@ -1,5 +1,6 @@
 from bpy.types import Panel, UILayout, Context, Menu, Node, NodeTree, Image
-from .preferences import pref, text_split_lines
+from .preferences import pref
+from .utils import text_split_lines
 
 class NODE_PT_node_note_gpu_panel(Panel):
     bl_label = "节点随记"
@@ -14,9 +15,9 @@ class NODE_PT_node_note_gpu_panel(Panel):
 
     def draw(self, context):
         layout = self.layout
-        draw_ui_layout(layout, context)
+        draw_panel(layout, context)
 
-def draw_ui_layout(layout: UILayout, context: Context, show_global=True, show_text=True, show_image=True, show_badge=True, show_list=True):
+def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=True, show_image=True, show_badge=True, show_list=True):
     header: UILayout
     body: UILayout
     prefs = pref()
@@ -289,6 +290,22 @@ def draw_search_list(layout: UILayout, context: Context):
                     row_text.label(text=" "*20 + line)
             else:
                 row_text.label(text="文本:  无", icon='FILE_TEXT')
+
+def draw_panel_for_shortcut(layout: UILayout, context: Context):
+    row = layout.row()
+    prefs = pref()
+    row.prop(prefs, "show_global", text="", icon="TOOL_SETTINGS")
+    row.prop(prefs, "show_text", text="", icon="FILE_TEXT")
+    row.prop(prefs, "show_image", text="", icon="IMAGE_DATA")
+    row.prop(prefs, "show_badge", text="", icon="EVENT_NDOF_BUTTON_1")
+    row.prop(prefs, "show_list", text="", icon="ALIGN_JUSTIFY")
+    draw_panel(layout,
+                    context,
+                    show_global=prefs.show_global,
+                    show_text=prefs.show_text,
+                    show_image=prefs.show_image,
+                    show_badge=prefs.show_badge,
+                    show_list=prefs.show_list)
 
 def draw_menu_func(self: Menu, context: Context):
     layout = self.layout
