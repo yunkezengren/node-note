@@ -22,7 +22,6 @@ class NodeNoteAddonPreferences(AddonPreferences):
     show_badge_lines       : BoolProperty(name="显示逻辑连线", default=True, description="显示节点之间的序号连线")
     is_interactive_mode    : BoolProperty(name="交互模式", default=False, description="点击节点即可编号，右键或ESC退出")
     sort_by_badge          : BoolProperty(name="按序号排序", default=True, description="勾选后，有序号的节点将优先显示在列表顶部")
-    # todo 实现这个
     use_occlusion          : BoolProperty(name="自动遮挡", default=False)
     tag_mode_prepend       : BoolProperty(name="前缀模式", default=True, description="特殊字符添加到已有文本前")
     navigator_search       : StringProperty(name="搜索", default="")
@@ -30,6 +29,7 @@ class NodeNoteAddonPreferences(AddonPreferences):
 
     # 2. 文本设置区
     default_font_size      : IntProperty(name="默认字号", default=8, min=4, max=100)
+    font_path              : StringProperty(default='', subtype='FILE_PATH', description="字体文件路径,留空使用默认字体")
     default_text_color     : FloatVectorProperty(name="默认字色", subtype='COLOR', size=4, default=(1.0, 1.0, 1.0, 1.0), min=0, max=1)
     default_txt_bg_color   : FloatVectorProperty(name="默认背景色", subtype='COLOR', size=4, default=(0.2, 0.3, 0.5, 0.9), min=0, max=1)
 
@@ -108,13 +108,14 @@ class NodeNoteAddonPreferences(AddonPreferences):
                 split1.label(text="快捷键未注册", icon='ERROR')
 
         layout.label(text="部分属性更改后重启Blender后生效:", icon='INFO')
+
         # region 文本笔记
         txt_box = layout.box()
         txt_box.label(text="文本笔记默认设置", icon='FILE_TEXT')
 
         split_txt = txt_box.split(factor=0.5)
         split_txt.prop(self, "default_font_size", text="字号")
-        split_txt.prop(pref(), "line_separator", text="换行符")
+        split_txt.prop(self, "font_path", text="字体")
 
         split_color = txt_box.split(factor=0.5)
         split_color.row().prop(self, "default_text_color", text="文本色")

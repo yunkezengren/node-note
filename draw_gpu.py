@@ -32,6 +32,20 @@ DefaultBg = (0.2, 0.3, 0.5, 0.9)
 handler = None
 _shader_cache: dict[str, GPUShader] = {}
 _manual_texture_cache: dict[str, GPUTexture] = {}
+_font_id: int = 0
+_font_path: str = ""
+
+def get_font_id() -> int:
+    """获取全局字体 ID"""
+    global _font_id, _font_path
+    font_path = pref().font_path
+    if font_path != _font_path:
+        _font_path = font_path
+        if font_path:
+            _font_id = blf.load(font_path) or 0
+        else:
+            _font_id = 0
+    return _font_id
 
 # region 数据类
 
@@ -392,8 +406,9 @@ def _draw_text_note(node: Node, text, bg_color: RGBA, node_info: NodeInfo, txt_x
     pad = PaddingX * scaled_zoom
     # 计算文本尺寸
     fs = max(1, int(getattr(node, "note_font_size", 8) * scaled_zoom))
+    # 获取字体
+    font_id = get_font_id()
     # 文本换行
-    font_id = 0
     blf.size(font_id, fs)
     txt_width_mode = getattr(node, "note_txt_width_mode", 'AUTO')
     lines = _wrap_text(font_id, text, txt_width_mode, note_width, pad)

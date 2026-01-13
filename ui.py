@@ -84,13 +84,14 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
                     op.tag_text = tag
 
                 txt_box.separator(factor=0.05)
-                split_txt = txt_box.split(factor=0.5)
+                split_txt = txt_box.split(factor=0.4)
                 split_txt.prop(node, "note_font_size", text="字号")
-                split_txt.prop(pref(), "line_separator", text="换行符")
+                split_txt.row().prop(node, "note_text_color", text="文本")
+                split_txt.row().prop(node, "note_txt_bg_color", text="背景")
 
-                split_color = txt_box.split(factor=0.5)
-                split_color.row().prop(node, "note_text_color", text="文本色")
-                split_color.row().prop(node, "note_txt_bg_color", text="背景色")
+                split_txt = txt_box.split(factor=0.5)
+                split_txt.prop(pref(), "font_path", text="字体")
+                split_txt.prop(pref(), "line_separator", text="换行符")
 
                 row_pos = txt_box.row()
                 row_pos.label(text="背景:")
