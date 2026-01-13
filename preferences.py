@@ -22,6 +22,7 @@ class NodeNoteAddonPreferences(AddonPreferences):
     bl_idname = __package__
 
     # 1. 全局设置
+    cursor_warp_x          : IntProperty(default=0, min=1, max=500, description="快捷键唤出面板时鼠标偏移")
     show_all_notes         : BoolProperty(name="显示所有", default=True, update=tag_redraw)
     show_badge_lines       : BoolProperty(name="显示逻辑连线", default=True, update=tag_redraw, description="显示节点之间的序号连线")
     is_interactive_mode    : BoolProperty(name="交互模式", default=False, update=tag_redraw, description="点击节点即可编号，右键或ESC退出")
@@ -43,7 +44,7 @@ class NodeNoteAddonPreferences(AddonPreferences):
     show_orange          : BoolProperty(name="显示橙", default=True, description="显示橙", update=tag_redraw)
     show_purple          : BoolProperty(name="显示紫", default=True, description="显示紫", update=tag_redraw)
     show_other           : BoolProperty(name="显示杂", default=True, description="显示杂", update=tag_redraw)
-    hide_img_by_bg   : BoolProperty(name="同时过滤图片", default=True, description="过滤文本时是否同时过滤对应节点的图片", update=tag_redraw)
+    hide_img_by_bg       : BoolProperty(name="同时过滤图片", default=True, description="过滤文本时是否同时过滤对应节点的图片", update=tag_redraw)
 
     # 2. 序号设置区
     badge_rel_scale        : FloatProperty(name="序号缩放", default=1.0, min=0.1, max=20.0, update=tag_redraw)
@@ -111,8 +112,11 @@ class NodeNoteAddonPreferences(AddonPreferences):
         row = box.row()
         row.label(text="全局设置", icon='WORLD_DATA')
         col = box.column()
+        split = col.split(factor=0.5)
+        split1 = split.row()
+        split.prop(self, "cursor_warp_x", text="默认鼠标偏移")
 
-        col.label(text="快捷键设置 (默认: Shift + 右键):", icon='KEYINGSET')
+        split1.label(text="面板快捷键:", icon='KEYINGSET')
         wm = context.window_manager
         kc = wm.keyconfigs.user
         km = kc.keymaps.get('Node Editor')
@@ -123,9 +127,9 @@ class NodeNoteAddonPreferences(AddonPreferences):
                     kmi = k
                     break
             if kmi:
-                col.prop(kmi, "type", text="", full_event=True)
+                split1.prop(kmi, "type", text="", full_event=True)
             else:
-                col.label(text="快捷键未注册", icon='ERROR')
+                split1.label(text="快捷键未注册", icon='ERROR')
 
         col.separator()
         col.prop(self, "use_occlusion", text="默认开启自动遮挡")

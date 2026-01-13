@@ -35,7 +35,7 @@ def draw_ui_layout(layout: UILayout, context: Context, show_global=True, show_te
             row_pos = body.row()
             row_pos.operator("preferences.addon_show", text="偏好", icon='PREFERENCES').module = __package__
             row_pos.prop(prefs, "show_all_notes", text="显示", icon='HIDE_OFF', toggle=True)
-            row_pos.operator("node.note_clear_all_scene_notes", text="全删", icon='TRASH')
+            row_pos.operator("node.note_delete_all_notes", text="全删", icon='TRASH')
             # 还很不完善
             # body.column().prop(prefs, "use_occlusion", text="被遮挡时自动隐藏")
 

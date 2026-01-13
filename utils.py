@@ -19,6 +19,9 @@ Rect = tuple[float, float, float, float]
 def ui_scale():
     return bpy.context.preferences.system.ui_scale
 
+def dpi_scale():
+    return bpy.context.preferences.system.dpi / 72
+
 def nd_abs_loc(node: Node):
     if hasattr(node, "location_absolute"):
         return node.location_absolute
