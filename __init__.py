@@ -41,5 +41,5 @@ def unregister():
     operators.unregister()
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
-    node_properties.clear_props()
+    node_properties.delete_props()
 

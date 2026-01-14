@@ -47,7 +47,7 @@ def init_props():
     Node.note_txt_offset     = IntVectorProperty(size=2, default=(0, 0), subtype='XYZ', description="文本偏移")
     Node.note_img_offset     = IntVectorProperty(size=2, default=(0, 0), subtype='XYZ', description="图像偏移")
 
-def clear_props():
+def delete_props():
     props = [
         "note_text",
         "note_image",
