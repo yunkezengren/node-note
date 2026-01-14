@@ -9,7 +9,7 @@ from mathutils import Vector as Vec2
 import math
 import numpy as np
 import os
-from .typings import NotedNode, float2, int3, RGBA
+from .typings import NotedNode, float2, int3, RGBA, AlignMode, TextWidthMode, BadgeScaleMode
 from .preferences import pref
 from .utils import (
     nd_abs_loc,
@@ -195,7 +195,7 @@ def _get_draw_params() -> DrawParams:
         occluders = [get_node_screen_rect(n) for n in context.selected_nodes]
     # 序号样式参数
     badge_rel_scale = prefs.badge_rel_scale
-    badge_scale_mode = prefs.badge_scale_mode
+    badge_scale_mode: BadgeScaleMode = prefs.badge_scale_mode
     badge_abs_scale = prefs.badge_abs_scale
     if badge_scale_mode == 'RELATIVE':
         badge_radius = 7 * badge_rel_scale * scaled_zoom
@@ -216,7 +216,7 @@ def _get_draw_params() -> DrawParams:
         badge_font_size,
     )
 
-def _wrap_text(font_id: int, text: str, txt_width_mode: str, note_width: float, pad: float) -> list:
+def _wrap_text(font_id: int, text: str, txt_width_mode: TextWidthMode, note_width: float, pad: float) -> list[str]:
     """文本换行处理"""
     if txt_width_mode == 'FIT':
         return text_split_lines(text)
@@ -246,7 +246,7 @@ def _calculate_node_position(node: NotedNode, params: DrawParams) -> NodeInfo:
         scaled_zoom,
     )
 
-def _calc_note_pos(node_info: NodeInfo, alignment: str, offset_vec: float2, self_width: float, self_height: float,
+def _calc_note_pos(node_info: NodeInfo, alignment: AlignMode, offset_vec: float2, self_width: float, self_height: float,
                    scaled_zoom: float) -> float2:
     """计算元素位置"""
     base_x = node_info.left_x

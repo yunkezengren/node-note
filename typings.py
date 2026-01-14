@@ -1,10 +1,15 @@
+from typing import Literal
 from bpy.types import Node, Image
-
 float2 = tuple[float, float]
 int2 = tuple[int, int]
 int3 = tuple[int, int, int]
 RGBA = tuple[float, float, float, float]
 Rect = tuple[float, float, float, float]
+
+AlignMode = Literal["TOP", "BOTTOM", "LEFT", "RIGHT"]
+TextWidthMode = Literal["AUTO", "FIT", "MANUAL"]
+ImageWidthMode = Literal["AUTO", "ORIGINAL", "MANUAL"]
+BadgeScaleMode = Literal["RELATIVE", "ABSOLUTE"]
 
 class NotedNode(Node):
     note_show_txt: bool
@@ -21,10 +26,10 @@ class NotedNode(Node):
     note_txt_bg_width: int
     note_img_width: int
     
-    note_txt_width_mode: str
-    note_img_width_mode: str
-    note_txt_pos: str
-    note_img_pos: str
+    note_txt_width_mode: TextWidthMode
+    note_img_width_mode: ImageWidthMode
+    note_txt_pos: AlignMode
+    note_img_pos: AlignMode
     
     note_txt_center: bool
     note_img_center: bool

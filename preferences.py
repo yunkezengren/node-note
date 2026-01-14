@@ -1,11 +1,28 @@
 import bpy
 from bpy.types import AddonPreferences, Context
-from bpy.props import BoolProperty, StringProperty, FloatProperty, FloatVectorProperty, IntProperty, EnumProperty, IntVectorProperty
+from bpy.props import BoolProperty, StringProperty, FloatProperty, FloatVectorProperty, IntProperty, EnumProperty
+from .typings import AlignMode, TextWidthMode, ImageWidthMode, BadgeScaleMode
 
-align_items = [('TOP', "顶部", ""), ('BOTTOM', "底部", ""), ('LEFT', "左侧", ""), ('RIGHT', "右侧", "")]
-txt_width_items = [('AUTO', "跟随节点", "宽度自动跟随节点宽度"), ('FIT', "适应内容", "宽度自动适应文本内容"), ('MANUAL', "手动设置", "手动设置宽度")]
-img_width_items = [('AUTO', "跟随节点", "宽度自动跟随节点宽度"), ('ORIGINAL', "原始宽度", "显示图像原始宽度"), ('MANUAL', "手动设置", "手动设置宽度")]
-badge_width_items = [('RELATIVE', "相对缩放", "跟随节点编辑器缩放"), ('ABSOLUTE', "屏幕空间", "固定屏幕像素大小")]
+align_items: list[tuple[AlignMode, str, str]] = [
+    ('TOP', "顶部", ""),
+    ('BOTTOM', "底部", ""),
+    ('LEFT', "左侧", ""),
+    ('RIGHT', "右侧", ""),
+]
+txt_width_items: list[tuple[TextWidthMode, str, str]] = [
+    ('AUTO', "跟随节点", "宽度自动跟随节点宽度"),
+    ('FIT', "适应内容", "宽度自动适应文本内容"),
+    ('MANUAL', "手动设置", "手动设置宽度"),
+]
+img_width_items: list[tuple[ImageWidthMode, str, str]] = [
+    ('AUTO', "跟随节点", "宽度自动跟随节点宽度"),
+    ('ORIGINAL', "原始宽度", "显示图像原始宽度"),
+    ('MANUAL', "手动设置", "手动设置宽度"),
+]
+badge_width_items: list[tuple[BadgeScaleMode, str, str]] = [
+    ('RELATIVE', "相对缩放", "跟随节点编辑器缩放"),
+    ('ABSOLUTE', "屏幕空间", "固定屏幕像素大小"),
+]
 
 def tag_redraw(self, context: Context):
     for window in context.window_manager.windows:
@@ -14,7 +31,7 @@ def tag_redraw(self, context: Context):
                 area.tag_redraw()
 
 class NodeNoteAddonPreferences(AddonPreferences):
-    bl_idname = __package__
+    bl_idname = __package__  # type: ignore
 
     # 1. 全局设置
     cursor_warp_x          : IntProperty(default=0, min=1, max=500, description="快捷键唤出面板时鼠标偏移")
@@ -144,7 +161,7 @@ class NodeNoteAddonPreferences(AddonPreferences):
         # region 图像笔记
         box = layout.box()
         box.label(text="图像笔记默认设置", icon='IMAGE_DATA')
-        
+
         col = box.column()
         row = col.row()
 

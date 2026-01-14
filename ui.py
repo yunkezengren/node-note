@@ -1,6 +1,7 @@
 from bpy.types import Panel, UILayout, Context, Menu, Node, Image
 from .preferences import pref
 from .utils import text_split_lines
+from .typings import NotedNode
 
 class NODE_PT_node_note_gpu_panel(Panel):
     bl_label = "节点随记"
@@ -59,7 +60,7 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
             if len(context.selected_nodes) > 1:
                 body.row().operator("node.note_copy_to_selected", text="同步活动样式到选中", icon='DUPLICATE')
 
-    node = context.active_node
+    node: NotedNode = context.active_node
     if node:
         if show_text:
             header, body = layout.panel("setting1", default_closed=False)
@@ -180,7 +181,7 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
 
     if show_list:
         search_key = pref().navigator_search.strip().lower()
-        filter_noted_nodes: list[Node] = []
+        filter_noted_nodes: list[NotedNode] = []
         all_notes_count = 0
 
         for node in context.space_data.edit_tree.nodes:
@@ -196,7 +197,7 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
         if body:
             draw_search_list(body, context, filter_noted_nodes, all_notes_count)
 
-def draw_search_list(layout: UILayout, context: Context, filter_noted_nodes: list[Node], all_notes_count: int):
+def draw_search_list(layout: UILayout, context: Context, filter_noted_nodes: list[NotedNode], all_notes_count: int):
     row = layout.row(align=True)
     row.prop(pref(), "navigator_search", text="", icon='VIEWZOOM')
 
