@@ -1,14 +1,8 @@
 import math
 from .preferences import pref
+from .typings import int2, RGBA, Rect
 import bpy
 from bpy.types import Context, Node, Image, SpaceImageEditor
-
-# ==================== 类型别名 ====================
-float2 = tuple[float, float]
-int2 = tuple[int, int]
-int3 = tuple[int, int, int]
-RGBA = tuple[float, float, float, float]
-Rect = tuple[float, float, float, float]
 
 # ==================== 工具函数 ====================
 

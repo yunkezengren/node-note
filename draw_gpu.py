@@ -3,17 +3,15 @@ import bpy
 import blf
 import gpu
 from gpu_extras.batch import batch_for_shader
-from bpy.types import Image, Node, NodeTree
+from bpy.types import Image, NodeTree
 from gpu.types import GPUShader, GPUTexture
 from mathutils import Vector as Vec2
 import math
 import numpy as np
 import os
+from .typings import NotedNode, float2, int3, RGBA
 from .preferences import pref
 from .utils import (
-    float2,
-    int3,
-    RGBA,
     nd_abs_loc,
     get_region_zoom,
     text_split_lines,
@@ -22,9 +20,8 @@ from .utils import (
     get_node_screen_rect,
 )
 
-from .typings import NotedNode # type: ignore
-
 # region 常量
+
 PaddingX = 2
 MarginBottom = 2
 MinAutoWidth = 101
@@ -407,12 +404,12 @@ def _draw_text_note(node: NotedNode, text, bg_color: RGBA, node_info: NodeInfo, 
     scaled_zoom = node_info.scaled_zoom
     pad = PaddingX * scaled_zoom
     # 计算文本尺寸
-    fs = max(1, int(getattr(node, "note_font_size", 8) * scaled_zoom))
+    fs = max(1, int(node.note_font_size * scaled_zoom))
     # 获取字体
     font_id = get_font_id()
     # 文本换行
     blf.size(font_id, fs)
-    txt_width_mode = getattr(node, "note_txt_width_mode", 'AUTO')
+    txt_width_mode = node.note_txt_width_mode
     lines = _wrap_text(font_id, text, txt_width_mode, note_width, pad)
     # 绘制背景
     draw_rounded_rect_batch(txt_x, txt_y, note_width, text_note_height, bg_color, CornerRadius * scaled_zoom)
@@ -479,17 +476,17 @@ def _draw_badge_notes(badge_infos: dict[int, list[BadgeInfo]], params: DrawParam
 def _process_and_draw_text_and_image_note(node: NotedNode, params: DrawParams, badge_infos: dict[int, list[BadgeInfo]]) -> None:
     """处理单个节点的注释绘制"""
     # 获取节点属性
-    text = getattr(node, "note_text", "").strip()
-    img = getattr(node, "note_image", None)
-    badge_idx = getattr(node, "note_badge_index", 0)
-    show_txt = getattr(node, "note_show_txt", True)
-    show_img = getattr(node, "note_show_img", True)
-    show_badge = getattr(node, "note_show_badge", True)
+    text = node.note_text
+    img = node.note_image
+    badge_idx = node.note_badge_index
+    show_txt = node.note_show_txt
+    show_img = node.note_show_img
+    show_badge = node.note_show_badge
     # 跳过空注释
     if not (text and show_txt) and not (img and show_img) and not (badge_idx > 0 and show_badge):
         return
     # 颜色可见性检查
-    bg_color = getattr(node, "note_txt_bg_color", DefaultBg)
+    bg_color = node.note_txt_bg_color
     visible_by_bg_color = check_color_visibility(bg_color)
     if not visible_by_bg_color and badge_idx == 0:
         return
@@ -497,9 +494,9 @@ def _process_and_draw_text_and_image_note(node: NotedNode, params: DrawParams, b
     node_info = _calculate_node_position(node, params)
 
     # 获取对齐和交换属性
-    txt_align = getattr(node, "note_txt_pos", 'TOP')
-    img_align = getattr(node, "note_img_pos", 'TOP')
-    swap = getattr(node, "note_swap_order", False)
+    txt_align = node.note_txt_pos
+    img_align = node.note_img_pos
+    swap = node.note_swap_order
 
     # 检查是否堆叠
     is_stacked = (txt_align == img_align)
@@ -515,8 +512,8 @@ def _process_and_draw_text_and_image_note(node: NotedNode, params: DrawParams, b
     text_note_height = 0
     lines = []
     if text and show_txt and visible_by_bg_color:
-        fs = max(1, int(getattr(node, "note_font_size", 8) * scaled_zoom))
-        txt_width_mode = getattr(node, "note_txt_width_mode", 'AUTO')
+        fs = max(1, int(node.note_font_size * scaled_zoom))
+        txt_width_mode = node.note_txt_width_mode
 
         # 计算目标宽度
         if txt_width_mode == 'FIT' and text:
@@ -532,7 +529,7 @@ def _process_and_draw_text_and_image_note(node: NotedNode, params: DrawParams, b
             min_w = view_to_region_scaled(loc[0] + MinAutoWidth, loc[1])[0] - node_info.left_x
             note_width = max(node_width_px, min_w)
         else:
-            manual_w = getattr(node, "note_txt_bg_width", 200)
+            manual_w = node.note_txt_bg_width
             note_width = view_to_region_scaled(loc[0] + manual_w, loc[1])[0] - node_info.left_x
 
         # 文本换行
@@ -550,7 +547,7 @@ def _process_and_draw_text_and_image_note(node: NotedNode, params: DrawParams, b
     img_draw_h = 0
     texture = None
     if img and show_img and (not pref().hide_img_by_bg or visible_by_bg_color):
-        img_width_mode = getattr(node, "note_img_width_mode", 'AUTO')
+        img_width_mode = node.note_img_width_mode
         ref_width = max(node_width_px, (view_to_region_scaled(loc[0] + MinAutoWidth, loc[1])[0] - node_info.left_x))
 
         if img_width_mode == 'ORIGINAL':
@@ -558,7 +555,7 @@ def _process_and_draw_text_and_image_note(node: NotedNode, params: DrawParams, b
         elif img_width_mode == 'AUTO':
             base_width = ref_width
         else:
-            manual_w = getattr(node, "note_img_width", 140)
+            manual_w = node.note_img_width
             base_width = view_to_region_scaled(loc[0] + manual_w, loc[1])[0] - node_info.left_x
 
         img_draw_w = base_width
@@ -569,13 +566,13 @@ def _process_and_draw_text_and_image_note(node: NotedNode, params: DrawParams, b
     if not is_stacked:
         # 非堆叠情况：各自独立计算位置
         if text and show_txt and visible_by_bg_color:
-            offset = getattr(node, "note_txt_offset", (0, 0))
+            offset = node.note_txt_offset
             txt_x, txt_y = _calc_note_pos(node_info, txt_align, offset, note_width, text_note_height, scaled_zoom)
         else:
             txt_x, txt_y = 0, 0
 
         if img and show_img and (not pref().hide_img_by_bg or visible_by_bg_color):
-            img_off = getattr(node, "note_img_offset", (0, 0))
+            img_off = node.note_img_offset
             img_x, img_y = _calc_note_pos(node_info, img_align, img_off, img_draw_w, img_draw_h, scaled_zoom)
         else:
             img_x, img_y = 0, 0
@@ -584,11 +581,11 @@ def _process_and_draw_text_and_image_note(node: NotedNode, params: DrawParams, b
         inner_width, inner_height, inner_offset = (note_width, text_note_height,
                                                    getattr(node, "note_txt_offset",
                                                            (0, 0))) if not swap else (img_draw_w, img_draw_h,
-                                                                                      getattr(node, "note_img_offset", (0, 0)))
+                                                                                      node.note_img_offset)
         outer_width, outer_height, outer_offset = (img_draw_w, img_draw_h,
                                                    getattr(node, "note_img_offset",
                                                            (0, 0))) if not swap else (note_width, text_note_height,
-                                                                                      getattr(node, "note_txt_offset", (0, 0)))
+                                                                                      node.note_txt_offset)
 
         inner_x, inner_y = _calc_note_pos(node_info, txt_align, inner_offset, inner_width, inner_height, scaled_zoom)
         outer_x, outer_y = inner_x, inner_y
@@ -619,7 +616,7 @@ def _process_and_draw_text_and_image_note(node: NotedNode, params: DrawParams, b
 
     # 绘制文本
     if text and show_txt and visible_by_bg_color:
-        txt_center = getattr(node, "note_txt_center", False)
+        txt_center = node.note_txt_center
         if txt_center and txt_align in {'TOP', 'BOTTOM'}:
             center_offset = (node_width_px - note_width) / 2
             txt_x += center_offset
@@ -627,7 +624,7 @@ def _process_and_draw_text_and_image_note(node: NotedNode, params: DrawParams, b
 
     # 绘制图像
     if img and show_img and (not pref().hide_img_by_bg or visible_by_bg_color):
-        img_center = getattr(node, "note_img_center", True)
+        img_center = node.note_img_center
         if img_center and img_align in {'TOP', 'BOTTOM'}:
             center_offset = (node_width_px - img_draw_w) / 2
             img_x += center_offset
@@ -650,7 +647,7 @@ def draw_callback_px() -> None:
     # 收集序号坐标
     badge_infos: dict[int, list[BadgeInfo]] = {}
     for node in tree.nodes:
-        _process_and_draw_text_and_image_note(node, params, badge_infos)
+        _process_and_draw_text_and_image_note(node, params, badge_infos)  # type: ignore
     _draw_badge_notes(badge_infos, params)
 
 def register_draw_handler() -> None:

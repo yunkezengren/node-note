@@ -1,5 +1,5 @@
 import bpy
-from bpy.types import Node, Context
+from bpy.types import Node
 from bpy.props import StringProperty, IntProperty, FloatVectorProperty, BoolProperty, PointerProperty, EnumProperty, IntVectorProperty
 from .preferences import pref, align_items, txt_width_items, img_width_items
 

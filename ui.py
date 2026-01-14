@@ -1,4 +1,4 @@
-from bpy.types import Panel, UILayout, Context, Menu, Node, NodeTree, Image
+from bpy.types import Panel, UILayout, Context, Menu, Node, Image
 from .preferences import pref
 from .utils import text_split_lines
 
