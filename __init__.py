@@ -26,10 +26,12 @@ def register():
         kmi = km.keymap_items.new("node.note_quick_edit", 'D', 'CLICK', ctrl=True)
         addon_keymaps.append((km, kmi))
     
-    bpy.types.NODE_MT_context_menu.prepend(ui.draw_menu_func)
+    bpy.types.NODE_MT_context_menu.append(ui.draw_to_context_menu)
+    bpy.types.NODE_PT_overlay.append(ui.draw_to_overlay_panel)
 
 def unregister():
-    bpy.types.NODE_MT_context_menu.remove(ui.draw_menu_func)
+    bpy.types.NODE_PT_overlay.remove(ui.draw_to_overlay_panel)
+    bpy.types.NODE_MT_context_menu.remove(ui.draw_to_context_menu)
 
     kc = bpy.context.window_manager.keyconfigs.addon
     if kc:

@@ -46,6 +46,7 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
             # row_del.operator("node.note_delete_selected_notes", text="删除选中笔记", icon='TRASH')
 
             if prefs.show_all_notes:
+                row_pos.prop(prefs, "dependent_overlay", text="叠加层", toggle=True, icon='OVERLAY')
                 _txt = "和图片" if prefs.hide_img_by_bg else ""
                 body.prop(prefs, "hide_img_by_bg", text=f"按文本背景色显示文本{_txt}:", toggle=True, icon='FILTER')
                 split = body.split(factor=0.1, align=True)
@@ -301,8 +302,10 @@ def draw_panel_for_shortcut(layout: UILayout, context: Context):
                     show_badge=prefs.show_badge,
                     show_list=prefs.show_list)
 
-def draw_menu_func(self: Menu, context: Context):
+def draw_to_context_menu(self: Menu, context: Context):
     layout = self.layout
-    layout.separator()
     layout.operator_context = 'INVOKE_DEFAULT'
     layout.operator("node.note_quick_edit", icon='TEXT')
+
+def draw_to_overlay_panel(self: Panel, context):
+    self.layout.prop(pref(), "show_all_notes", text="节点笔记", icon='HIDE_OFF', toggle=True)

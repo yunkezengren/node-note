@@ -3,7 +3,7 @@ import bpy
 import blf
 import gpu
 from gpu_extras.batch import batch_for_shader
-from bpy.types import Image, NodeTree
+from bpy.types import Image, NodeTree, SpaceNodeEditor
 from gpu.types import GPUShader, GPUTexture
 from mathutils import Vector as Vec2
 import math
@@ -638,8 +638,9 @@ def _process_and_draw_text_and_image_note(node: NotedNode, params: DrawParams, b
 
 def draw_callback_px() -> None:
     """主绘制回调函数"""
-    space = bpy.context.space_data
+    space: SpaceNodeEditor = bpy.context.space_data
     if space.type != 'NODE_EDITOR' or not pref().show_all_notes: return
+    if pref().dependent_overlay and not space.overlay.show_overlays: return
     tree: NodeTree = space.edit_tree
     if not tree: return
 
@@ -653,10 +654,10 @@ def draw_callback_px() -> None:
 def register_draw_handler() -> None:
     global handler
     if not handler:
-        handler = bpy.types.SpaceNodeEditor.draw_handler_add(draw_callback_px, (), 'WINDOW', 'POST_PIXEL')  # type: ignore
+        handler = SpaceNodeEditor.draw_handler_add(draw_callback_px, (), 'WINDOW', 'POST_PIXEL')  # type: ignore
 
 def unregister_draw_handler() -> None:
     global handler
     if handler:
-        bpy.types.SpaceNodeEditor.draw_handler_remove(handler, 'WINDOW')
+        SpaceNodeEditor.draw_handler_remove(handler, 'WINDOW')
         handler = None
