@@ -21,6 +21,9 @@ from .utils import (
     check_color_visibility,
     get_node_screen_rect,
 )
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from .typings import NotedNode # type: ignore
 
 # region 常量
 PaddingX = 2
@@ -64,7 +67,7 @@ class DrawParams:
 @dataclass
 class NodeInfo:
     """屏幕空间节点位置信息"""
-    node: Node
+    node: NotedNode
     top_y: float
     bottom_y: float
     left_x: float
@@ -224,7 +227,7 @@ def _wrap_text(font_id: int, text: str, txt_width_mode: str, note_width: float, 
     else:
         return _wrap_text_pure(font_id, text, max(1, note_width - pad*2))
 
-def _calculate_node_position(node: Node, params: DrawParams) -> NodeInfo:
+def _calculate_node_position(node: NotedNode, params: DrawParams) -> NodeInfo:
     """计算节点位置信息"""
     scaled_zoom = params.scaled_zoom
     sys_ui_scale = params.sys_ui_scale
@@ -399,7 +402,7 @@ def draw_image_error_placeholder(x: float, y: float, width: float, height: float
 
 # region 核心绘制函数
 
-def _draw_text_note(node: Node, text, bg_color: RGBA, node_info: NodeInfo, txt_x: float, txt_y: float, note_width: float,
+def _draw_text_note(node: NotedNode, text, bg_color: RGBA, node_info: NodeInfo, txt_x: float, txt_y: float, note_width: float,
                     text_note_height: float) -> None:
     """绘制 文本+背景"""
     scaled_zoom = node_info.scaled_zoom
@@ -474,7 +477,7 @@ def _draw_badge_notes(badge_infos: dict[int, list[BadgeInfo]], params: DrawParam
     _draw_badge_lines(badge_infos, params)
     _draw_badge_badges(badge_infos, params)
 
-def _process_and_draw_text_and_image_note(node: Node, params: DrawParams, badge_infos: dict[int, list[BadgeInfo]]) -> None:
+def _process_and_draw_text_and_image_note(node: NotedNode, params: DrawParams, badge_infos: dict[int, list[BadgeInfo]]) -> None:
     """处理单个节点的注释绘制"""
     # 获取节点属性
     text = getattr(node, "note_text", "").strip()
