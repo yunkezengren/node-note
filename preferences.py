@@ -39,7 +39,7 @@ class NodeNoteAddonPreferences(AddonPreferences):
 
     # 3. 图像设置区
     default_img_width_mode : EnumProperty(name="宽度模式", items=img_width_items, default=0)
-    default_img_width      : IntProperty(name="默认图像宽度", default=140, min=10, max=2000)
+    default_img_width      : IntProperty(name="默认图像宽度", default=300, min=10, max=4000)
     default_img_pos      : EnumProperty(name="默认对齐", items=align_items, default='TOP')
 
     # 4. 序号设置区

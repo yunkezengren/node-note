@@ -1,8 +1,8 @@
 import bpy
 from bpy.types import Operator
-from bpy.props import StringProperty
 from .preferences import pref
 from .utils import get_image_from_clipboard
+from .image_tool import import_clipboard_image
 from .ui import draw_panel_for_shortcut
 
 class NODE_OT_note_note_swap_order(Operator):
@@ -254,6 +254,28 @@ class NODE_OT_note_reset_img_offset(Operator):
         context.area.tag_redraw()
         return {'FINISHED'}
 
+class NODE_OT_note_paste_image_tool(Operator):
+    bl_idname = "node.note_paste_image_tool"
+    bl_label = "从剪贴板粘贴图像"
+    bl_description = "从剪贴板粘贴图像"
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+        active_node = context.active_node
+        if not active_node:
+            return {'CANCELLED'}
+        image = import_clipboard_image()
+        if image:
+            # image.colorspace_settings.name = 'sRGB'
+            image.use_fake_user = True
+            active_node.note_image = image
+            active_node.note_show_img = True
+            self.report({'INFO'}, f"成功导入图片: {image.name}")
+            return {'FINISHED'}
+        else:
+            self.report({'WARNING'}, "剪贴板无图像")
+            return {'CANCELLED'}
+
 class NODE_OT_note_paste_image(Operator):
     bl_idname = "node.note_paste_image"
     bl_label = "从剪贴板粘贴图像"
@@ -399,6 +421,7 @@ classes = [
     NODE_OT_note_interactive_badge,
     NODE_OT_note_reset_txt_offset,
     NODE_OT_note_reset_img_offset,
+    NODE_OT_note_paste_image_tool,
     NODE_OT_note_paste_image,
     NODE_OT_note_apply_preset,
     NODE_OT_note_copy_active_to_selected,
