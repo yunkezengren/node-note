@@ -614,14 +614,6 @@ def _process_and_draw_text_and_image_note(node: NotedNode, params: DrawParams, b
             img_x, img_y = inner_x, inner_y
             txt_x, txt_y = outer_x, outer_y
 
-    # 绘制文本
-    if text and show_txt and visible_by_bg_color:
-        txt_center = node.note_txt_center
-        if txt_center and txt_align in {'TOP', 'BOTTOM'}:
-            center_offset = (node_width_px - note_width) / 2
-            txt_x += center_offset
-        _draw_text_note(node, text, bg_color, node_info, txt_x, txt_y, note_width, text_note_height)
-
     # 绘制图像
     if img and show_img and (not pref().hide_img_by_bg or visible_by_bg_color):
         img_center = node.note_img_center
@@ -629,6 +621,14 @@ def _process_and_draw_text_and_image_note(node: NotedNode, params: DrawParams, b
             center_offset = (node_width_px - img_draw_w) / 2
             img_x += center_offset
         _draw_image_note(texture, img_x, img_y, img_draw_w, img_draw_h)
+
+    # 绘制文本
+    if text and show_txt and visible_by_bg_color:
+        txt_center = node.note_txt_center
+        if txt_center and txt_align in {'TOP', 'BOTTOM'}:
+            center_offset = (node_width_px - note_width) / 2
+            txt_x += center_offset
+        _draw_text_note(node, text, bg_color, node_info, txt_x, txt_y, note_width, text_note_height)
 
     # 收集序号坐标
     if badge_idx > 0 and show_badge:

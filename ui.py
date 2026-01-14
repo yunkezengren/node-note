@@ -1,4 +1,4 @@
-from bpy.types import Panel, UILayout, Context, Menu, Node, Image
+from bpy.types import Panel, UILayout, Context, Menu, Image
 from .preferences import pref
 from .utils import text_split_lines
 from .typings import NotedNode
@@ -12,7 +12,8 @@ class NODE_PT_node_note_gpu_panel(Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.space_data.type == 'NODE_EDITOR'
+        space = context.space_data
+        return space.type == 'NODE_EDITOR' and space.edit_tree
 
     def draw(self, context):
         layout = self.layout
@@ -37,16 +38,14 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
             row_pos = body.row()
             row_pos.operator("preferences.addon_show", text="偏好", icon='PREFERENCES').module = __package__
             row_pos.prop(prefs, "show_all_notes", text="显示", icon='HIDE_OFF', toggle=True)
-            row_pos.operator("node.note_delete_all_notes", text="全删", icon='TRASH')
+            row_pos.prop(prefs, "dependent_overlay", text="叠加层", toggle=True, icon='OVERLAY')
+            row_del = body.row()
+            row_del.operator("node.note_delete_all_notes", text="全部笔记", icon='TRASH')
+            row_del.operator("node.note_delete_selected_notes", text="选中笔记", icon='TRASH')
             # 还很不完善
             # body.column().prop(prefs, "use_occlusion", text="被遮挡时自动隐藏")
 
-            # 暂时禁用这个
-            # row_del = body.row(align=True)
-            # row_del.operator("node.note_delete_selected_notes", text="删除选中笔记", icon='TRASH')
-
             if prefs.show_all_notes:
-                row_pos.prop(prefs, "dependent_overlay", text="叠加层", toggle=True, icon='OVERLAY')
                 _txt = "和图片" if prefs.hide_img_by_bg else ""
                 body.prop(prefs, "hide_img_by_bg", text=f"按文本背景色显示文本{_txt}:", toggle=True, icon='FILTER')
                 split = body.split(factor=0.1, align=True)
@@ -66,8 +65,8 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
         if show_text:
             header, body = layout.panel("setting1", default_closed=False)
             header.label(text="", icon='FILE_TEXT')
-            h_split = header.row().split(factor=0.5)
-            h_split.operator("node.note_show_selected_txt", text="文字笔记", icon="HIDE_OFF" if node.note_show_txt else "HIDE_ON")
+            h_split = header.row().split(factor=0.4)
+            h_split.operator("node.note_show_selected_txt", text="文字", icon="HIDE_OFF" if node.note_show_txt else "HIDE_ON")
             h_split.prop(node, "note_text", text="")
             header.operator("node.note_delete_selected_txt", text="", icon='TRASH')
             if body:
@@ -118,8 +117,8 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
         if show_image:
             header, body = layout.panel("setting2", default_closed=True)
             header.label(text="", icon='IMAGE_DATA')
-            h_split = header.row().split(factor=0.5)
-            h_split.operator("node.note_show_selected_img", text="图片笔记", icon="HIDE_OFF" if node.note_show_img else "HIDE_ON")
+            h_split = header.row().split(factor=0.4)
+            h_split.operator("node.note_show_selected_img", text="图片", icon="HIDE_OFF" if node.note_show_img else "HIDE_ON")
             h_split.operator("node.note_paste_image", text="", icon='PASTEDOWN')
             if node.note_show_txt and node.note_text and node.note_show_img and node.note_image:
                 h_split.operator("node.note_swap_order", text="⇅")
@@ -132,8 +131,9 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
                 img_split = img_box.split(factor=0.03)
                 img_split.label(text="")
                 img_preview = img_split.box()
-                # img_preview.scale_y = 2
                 img_preview.template_ID_preview(node, "note_image", open="image.open", rows=4, cols=4)
+                img_preview.operator("node.note_delete_selected_img", text="删除图片", icon='TRASH')
+
                 width_row = img_box.row(align=True)
                 width_row.prop(node, "note_img_width_mode", text="宽度")
                 if node.note_img_width_mode == 'MANUAL':
@@ -149,8 +149,8 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
         if show_badge:
             header, body = layout.panel("setting3", default_closed=True)
             header.label(text="", icon='EVENT_NDOF_BUTTON_1')
-            h_split = header.row().split(factor=0.5, align=True)
-            h_split.operator("node.note_show_selected_badge", text="序号笔记", icon="HIDE_OFF" if node.note_show_badge else "HIDE_ON")
+            h_split = header.row().split(factor=0.4, align=True)
+            h_split.operator("node.note_show_selected_badge", text="序号", icon="HIDE_OFF" if node.note_show_badge else "HIDE_ON")
             h_split.prop(node, "note_badge_index", text="")
             h_split.operator("node.note_interactive_badge", text="", icon='BRUSH_DATA', depress=prefs.is_interactive_mode)
             header.operator("node.note_delete_selected_badge", text="", icon='TRASH')
@@ -184,7 +184,7 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
         search_key = pref().navigator_search.strip().lower()
         filter_noted_nodes: list[NotedNode] = []
         all_notes_count = 0
-
+        
         for node in context.space_data.edit_tree.nodes:
             if node.note_text.strip() or node.note_badge_index > 0 or node.note_image:
                 all_notes_count += 1
@@ -193,7 +193,7 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
                 filter_noted_nodes.append(node)
 
         header, body = layout.panel("setting4", default_closed=True)
-        header.label(text=f"笔记列表({all_notes_count})", icon="ALIGN_JUSTIFY")
+        header.label(text=f"列表({all_notes_count})", icon="ALIGN_JUSTIFY")
         header.prop(prefs, "sort_by_badge", text="按序号排列")
         if body:
             draw_search_list(body, context, filter_noted_nodes, all_notes_count)
@@ -257,7 +257,7 @@ def draw_search_list(layout: UILayout, context: Context, filter_noted_nodes: lis
         op = split_text.operator("node.note_jump_to_note", text=display_text, icon='VIEW_ZOOM', emboss=True)
         op.node_name = node.name
 
-        image: Image = getattr(node, "note_image", None)
+        image: Image = node.note_image
         split_img_name.label(text=image.name if image else "无")
         split_badge.label(text=f"{badge_idx:0>2}" if badge_idx else "无")
 

@@ -1,3 +1,4 @@
+from re import S
 import bpy
 from bpy.types import Operator, Node, Nodes, NodeTree, Context
 from .preferences import pref
@@ -5,6 +6,7 @@ from .utils import import_clipboard_image
 from .ui import draw_panel_for_shortcut
 
 class NoteBaseOperator(Operator):
+    bl_options = {'REGISTER', 'UNDO'}
     @classmethod
     def poll(cls, context):
         return context.active_node is not None
@@ -20,7 +22,6 @@ class NODE_OT_note_note_swap_order(NoteBaseOperator):
     bl_idname = "node.note_swap_order"
     bl_label = "交换图文位置"
     bl_description = "交换选中节点文本笔记和图像笔记顺序"
-    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         nodes = self.get_target_nodes(context)
@@ -36,6 +37,248 @@ class NODE_OT_note_note_swap_order(NoteBaseOperator):
                         node.note_swap_order = not node.note_swap_order
         context.area.tag_redraw()
         return {'FINISHED'}
+
+def delete_notes(nodes: Nodes | list[Node]):
+    for node in nodes:
+        if node.note_text:
+            node.note_text = ""
+        if node.note_image:
+            node.note_image = None
+        if node.note_badge_index:
+            node.note_badge_index = 0
+
+class NODE_OT_note_delete_selected_txt(NoteBaseOperator):
+    bl_idname = "node.note_delete_selected_txt"
+    bl_label = "删除文本"
+    bl_description = "删除选中节点的文字笔记"
+
+    def execute(self, context):
+        for node in self.get_target_nodes(context):
+            if node.note_text:
+                node.note_text = ""
+        return {'FINISHED'}
+
+class NODE_OT_note_delete_selected_badge(NoteBaseOperator):
+    bl_idname = "node.note_delete_selected_badge"
+    bl_label = "删除序号"
+    bl_description = "删除选中节点的序号笔记"
+
+    def execute(self, context):
+        for node in self.get_target_nodes(context):
+            if node.note_badge_index:
+                node.note_badge_index = 0
+        return {'FINISHED'}
+
+class NoteDeleteOperator(NoteBaseOperator):
+    confirm_delete: bpy.props.BoolProperty(name="同时删除图片", default=False)
+
+    def draw(self, context):
+        self.layout.prop(self, "confirm_delete", text="同时删除图片")
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self, width=300)
+
+class NODE_OT_note_delete_selected_img(NoteDeleteOperator):
+    bl_idname = "node.note_delete_selected_img"
+    bl_label = "删除图片"
+    bl_description = "删除选中节点图片笔记对应的图片"
+
+    def execute(self, context):
+        for node in self.get_target_nodes(context):
+            if node.note_image:
+                image = node.note_image
+                node.note_image = None
+                if self.confirm_delete:
+                    bpy.data.images.remove(image)
+        return {'FINISHED'}
+
+class NODE_OT_note_delete_selected_notes(NoteDeleteOperator):
+    bl_idname = "node.note_delete_selected_notes"
+    bl_label = "删除选中三种笔记"
+    bl_description = "删除选中节点的三种笔记"
+
+    def execute(self, context):
+        images_to_delete = []
+        for node in self.get_target_nodes(context):
+            if node.note_image:
+                image = node.note_image
+                node.note_image = None
+                if self.confirm_delete:
+                    images_to_delete.append(image)
+            if node.note_text:
+                node.note_text = ""
+            if node.note_badge_index:
+                node.note_badge_index = 0
+        if self.confirm_delete:
+            for image in images_to_delete:
+                bpy.data.images.remove(image)
+        return {'FINISHED'}
+
+class NODE_OT_note_delete_all_notes(NoteDeleteOperator):
+    bl_idname = "node.note_delete_all_notes"
+    bl_label = "删除所有笔记"
+    bl_description = "删除节点树中所有笔记, 不包括节点组内的"
+
+    def execute(self, context):
+        tree: NodeTree = context.space_data.edit_tree
+        if tree:
+            images_to_delete = []
+            for node in tree.nodes:
+                if node.note_image:
+                    image = node.note_image
+                    node.note_image = None
+                    images_to_delete.append(image)
+                if node.note_text:
+                    node.note_text = ""
+                if node.note_badge_index:
+                    node.note_badge_index = 0
+            if self.confirm_delete:
+                for image in images_to_delete:
+                    bpy.data.images.remove(image)
+        return {'FINISHED'}
+
+class NODE_OT_note_show_selected_txt(NoteBaseOperator):
+    bl_idname = "node.note_show_selected_txt"
+    bl_label = "显示文本"
+    bl_description = "显示选中节点的文字笔记"
+
+    def execute(self, context):
+        active_node = context.active_node
+        new_value = not active_node.note_show_txt
+        for node in self.get_target_nodes(context):
+            node.note_show_txt = new_value
+        return {'FINISHED'}
+
+class NODE_OT_note_show_selected_img(NoteBaseOperator):
+    bl_idname = "node.note_show_selected_img"
+    bl_label = "显示图片"
+    bl_description = "显示选中节点的图片笔记"
+
+    def execute(self, context):
+        active_node = context.active_node
+        new_value = not active_node.note_show_img
+        for node in self.get_target_nodes(context):
+            node.note_show_img = new_value
+        return {'FINISHED'}
+
+class NODE_OT_note_show_selected_badge(NoteBaseOperator):
+    bl_idname = "node.note_show_selected_badge"
+    bl_label = "显示序号"
+    bl_description = "显示选中节点的序号笔记"
+
+    def execute(self, context):
+        active_node = context.active_node
+        new_value = not active_node.note_show_badge
+        for node in self.get_target_nodes(context):
+            node.note_show_badge = new_value
+        return {'FINISHED'}
+
+class NODE_OT_note_apply_preset(NoteBaseOperator):
+    bl_idname = "node.note_apply_preset"
+    bl_label = "应用预设给选中节点"
+    bg_color: bpy.props.FloatVectorProperty(size=4)
+
+    def execute(self, context):
+        for node in self.get_target_nodes(context):
+            node.note_txt_bg_color = self.bg_color
+            node.note_text_color = (1, 1, 1, 1)
+        return {'FINISHED'}
+
+class NODE_OT_note_copy_active_to_selected(NoteBaseOperator):
+    bl_idname = "node.note_copy_to_selected"
+    bl_label = "同步活动样式给选中"
+
+    def execute(self, context):
+        # todo 改为从偏好设置导入
+        strict_sync_props = [
+            "note_font_size", "note_text_color", "note_txt_bg_color", "note_badge_color", "note_txt_width_mode", "note_txt_bg_width",
+            "note_img_width_mode", "note_img_width"
+        ]
+        count = 0
+        active = context.active_node
+        for node in self.get_target_nodes(context, skip_active=True):
+            for prop in strict_sync_props:
+                setattr(node, prop, getattr(active, prop))
+            count += 1
+        self.report({'INFO'}, f"已同步 6 项样式至 {count} 个节点")
+        context.area.tag_redraw()
+        return {'FINISHED'}
+
+class NODE_OT_note_add_quick_tag(NoteBaseOperator):
+    bl_idname = "node.note_add_quick_tag"
+    bl_label = "标签"
+    tag_text: bpy.props.StringProperty()
+
+    def execute(self, context):
+        for node in self.get_target_nodes(context):
+            node.note_text = (self.tag_text + " " + node.note_text) if pref().tag_mode_prepend else (node.note_text + " " + self.tag_text)
+        return {'FINISHED'}
+
+class NODE_OT_note_reset_txt_offset(NoteBaseOperator):
+    bl_idname = "node.note_reset_txt_offset"
+    bl_label = "复位文本偏移"
+
+    def execute(self, context):
+        context.active_node.note_txt_offset = (0, 0)
+        return {'FINISHED'}
+
+class NODE_OT_note_reset_img_offset(NoteBaseOperator):
+    bl_idname = "node.note_reset_img_offset"
+    bl_label = "复位图片偏移"
+
+    def execute(self, context):
+        context.active_node.note_img_offset = (0, 0)
+        return {'FINISHED'}
+
+class NODE_OT_note_paste_image(NoteBaseOperator):
+    bl_idname = "node.note_paste_image"
+    bl_label = "从剪贴板粘贴图像"
+    bl_description = "从剪贴板粘贴图像"
+
+    def execute(self, context):
+        active_node = context.active_node
+        image = import_clipboard_image()
+        if image:
+            image.use_fake_user = False
+            active_node.note_image = image
+            active_node.note_show_img = True
+            self.report({'INFO'}, f"成功导入图片: {image.name}")
+            return {'FINISHED'}
+        else:
+            self.report({'WARNING'}, "剪贴板无图像或粘贴失败")
+            return {'CANCELLED'}
+
+class NODE_OT_note_jump_to_note(Operator):
+    """跳转到指定注记节点"""
+    bl_idname = "node.note_jump_to_note"
+    bl_label = "跳转到注记"
+    bl_description = "聚焦视图到该节点"
+    node_name: bpy.props.StringProperty()
+
+    def execute(self, context):
+        nodes = context.space_data.edit_tree.nodes
+        target_node = nodes[self.node_name]
+        for node in nodes:
+            node.select = False
+        target_node.select = True
+        nodes.active = target_node
+        bpy.ops.node.view_selected()
+        return {'FINISHED'}
+
+class NODE_OT_note_note_quick_edit(Operator):
+    bl_idname = "node.note_quick_edit"
+    bl_label = "节点随记"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):  # 空的也得有
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        context.window.cursor_warp(event.mouse_x + pref().cursor_warp_x, event.mouse_y)
+        return context.window_manager.invoke_popup(self, width=220)
+
+    def draw(self, context):
+        draw_panel_for_shortcut(self.layout, context)
 
 class NODE_OT_note_interactive_badge(Operator):
     bl_idname = "node.note_interactive_badge"
@@ -110,234 +353,6 @@ class NODE_OT_note_interactive_badge(Operator):
             self.report({'WARNING'}, "未找到节点编辑器")
             pref().is_interactive_mode = False
             return {'CANCELLED'}
-
-def delete_notes(nodes: Nodes | list[Node]):
-    for node in nodes:
-        if node.note_text:
-            node.note_text = ""
-        if node.note_image:
-            node.note_image = None
-        if node.note_badge_index:
-            node.note_badge_index = 0
-
-class NODE_OT_note_delete_selected_txt(NoteBaseOperator):
-    bl_idname = "node.note_delete_selected_txt"
-    bl_label = "删除文本"
-    bl_description = "删除选中节点的文字笔记"
-    bl_options = {'UNDO'}
-
-    def execute(self, context):
-        for node in self.get_target_nodes(context):
-            if node.note_text:
-                node.note_text = ""
-        return {'FINISHED'}
-
-class NODE_OT_note_delete_selected_img(NoteBaseOperator):
-    bl_idname = "node.note_delete_selected_img"
-    bl_label = "删除图片"
-    bl_description = "删除选中节点的图片笔记"
-    bl_options = {'UNDO'}
-
-    def execute(self, context):
-        for node in self.get_target_nodes(context):
-            if node.note_image:
-                node.note_image = None
-        return {'FINISHED'}
-
-class NODE_OT_note_delete_selected_badge(NoteBaseOperator):
-    bl_idname = "node.note_delete_selected_badge"
-    bl_label = "删除序号"
-    bl_description = "删除选中节点的序号笔记"
-    bl_options = {'UNDO'}
-
-    def execute(self, context):
-        for node in self.get_target_nodes(context):
-            if node.note_badge_index:
-                node.note_badge_index = 0
-        return {'FINISHED'}
-
-class NODE_OT_note_delete_selected_notes(NoteBaseOperator):
-    bl_idname = "node.note_delete_selected_notes"
-    bl_label = "删除全部"
-    bl_description = "删除选中节点的所有笔记"
-    bl_options = {'UNDO'}
-
-    def execute(self, context):
-        delete_notes(self.get_target_nodes(context))
-        return {'FINISHED'}
-
-class NODE_OT_note_delete_all_notes(Operator):
-    bl_idname = "node.note_delete_all_notes"
-    bl_label = "删除所有笔记"
-    bl_description = "删除节点树中所有笔记, 不包括节点组内的"
-    bl_options = {'UNDO'}
-
-    def invoke(self, context, event):
-        return context.window_manager.invoke_confirm(self, event)
-
-    def execute(self, context):
-        tree: NodeTree = context.space_data.edit_tree
-        if tree:
-            delete_notes(tree.nodes)
-        return {'FINISHED'}
-
-class NODE_OT_note_show_selected_txt(Operator):
-    bl_idname = "node.note_show_selected_txt"
-    bl_label = "显示文本"
-    bl_description = "显示选中节点的文字笔记"
-    bl_options = {'UNDO'}
-
-    def execute(self, context):
-        active_node = context.active_node
-        nodes = context.selected_nodes
-        new_value = not active_node.note_show_txt
-        active_node.note_show_txt = new_value
-        for node in nodes:
-            node.note_show_txt = new_value
-        return {'FINISHED'}
-
-class NODE_OT_note_show_selected_img(Operator):
-    bl_idname = "node.note_show_selected_img"
-    bl_label = "显示图片"
-    bl_description = "显示选中节点的图片笔记"
-    bl_options = {'UNDO'}
-
-    def execute(self, context):
-        active_node = context.active_node
-        nodes = context.selected_nodes
-        new_value = not active_node.note_show_img
-        active_node.note_show_img = new_value
-        for node in nodes:
-            node.note_show_img = new_value
-        return {'FINISHED'}
-
-class NODE_OT_note_show_selected_badge(Operator):
-    bl_idname = "node.note_show_selected_badge"
-    bl_label = "显示序号"
-    bl_description = "显示选中节点的序号笔记"
-    bl_options = {'UNDO'}
-
-    def execute(self, context):
-        active_node = context.active_node
-        nodes = context.selected_nodes
-        new_value = not active_node.note_show_badge
-        active_node.note_show_badge = new_value
-        for node in nodes:
-            node.note_show_badge = new_value
-        return {'FINISHED'}
-
-class NODE_OT_note_apply_preset(NoteBaseOperator):
-    bl_idname = "node.note_apply_preset"
-    bl_label = "应用预设给选中节点"
-    bl_options = {'UNDO'}
-    bg_color: bpy.props.FloatVectorProperty(size=4)
-
-    def execute(self, context):
-        for node in self.get_target_nodes(context):
-            node.note_txt_bg_color = self.bg_color
-            node.note_text_color = (1, 1, 1, 1)
-        return {'FINISHED'}
-
-class NODE_OT_note_copy_active_to_selected(NoteBaseOperator):
-    bl_idname = "node.note_copy_to_selected"
-    bl_label = "同步活动样式给选中"
-    bl_options = {'UNDO'}
-
-    def execute(self, context):
-        # todo 改为从偏好设置导入
-        strict_sync_props = [
-            "note_font_size", "note_text_color", "note_txt_bg_color", "note_badge_color", "note_txt_width_mode", "note_txt_bg_width",
-            "note_img_width_mode", "note_img_width"
-        ]
-        count = 0
-        active = context.active_node
-        for node in self.get_target_nodes(context, skip_active=True):
-            for prop in strict_sync_props:
-                setattr(node, prop, getattr(active, prop))
-            count += 1
-        self.report({'INFO'}, f"已同步 6 项样式至 {count} 个节点")
-        context.area.tag_redraw()
-        return {'FINISHED'}
-
-class NODE_OT_note_add_quick_tag(NoteBaseOperator):
-    bl_idname = "node.note_add_quick_tag"
-    bl_label = "标签"
-    bl_options = {'UNDO'}
-    tag_text: bpy.props.StringProperty()
-
-    def execute(self, context):
-        for node in self.get_target_nodes(context):
-            node.note_text = (self.tag_text + " " + node.note_text) if pref().tag_mode_prepend else (node.note_text + " " + self.tag_text)
-        return {'FINISHED'}
-
-class NODE_OT_note_reset_txt_offset(NoteBaseOperator):
-    bl_idname = "node.note_reset_txt_offset"
-    bl_label = "复位文本偏移"
-    bl_options = {'UNDO'}
-
-    def execute(self, context):
-        context.active_node.note_txt_offset = (0, 0)
-        return {'FINISHED'}
-
-class NODE_OT_note_reset_img_offset(NoteBaseOperator):
-    bl_idname = "node.note_reset_img_offset"
-    bl_label = "复位图片偏移"
-    bl_options = {'UNDO'}
-
-    def execute(self, context):
-        context.active_node.note_img_offset = (0, 0)
-        return {'FINISHED'}
-
-class NODE_OT_note_paste_image(NoteBaseOperator):
-    bl_idname = "node.note_paste_image"
-    bl_label = "从剪贴板粘贴图像"
-    bl_description = "从剪贴板粘贴图像"
-    bl_options = {'UNDO'}
-
-    def execute(self, context):
-        active_node = context.active_node
-        image = import_clipboard_image()
-        if image:
-            image.use_fake_user = False
-            active_node.note_image = image
-            active_node.note_show_img = True
-            self.report({'INFO'}, f"成功导入图片: {image.name}")
-            return {'FINISHED'}
-        else:
-            self.report({'WARNING'}, "剪贴板无图像或粘贴失败")
-            return {'CANCELLED'}
-
-class NODE_OT_note_jump_to_note(Operator):
-    """跳转到指定注记节点"""
-    bl_idname = "node.note_jump_to_note"
-    bl_label = "跳转到注记"
-    bl_description = "聚焦视图到该节点"
-    node_name: bpy.props.StringProperty()
-
-    def execute(self, context):
-        nodes = context.space_data.edit_tree.nodes
-        target_node = nodes[self.node_name]
-        for node in nodes:
-            node.select = False
-        target_node.select = True
-        nodes.active = target_node
-        bpy.ops.node.view_selected()
-        return {'FINISHED'}
-
-class NODE_OT_note_note_quick_edit(Operator):
-    bl_idname = "node.note_quick_edit"
-    bl_label = "节点随记"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):  # 空的也得有
-        return {'FINISHED'}
-
-    def invoke(self, context, event):
-        context.window.cursor_warp(event.mouse_x + pref().cursor_warp_x, event.mouse_y)
-        return context.window_manager.invoke_popup(self, width=220)
-
-    def draw(self, context):
-        draw_panel_for_shortcut(self.layout, context)
 
 classes = [
     NODE_OT_note_delete_selected_txt,

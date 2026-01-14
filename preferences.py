@@ -36,10 +36,11 @@ class NodeNoteAddonPreferences(AddonPreferences):
     # 1. 全局设置
     cursor_warp_x          : IntProperty(default=0, min=1, max=500, description="快捷键唤出面板时鼠标偏移")
     show_all_notes         : BoolProperty(name="显示所有", default=True)
-    dependent_overlay      : BoolProperty(name="跟随叠加层", default=True, description="当节点编辑器叠加层关闭时，自动隐藏笔记")
+    dependent_overlay      : BoolProperty(name="跟随叠加层", default=True, description="当节点编辑器叠加层关闭时，是否隐藏笔记")
     show_badge_lines       : BoolProperty(name="显示逻辑连线", default=True, description="显示节点之间的序号连线")
     is_interactive_mode    : BoolProperty(name="交互模式", default=False, description="点击节点即可编号，右键或ESC退出")
     sort_by_badge          : BoolProperty(name="按序号排序", default=True, description="勾选后，有序号的节点将优先显示在列表顶部")
+    # todo 改进遮挡
     use_occlusion          : BoolProperty(name="自动遮挡", default=False)
     tag_mode_prepend       : BoolProperty(name="前缀模式", default=True, description="特殊字符添加到已有文本前")
     navigator_search       : StringProperty(name="搜索", default="", options={'TEXTEDIT_UPDATE'})
@@ -98,7 +99,6 @@ class NodeNoteAddonPreferences(AddonPreferences):
     show_purple          : BoolProperty(name="显示紫", default=True, description="显示紫")
     show_other           : BoolProperty(name="显示杂", default=True, description="显示杂")
     hide_img_by_bg       : BoolProperty(name="同时过滤图片", default=True, description="过滤文本时是否同时过滤对应节点的图片")
-
 
     def draw(self, context):
         layout = self.layout
