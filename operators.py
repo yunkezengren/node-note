@@ -336,23 +336,11 @@ class NODE_OT_note_add_quick_tag(Operator):
             node.note_text = (self.tag_text + " " + node.note_text) if pref().tag_mode_prepend else (node.note_text + " " + self.tag_text)
         return {'FINISHED'}
 
-# todo 为什么需要这个?
-class NODE_OT_note_delete_search(Operator):
-    """清除搜索内容"""
-    bl_idname = "node.note_delete_search"
-    bl_label = "清除搜索"
-    bl_options = {'INTERNAL'}
-
-    def execute(self, context):
-        pref().navigator_search = ""
-        return {'FINISHED'}
-
 class NODE_OT_note_jump_to_note(Operator):
     """跳转到指定注记节点"""
     bl_idname = "node.note_jump_to_note"
     bl_label = "跳转到注记"
     bl_description = "聚焦视图到该节点"
-
     node_name: bpy.props.StringProperty()
 
     def execute(self, context):
@@ -370,13 +358,7 @@ class NODE_OT_note_note_quick_edit(Operator):
     bl_label = "节点随记"
     bl_options = {'REGISTER', 'UNDO'}
 
-    @classmethod
-    def poll(cls, context):
-        # todo 增加提示
-        return context.active_node is not None
-
-    def execute(self, context):
-        # 空的也得有
+    def execute(self, context):  # 空的也得有
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -405,7 +387,6 @@ classes = [
     NODE_OT_note_copy_active_to_selected,
     NODE_OT_note_add_quick_tag,
     NODE_OT_note_note_quick_edit,
-    NODE_OT_note_delete_search,
     NODE_OT_note_jump_to_note,
 ]
 

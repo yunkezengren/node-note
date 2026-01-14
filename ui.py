@@ -190,9 +190,6 @@ def draw_search_list(layout: UILayout, context: Context):
     row = layout.row(align=True)
     row.prop(pref(), "navigator_search", text="", icon='VIEWZOOM')
     search_key = pref().navigator_search.strip().lower()
-    if search_key:
-        row.operator("node.note_delete_search", text="", icon='X')
-
     noted_nodes: list[Node] = []
     all_notes_count = 0
 
@@ -220,7 +217,6 @@ def draw_search_list(layout: UILayout, context: Context):
         box = layout.box()
         col = box.column(align=True)
         col.label(text="未找到匹配项", icon='FILE_SCRIPT')
-        col.operator("node.note_delete_search", text="清除过滤", icon='X')
         return
 
     if all_notes_count == 0:

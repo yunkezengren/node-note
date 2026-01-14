@@ -24,8 +24,8 @@ class NodeNoteAddonPreferences(AddonPreferences):
     sort_by_badge          : BoolProperty(name="按序号排序", default=True, description="勾选后，有序号的节点将优先显示在列表顶部")
     use_occlusion          : BoolProperty(name="自动遮挡", default=False)
     tag_mode_prepend       : BoolProperty(name="前缀模式", default=True, description="特殊字符添加到已有文本前")
-    navigator_search       : StringProperty(name="搜索", default="")
-    line_separator         : StringProperty(name="换行符", default=";|\\", description="文本中用于换行的分隔符，支持多个（用 | 分隔），如 : ;|\\ ")
+    navigator_search       : StringProperty(name="搜索", default="", options={'TEXTEDIT_UPDATE'})
+    line_separator         : StringProperty(name="换行符", default=";|\\", options={'TEXTEDIT_UPDATE'}, description="文本中用于换行的分隔符，支持多个（用 | 分隔），如 : ;|\\ ")
 
     # 2. 文本设置区
     default_font_size      : IntProperty(name="默认字号", default=8, min=4, max=100)

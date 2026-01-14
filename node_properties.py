@@ -1,7 +1,7 @@
 import bpy
 from bpy.types import Node, Context
 from bpy.props import StringProperty, IntProperty, FloatVectorProperty, BoolProperty, PointerProperty, EnumProperty, IntVectorProperty
-from .preferences import pref, tag_redraw, align_items, txt_width_items, img_width_items
+from .preferences import pref, align_items, txt_width_items, img_width_items
 
 def get_txt_width_items(self, context):
     if self.bl_idname == "NodeReroute":
