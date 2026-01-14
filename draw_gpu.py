@@ -8,6 +8,7 @@ from gpu.types import GPUShader, GPUTexture
 from mathutils import Vector as Vec2
 import math
 import numpy as np
+import os
 from .preferences import pref
 from .utils import (
     float2,
@@ -41,7 +42,7 @@ def get_font_id() -> int:
     font_path = pref().font_path
     if font_path != _font_path:
         _font_path = font_path
-        if font_path:
+        if font_path and os.path.exists(font_path):
             _font_id = blf.load(font_path) or 0
         else:
             _font_id = 0
