@@ -1,5 +1,5 @@
 import bpy
-from bpy.types import Operator, Node
+from bpy.types import Operator, Node, Nodes, NodeTree
 from .preferences import pref
 from .utils import get_image_from_clipboard, import_clipboard_image
 from .ui import draw_panel_for_shortcut
@@ -13,7 +13,7 @@ class NODE_OT_note_note_swap_order(Operator):
     def execute(self, context):
         node = context.active_node
         if not node: return {'CANCELLED'}
-        nodes = context.selected_nodes if context.selected_nodes else [context.active_node]
+        nodes = context.selected_nodes + [context.active_node]
         for node in nodes:
             if hasattr(node, "note_txt_pos") and hasattr(node, "note_img_pos"):
                 align_txt = node.note_txt_pos
@@ -101,7 +101,7 @@ class NODE_OT_note_interactive_badge(Operator):
             pref().is_interactive_mode = False
             return {'CANCELLED'}
 
-def delete_notes(nodes: list[Node]):
+def delete_notes(nodes: Nodes | list[Node]):
     for node in nodes:
         if node.note_text:
             node.note_text = ""
@@ -117,10 +117,9 @@ class NODE_OT_note_delete_selected_txt(Operator):
     bl_options = {'UNDO'}
 
     def execute(self, context):
-        nodes = context.selected_nodes if context.selected_nodes else [context.active_node]
-        for node in nodes:
-            if not node.note_text: continue
-            node.note_text = ""
+        for node in context.selected_nodes + [context.active_node]:
+            if node.note_text:
+                node.note_text = ""
         return {'FINISHED'}
 
 class NODE_OT_note_delete_selected_img(Operator):
@@ -130,7 +129,7 @@ class NODE_OT_note_delete_selected_img(Operator):
     bl_options = {'UNDO'}
 
     def execute(self, context):
-        nodes = context.selected_nodes if context.selected_nodes else [context.active_node]
+        nodes = context.selected_nodes + [context.active_node]
         for node in nodes:
             if node.note_image:
                 node.note_image = None
@@ -143,7 +142,7 @@ class NODE_OT_note_delete_selected_badge(Operator):
     bl_options = {'UNDO'}
 
     def execute(self, context):
-        nodes = context.selected_nodes if context.selected_nodes else [context.active_node]
+        nodes = context.selected_nodes + [context.active_node]
         for node in nodes:
             if node.note_badge_index:
                 node.note_badge_index = 0
@@ -156,12 +155,10 @@ class NODE_OT_note_delete_selected_notes(Operator):
     bl_options = {'UNDO'}
 
     def execute(self, context):
-        nodes = context.selected_nodes if context.selected_nodes else [context.active_node]
-        for node in nodes:
-            if node.note_text or node.note_image or node.note_badge_index:
-                node.note_text = ""
-                node.note_image = None
-                node.note_badge_index = 0
+        # todo 改进类似调用
+        if not context.active_node: return {'CANCELLED'}
+        nodes = context.selected_nodes + [context.active_node]
+        delete_notes(nodes)
         return {'FINISHED'}
 
 class NODE_OT_note_delete_all_notes(Operator):
@@ -174,7 +171,9 @@ class NODE_OT_note_delete_all_notes(Operator):
         return context.window_manager.invoke_confirm(self, event)
 
     def execute(self, context):
-        delete_notes(context.space_data.edit_tree.nodes)
+        tree: NodeTree = context.space_data.edit_tree
+        if tree:
+            delete_notes(tree.nodes)
         return {'FINISHED'}
 
 class NODE_OT_note_show_selected_txt(Operator):

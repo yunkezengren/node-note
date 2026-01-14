@@ -180,40 +180,38 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
         layout.label(text="需要活动节点", icon='INFO')
     
     if show_list:
+        search_key = pref().navigator_search.strip().lower()
+        filter_noted_nodes: list[Node] = []
+        all_notes_count = 0
+
+        for node in context.space_data.edit_tree.nodes:
+            # todo 复用函数
+            if node.note_text.strip() or node.note_badge_index > 0 or node.note_image:
+                all_notes_count += 1
+                if search_key and (search_key not in node.note_text.lower()):
+                    continue
+                filter_noted_nodes.append(node)
+
         header, body = layout.panel("setting4", default_closed=True)
-        header.label(text="笔记列表", icon="ALIGN_JUSTIFY")
+        header.label(text=f"笔记列表({all_notes_count})", icon="ALIGN_JUSTIFY")
         header.prop(prefs, "sort_by_badge", text="按序号排列")
         if body:
-            draw_search_list(body, context)
+            draw_search_list(body, context, filter_noted_nodes, all_notes_count)
 
-def draw_search_list(layout: UILayout, context: Context):
+def draw_search_list(layout: UILayout, context: Context, filter_noted_nodes: list[Node], all_notes_count: int):
     row = layout.row(align=True)
     row.prop(pref(), "navigator_search", text="", icon='VIEWZOOM')
-    search_key = pref().navigator_search.strip().lower()
-    noted_nodes: list[Node] = []
-    all_notes_count = 0
-
-    tree: NodeTree = context.space_data.edit_tree
-    for node in tree.nodes:
-        has_text = hasattr(node, "note_text") and node.note_text.strip()
-        has_badge = hasattr(node, "note_badge_index") and node.note_badge_index > 0
-
-        if has_text or has_badge:
-            all_notes_count += 1
-            if search_key and has_text and (search_key not in node.note_text.lower()):
-                continue
-            noted_nodes.append(node)
 
     if pref().sort_by_badge:
-        noted_nodes.sort(key=lambda n: (
+        filter_noted_nodes.sort(key=lambda n: (
             0 if getattr(n, "note_badge_index", 0) > 0 else 1,
             getattr(n, "note_badge_index", 0),
             getattr(n, "location", (0,0))[0]
         ))
     else:
-        noted_nodes.sort(key=lambda n: (getattr(n, "location", (0,0))[0], -getattr(n, "location", (0,0))[1]))
+        filter_noted_nodes.sort(key=lambda n: (getattr(n, "location", (0,0))[0], -getattr(n, "location", (0,0))[1]))
 
-    if not noted_nodes and all_notes_count > 0:
+    if not filter_noted_nodes and all_notes_count > 0:
         box = layout.box()
         col = box.column(align=True)
         col.label(text="未找到匹配项", icon='FILE_SCRIPT')
@@ -224,14 +222,14 @@ def draw_search_list(layout: UILayout, context: Context):
         return
 
     sort_icon = 'SORT_ASC' if pref().sort_by_badge else 'GRID'
-    if search_key: sort_icon = 'FILTER'
+    if pref().navigator_search.strip().lower():
+        sort_icon = 'FILTER'
 
-    layout.label(text=f"列表 ({len(noted_nodes)}):", icon=sort_icon)
-
+    layout.label(text=f"列表 ({len(filter_noted_nodes)}):", icon=sort_icon)
     col = layout.column()
     header: UILayout
     body: UILayout
-    for index, node in enumerate(noted_nodes):
+    for index, node in enumerate(filter_noted_nodes):
         header, body = layout.panel(f"note_{index}_{node.name}", default_closed=True)
 
         row = header.row(align=True)
