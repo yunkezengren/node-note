@@ -78,40 +78,7 @@ def is_rect_overlap(r1: Rect, r2: Rect) -> bool:
     """检查两个矩形是否重叠"""
     return not (r1[2] < r2[0] or r1[0] > r2[2] or r1[3] < r2[1] or r1[1] > r2[3])
 
-# 来自 来一点咖啡吗 的 RARA_Blender_Helper : https://space.bilibili.com/27284213
-def get_image_from_clipboard() -> tuple[Image | None, str | None]:
-    try:
-        clipboard = PIL.ImageGrab.grabclipboard()
-        if isinstance(clipboard, PIL.Image.Image):
-            if clipboard.mode != 'RGBA':
-                clipboard = clipboard.convert('RGBA')
-            clipboard_t = clipboard.transpose(PIL.Image.FLIP_TOP_BOTTOM)
-            img_name = "image_note"
-            width, height = clipboard_t.size
-            array = np.array(clipboard_t).astype(np.float32) / 255.0
-            array = array.flatten()
-            bl_image = bpy.data.images.new(img_name, width, height, alpha=True)
-            bl_image.pixels = array.tolist()
-            bl_image.pack()
-            return bl_image, None
-        elif isinstance(clipboard, list) and len(clipboard) > 0:
-            file_path = clipboard[0]
-            imgge_type = (".png", ".jpg", ".jpeg", ".bmp", ".exr", ".webp", ".cin", ".sgi", ".rgb", ".bw", ".jp2", ".hdr", ".tga", ".tif", ".tiff")
-            imgge_type = ('.png', '.jpg', '.jpeg', '.bmp', '.tga', '.tif', '.tiff', '.exr')
-            if not os.path.isfile(file_path) or not file_path.lower().endswith(imgge_type):
-                return None, "剪贴板中的文件不是支持的图片格式"
-            try:
-                img_name = os.path.basename(file_path)
-                bl_image = bpy.data.images.load(file_path)
-                bl_image.pack()
-                return bl_image, None
-            except Exception as e:
-                return None, f"无法加载文件: {os.path.basename(file_path)}"
-        return None, "剪贴板无图像"
-    except Exception as e:
-        return None, f"获取剪贴板内容失败: {str(e)}"
-
-# 来自 来一点咖啡吗 : https://space.bilibili.com/27284213
+# 来自 来一点咖啡吗 RARA_Blender_Helper: https://space.bilibili.com/27284213
 def import_clipboard_image() -> Image | None:
     area = bpy.context.area
     old_ui_type = area.ui_type

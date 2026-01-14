@@ -1,7 +1,7 @@
 import bpy
 from bpy.types import Operator, Node, Nodes, NodeTree, Context
 from .preferences import pref
-from .utils import get_image_from_clipboard, import_clipboard_image
+from .utils import import_clipboard_image
 from .ui import draw_panel_for_shortcut
 
 class NoteBaseOperator(Operator):
@@ -307,29 +307,6 @@ class NODE_OT_note_paste_image(NoteBaseOperator):
             self.report({'WARNING'}, "剪贴板无图像或粘贴失败")
             return {'CANCELLED'}
 
-class NODE_OT_note_paste_image_pil(NoteBaseOperator):
-    bl_idname = "node.note_paste_image_pil"
-    bl_label = "从剪贴板粘贴图像"
-    bl_description = "从剪贴板粘贴图像"
-    bl_options = {'UNDO'}
-
-    def execute(self, context):
-        active_node = context.active_node
-        image, error = get_image_from_clipboard()
-        if image:
-            image.colorspace_settings.name = 'sRGB'
-            image.use_fake_user = True
-            active_node.note_image = image
-            active_node.note_show_img = True
-            self.report({'INFO'}, f"成功导入图片: {image.name}")
-            return {'FINISHED'}
-        elif error:
-            self.report({'WARNING'}, error)
-            return {'CANCELLED'}
-        else:
-            self.report({'WARNING'}, "剪贴板无图像")
-            return {'CANCELLED'}
-
 class NODE_OT_note_jump_to_note(Operator):
     """跳转到指定注记节点"""
     bl_idname = "node.note_jump_to_note"
@@ -376,7 +353,6 @@ classes = [
     NODE_OT_note_reset_txt_offset,
     NODE_OT_note_reset_img_offset,
     NODE_OT_note_paste_image,
-    NODE_OT_note_paste_image_pil,
     NODE_OT_note_apply_preset,
     NODE_OT_note_copy_active_to_selected,
     NODE_OT_note_add_quick_tag,
