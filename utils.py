@@ -3,7 +3,7 @@ import os
 import numpy as np
 from .preferences import pref
 import bpy
-from bpy.types import Context, Node
+from bpy.types import Context, Node, Image, SpaceImageEditor
 import PIL.Image
 import PIL.ImageGrab
 
@@ -79,7 +79,7 @@ def is_rect_overlap(r1: Rect, r2: Rect) -> bool:
     return not (r1[2] < r2[0] or r1[0] > r2[2] or r1[3] < r2[1] or r1[1] > r2[3])
 
 # 来自 来一点咖啡吗 的 RARA_Blender_Helper : https://space.bilibili.com/27284213
-def get_image_from_clipboard() -> tuple[bpy.types.Image | None, str | None]:
+def get_image_from_clipboard() -> tuple[Image | None, str | None]:
     try:
         clipboard = PIL.ImageGrab.grabclipboard()
         if isinstance(clipboard, PIL.Image.Image):
@@ -96,7 +96,9 @@ def get_image_from_clipboard() -> tuple[bpy.types.Image | None, str | None]:
             return bl_image, None
         elif isinstance(clipboard, list) and len(clipboard) > 0:
             file_path = clipboard[0]
-            if not os.path.isfile(file_path) or not file_path.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tga', '.tif', '.tiff', '.exr')):
+            imgge_type = (".png", ".jpg", ".jpeg", ".bmp", ".exr", ".webp", ".cin", ".sgi", ".rgb", ".bw", ".jp2", ".hdr", ".tga", ".tif", ".tiff")
+            imgge_type = ('.png', '.jpg', '.jpeg', '.bmp', '.tga', '.tif', '.tiff', '.exr')
+            if not os.path.isfile(file_path) or not file_path.lower().endswith(imgge_type):
                 return None, "剪贴板中的文件不是支持的图片格式"
             try:
                 img_name = os.path.basename(file_path)
@@ -108,3 +110,22 @@ def get_image_from_clipboard() -> tuple[bpy.types.Image | None, str | None]:
         return None, "剪贴板无图像"
     except Exception as e:
         return None, f"获取剪贴板内容失败: {str(e)}"
+
+# 来自 来一点咖啡吗 : https://space.bilibili.com/27284213
+def import_clipboard_image() -> Image | None:
+    area = bpy.context.area
+    old_ui_type = area.ui_type
+    area.ui_type = 'IMAGE_EDITOR'
+    space: SpaceImageEditor = area.spaces.active
+    old_image = space.image
+    try:
+        bpy.ops.image.clipboard_paste()
+    except:
+        space.image = old_image
+        area.ui_type = old_ui_type
+        return None
+    clipboard_image = space.image
+    clipboard_image.pack()
+    space.image = old_image
+    area.ui_type = old_ui_type
+    return clipboard_image

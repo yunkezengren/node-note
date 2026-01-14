@@ -118,8 +118,8 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
             header.label(text="", icon='IMAGE_DATA')
             h_split = header.row().split(factor=0.5)
             h_split.operator("node.note_show_select_img", text="图片笔记", icon="HIDE_OFF" if node.note_show_img else "HIDE_ON")
-            # h_split.operator("node.note_paste_image_tool", text="", icon='PASTEDOWN')
             h_split.operator("node.note_paste_image", text="", icon='PASTEDOWN')
+            h_split.operator("node.note_paste_image_pil", text="pil", icon='PASTEDOWN')
             if node.note_show_txt and node.note_text and node.note_show_img and node.note_image:
                 h_split.operator("node.note_swap_order", text="⇅")
             header.operator("node.note_clear_select_img", text="", icon='TRASH')

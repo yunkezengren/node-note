@@ -3,25 +3,6 @@ from bpy.types import Node, Context
 from bpy.props import StringProperty, IntProperty, FloatVectorProperty, BoolProperty, PointerProperty, EnumProperty, IntVectorProperty
 from .preferences import pref, tag_redraw, align_items, txt_width_items, img_width_items
 
-def update_note_image(self, context: Context):
-    node = self
-    new_img = node.note_image
-    prev_img_name = node.get("_note_last_img_name", "")
-    if new_img:
-        if not new_img.use_fake_user: new_img.use_fake_user = True
-        if new_img.name != prev_img_name:
-            if prev_img_name:
-                old_img = bpy.data.images.get(prev_img_name)
-                if old_img and old_img.use_fake_user and old_img.users == 1:
-                    old_img.use_fake_user = False
-            node["_note_last_img_name"] = new_img.name
-    elif prev_img_name:
-        old_img = bpy.data.images.get(prev_img_name)
-        if old_img and old_img.use_fake_user and old_img.users == 1:
-            old_img.use_fake_user = False
-        node["_note_last_img_name"] = ""
-    tag_redraw(self, context)
-
 def get_txt_width_items(self, context):
     if self.bl_idname == "NodeReroute":
         return txt_width_items[1:]
@@ -47,7 +28,7 @@ def init_props():
     Node.note_show_badge     = BoolProperty(default=True)
     Node.note_swap_order     = BoolProperty(default=False, description="交换图片与文字的顺序")
     Node.note_text           = StringProperty(default="", options={'TEXTEDIT_UPDATE'})
-    Node.note_image          = PointerProperty(type=bpy.types.Image, update=update_note_image)  # type: ignore
+    Node.note_image          = PointerProperty(type=bpy.types.Image)  # type: ignore
     Node.note_badge_index    = IntProperty(default=0, min=0, description="徽章序号 (0为不显示)")
     
     Node.note_text_color     = FloatVectorProperty(subtype='COLOR', size=4, default=prefs.default_text_color, min=0.0, max=1.0)
