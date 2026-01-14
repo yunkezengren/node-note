@@ -6,8 +6,8 @@ from gpu_extras.batch import batch_for_shader
 from bpy.types import Image, Node, NodeTree
 from gpu.types import GPUShader, GPUTexture
 from mathutils import Vector as Vec2
-import array
 import math
+import numpy as np
 from .preferences import pref
 from .utils import (
     float2,
@@ -151,8 +151,7 @@ def create_texture_from_pixels(image: Image) -> GPUTexture | None:
         return _manual_texture_cache[cache_key]
     try:
         width, height = image.size
-        # TODO 优化性能
-        pixel_data = array.array('f', [0.0] * width * height * 4)
+        pixel_data = np.zeros(width * height * 4, dtype=np.float32)
         image.pixels.foreach_get(pixel_data)
         # texture = GPUTexture((width, height), format='SRGB8_A8', data=pixel_data)  # type: ignore
         texture = GPUTexture((width, height), format='RGBA32F', data=pixel_data)  # type: ignore

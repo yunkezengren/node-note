@@ -29,7 +29,7 @@ class NodeNoteAddonPreferences(AddonPreferences):
 
     # 2. 文本设置区
     default_font_size      : IntProperty(name="默认字号", default=8, min=4, max=100)
-    font_path              : StringProperty(default='', subtype='FILE_PATH', description="字体文件路径,留空使用默认字体")
+    font_path              : StringProperty(default='', subtype='FILE_PATH', options={'TEXTEDIT_UPDATE'}, description="字体文件路径,留空使用默认字体")
     default_text_color     : FloatVectorProperty(name="默认字色", subtype='COLOR', size=4, default=(1.0, 1.0, 1.0, 1.0), min=0, max=1)
     default_txt_bg_color   : FloatVectorProperty(name="默认背景色", subtype='COLOR', size=4, default=(0.2, 0.3, 0.5, 0.9), min=0, max=1)
 
