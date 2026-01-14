@@ -1,11 +1,7 @@
 import math
-import os
-import numpy as np
 from .preferences import pref
 import bpy
 from bpy.types import Context, Node, Image, SpaceImageEditor
-import PIL.Image
-import PIL.ImageGrab
 
 # ==================== 类型别名 ====================
 float2 = tuple[float, float]

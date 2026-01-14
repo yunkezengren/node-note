@@ -177,14 +177,13 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
                 row_set.prop(prefs, "badge_line_thickness", text="线宽")
     else:
         layout.label(text="需要活动节点", icon='INFO')
-    
+
     if show_list:
         search_key = pref().navigator_search.strip().lower()
         filter_noted_nodes: list[Node] = []
         all_notes_count = 0
 
         for node in context.space_data.edit_tree.nodes:
-            # todo 复用函数
             if node.note_text.strip() or node.note_badge_index > 0 or node.note_image:
                 all_notes_count += 1
                 if search_key and (search_key not in node.note_text.lower()):
@@ -201,12 +200,9 @@ def draw_search_list(layout: UILayout, context: Context, filter_noted_nodes: lis
     row = layout.row(align=True)
     row.prop(pref(), "navigator_search", text="", icon='VIEWZOOM')
 
+    # todo 改进
     if pref().sort_by_badge:
-        filter_noted_nodes.sort(key=lambda n: (
-            0 if getattr(n, "note_badge_index", 0) > 0 else 1,
-            getattr(n, "note_badge_index", 0),
-            getattr(n, "location", (0,0))[0]
-        ))
+        filter_noted_nodes.sort(key=lambda node: (node.note_badge_index == 0, node.note_badge_index))
     else:
         filter_noted_nodes.sort(key=lambda n: (getattr(n, "location", (0,0))[0], -getattr(n, "location", (0,0))[1]))
 
@@ -230,24 +226,25 @@ def draw_search_list(layout: UILayout, context: Context, filter_noted_nodes: lis
     body: UILayout
     for index, node in enumerate(filter_noted_nodes):
         header, body = layout.panel(f"note_{index}_{node.name}", default_closed=True)
-
         row = header.row(align=True)
         split1 = row.split(factor=0.1)
         split_color = split1.row()
-        split2 = split1.split(factor=0.1)
-        split_badge = split2.row()
-        split3 = split2.split(factor=0.6)
-        split_text = split3.row()
+        split2 = split1.split(factor=0.5)
+        split_text = split2.row()
+        if node == context.active_node and context.active_node.select:
+            split_text.alert = True
+        split3 = split2.split(factor=0.75)
         split_img_name = split3.row()
-        if hasattr(node, "note_txt_bg_color"):
+        split_badge = split3.row()
+
+        if node.note_text:
             split_color.prop(node, "note_txt_bg_color", text="")
         else:
-            split1.label(text="", icon='QUESTION')
+            split_color.label(text="无")
 
         badge_idx = getattr(node, "note_badge_index", 0)
         txt_content = getattr(node, "note_text", "").strip()
 
-        split_badge.label(text=f"{badge_idx:->3}" if badge_idx else "无")
         display_text = ""
         split_lines: list[str] = []
         if txt_content:
@@ -255,14 +252,12 @@ def draw_search_list(layout: UILayout, context: Context, filter_noted_nodes: lis
             display_text += split_lines[0]
         else:
             display_text += node.name
-        if node == context.active_node:
-            display_text = "★★: " + display_text
         op = split_text.operator("node.note_jump_to_note", text=display_text, icon='VIEW_ZOOM', emboss=True)
         op.node_name = node.name
 
         image: Image = getattr(node, "note_image", None)
-        if image:
-            split_img_name.label(text=image.name)
+        split_img_name.label(text=image.name if image else "无")
+        split_badge.label(text=f"{badge_idx:0>2}" if badge_idx else "无")
 
         if body:
             body_split = body.split(factor=0.03)

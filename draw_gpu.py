@@ -21,9 +21,8 @@ from .utils import (
     check_color_visibility,
     get_node_screen_rect,
 )
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from .typings import NotedNode # type: ignore
+
+from .typings import NotedNode # type: ignore
 
 # region 常量
 PaddingX = 2
