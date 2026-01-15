@@ -400,18 +400,14 @@ def _calc_stacked_positions(node_info: NodeInfo, scale: float, text_dims: TextDi
 
     return ElementPosition(txt_x=txt_x, txt_y=txt_y, img_x=img_x, img_y=img_y)
 
-def _apply_centering_offset(positions: ElementPosition, node: NotedNode, node_width_px: float,
-                           text_dims: TextDimensions, image_dims: ImageDimensions) -> ElementPosition:
+def _apply_centering_offset(element_pos: ElementPosition, node_info: NodeInfo, text_dims: TextDimensions, image_dims: ImageDimensions):
     """应用居中偏移(仅对TOP/BOTTOM对齐有效)"""
-    txt_x, txt_y, img_x, img_y = positions.txt_x, positions.txt_y, positions.img_x, positions.img_y
-
+    node = node_info.node
+    node_width = node_info.right_x - node_info.left_x
     if text_dims.should_draw and node.note_txt_center and node.note_txt_pos in {'TOP', 'BOTTOM'}:
-        txt_x += (node_width_px - text_dims.width) / 2
+        element_pos.txt_x += (node_width - text_dims.width) / 2
     if image_dims.should_draw and node.note_img_center and node.note_img_pos in {'TOP', 'BOTTOM'}:
-        img_x += (node_width_px - image_dims.width) / 2
-
-    return ElementPosition(txt_x=txt_x, txt_y=txt_y, img_x=img_x, img_y=img_y)
-
+        element_pos.img_x += (node_width - image_dims.width) / 2
 # region 基础绘制函数
 
 def draw_rounded_rect_batch(x: float, y: float, width: float, height: float, color: RGBA, radius: float = 3.0) -> None:
@@ -626,15 +622,15 @@ def _process_and_draw_text_and_image_note(node: NotedNode, params: DrawParams, b
     image_dims = _calc_image_dimensions(node_info, scale)
 
     is_stacked = (node.note_txt_pos == node.note_img_pos)
-    positions = (_calc_stacked_positions(node_info, scale, text_dims, image_dims, node.note_txt_pos) if is_stacked
+    element_pos = (_calc_stacked_positions(node_info, scale, text_dims, image_dims, node.note_txt_pos) if is_stacked
                 else _calc_non_stacked_positions(node_info, scale, text_dims, image_dims))
-    positions = _apply_centering_offset(positions, node, node_info.right_x - node_info.left_x, text_dims, image_dims)
+    _apply_centering_offset(element_pos, node_info, text_dims, image_dims)
 
     # 绘制
     if image_dims.should_draw:
-        _draw_image_note(image_dims.texture, positions.img_x, positions.img_y, image_dims.width, image_dims.height)
+        _draw_image_note(image_dims.texture, element_pos.img_x, element_pos.img_y, image_dims.width, image_dims.height)
     if text_dims.should_draw:
-        _draw_text_note(node_info, scale, bg_color,  positions.txt_x, positions.txt_y, text_dims)
+        _draw_text_note(node_info, scale, bg_color,  element_pos.txt_x, element_pos.txt_y, text_dims)
     if badge_idx > 0 and show_badge:
         _collect_badge_coords(node_info, badge_infos)
 
