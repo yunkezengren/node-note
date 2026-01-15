@@ -12,6 +12,7 @@ import os
 from .typings import NotedNode, float2, int3, RGBA, AlignMode, TextWidthMode, BadgeScaleMode
 from .preferences import pref
 from .utils import (
+    ui_scale,
     nd_abs_loc,
     get_region_zoom,
     text_split_lines,
@@ -23,7 +24,6 @@ from .utils import (
 # region 常量
 
 PaddingX = 2
-MarginBottom = 2
 MinAutoWidth = 101
 CornerRadius = 2.0
 CornerScaleY = 1.1
@@ -52,9 +52,7 @@ def get_font_id() -> int:
 @dataclass
 class DrawParams:
     """绘制参数"""
-    sys_ui_scale: float
-    scaled_zoom: float
-    is_occlusion_enabled: bool
+    scale: float
     occluders: list
     badge_radius: float
     arrow_size: float
@@ -69,7 +67,6 @@ class NodeInfo:
     left_x: float
     right_x: float
     loc: Vec2
-    scaled_zoom: float
 
 @dataclass
 class BadgeInfo:
@@ -95,7 +92,7 @@ class ImageDimensions:
     should_draw: bool
 
 @dataclass
-class ElementPositions:
+class ElementPosition:
     """文本和图像的屏幕坐标"""
     txt_x: float
     txt_y: float
@@ -209,32 +206,29 @@ def _get_draw_params() -> DrawParams:
     context = bpy.context
     prefs = pref()
     # 缩放计算
-    sys_ui_scale = context.preferences.system.ui_scale
     zoom = get_region_zoom(context)
     prefs_ui_scale = context.preferences.view.ui_scale
-    scaled_zoom = zoom * prefs_ui_scale
+    scale = zoom * prefs_ui_scale
+    # scale = ui_scale()
     # 遮挡检测
-    is_occlusion_enabled = prefs.use_occlusion
     occluders = []
-    if is_occlusion_enabled and context.selected_nodes:
+    if prefs.use_occlusion and context.selected_nodes:
         occluders = [get_node_screen_rect(n) for n in context.selected_nodes]
     # 序号样式参数
     badge_rel_scale = prefs.badge_rel_scale
-    badge_scale_mode: BadgeScaleMode = prefs.badge_scale_mode
     badge_abs_scale = prefs.badge_abs_scale
+    badge_scale_mode: BadgeScaleMode = prefs.badge_scale_mode
     if badge_scale_mode == 'RELATIVE':
-        badge_radius = 7 * badge_rel_scale * scaled_zoom
-        arrow_size = 8.0 * badge_rel_scale * scaled_zoom
-        badge_font_size = 8 * badge_rel_scale * scaled_zoom
-    else:
+        badge_radius = 7 * badge_rel_scale * scale
+        arrow_size = 8.0 * badge_rel_scale * scale
+        badge_font_size = 8 * badge_rel_scale * scale
+    elif badge_scale_mode == 'ABSOLUTE':
         max_diameter = view_to_region_scaled(140, 0)[0] - view_to_region_scaled(0, 0)[0]
         badge_radius = min(7 * 2, max_diameter / 2) * badge_abs_scale
         arrow_size = min(16, max_diameter * 0.6) * badge_abs_scale
         badge_font_size = min(16, max_diameter / 2) * badge_abs_scale
     return DrawParams(
-        sys_ui_scale,
-        scaled_zoom,
-        is_occlusion_enabled,
+        scale,
         occluders,
         badge_radius,
         arrow_size,
@@ -248,12 +242,10 @@ def _wrap_text(font_id: int, text: str, txt_width_mode: TextWidthMode, note_widt
     else:
         return _wrap_text_pure(font_id, text, max(1, note_width - pad*2))
 
-def _calculate_node_position(node: NotedNode, params: DrawParams) -> NodeInfo:
+def _get_node_info(node: NotedNode) -> NodeInfo:
     """计算节点位置信息"""
-    scaled_zoom = params.scaled_zoom
-    sys_ui_scale = params.sys_ui_scale
     loc = nd_abs_loc(node)
-    h_logical = node.dimensions.y / sys_ui_scale
+    h_logical = node.dimensions.y / ui_scale()
     logical_top_y = max(loc.y - (h_logical/2 + 9), loc.y + (h_logical/2 - 9)) if node.hide else loc.y
     logical_bottom_y = min(loc.y - (h_logical/2 + 9), loc.y + (h_logical/2 - 9)) if node.hide else (loc.y - h_logical)
 
@@ -268,54 +260,53 @@ def _calculate_node_position(node: NotedNode, params: DrawParams) -> NodeInfo:
         left_x,
         right_x,
         loc,
-        scaled_zoom,
     )
 
 def _calc_note_pos(node_info: NodeInfo, alignment: AlignMode, offset_vec: float2, self_width: float, self_height: float,
-                   scaled_zoom: float) -> float2:
+                   scale: float) -> float2:
     """计算元素位置"""
     base_x = node_info.left_x
     base_y = node_info.top_y
     bottom_y = node_info.bottom_y
     right_x = node_info.right_x
 
-    pos_x, pos_y = base_x, base_y
-    offset_x = offset_vec[0] * scaled_zoom
-    offset_y = offset_vec[1] * scaled_zoom
+    offset_x = offset_vec[0] * scale
+    offset_y = offset_vec[1] * scale
+    margin = 2
 
     if alignment == 'TOP':
         pos_x = base_x
-        pos_y = base_y + MarginBottom*scaled_zoom
+        pos_y = base_y + margin*scale
     elif alignment == 'BOTTOM':
         pos_x = base_x
-        pos_y = bottom_y - MarginBottom*scaled_zoom - self_height
+        pos_y = bottom_y - margin*scale - self_height
     elif alignment == 'LEFT':
-        pos_x = base_x - MarginBottom*scaled_zoom - self_width
+        pos_x = base_x - margin*scale - self_width
         pos_y = base_y - self_height
     elif alignment == 'RIGHT':
-        pos_x = right_x + MarginBottom*scaled_zoom
+        pos_x = right_x + margin*scale
         pos_y = base_y - self_height
 
     return pos_x + offset_x, pos_y + offset_y
 
 # region 尺寸和位置计算函数
 
-def _calculate_text_dimensions(node: NotedNode, node_info: NodeInfo, is_visible: bool) -> TextDimensions:
+def _calc_text_dimensions(node_info: NodeInfo, scale: float, is_visible: bool) -> TextDimensions:
     """计算文本注释的尺寸和换行"""
+    node = node_info.node
     text = node.note_text
     show_txt = node.note_show_txt
-    
+
     if not (text and show_txt and is_visible):
         return TextDimensions(width=0, height=0, lines=[], font_size=0, should_draw=False)
-    
-    scaled_zoom = node_info.scaled_zoom
-    pad = PaddingX * scaled_zoom
+
+    pad = PaddingX * scale
     node_width_px = node_info.right_x - node_info.left_x
     loc = node_info.loc
-    
-    fs = max(1, int(node.note_font_size * scaled_zoom))
+
+    fs = max(1, int(node.note_font_size * scale))
     txt_width_mode = node.note_txt_width_mode
-    
+
     # 计算宽度
     if txt_width_mode == 'FIT' and text:
         font_id = get_font_id()
@@ -327,74 +318,73 @@ def _calculate_text_dimensions(node: NotedNode, node_info: NodeInfo, is_visible:
         note_width = max(node_width_px, min_w)
     else:
         note_width = view_to_region_scaled(loc[0] + node.note_txt_bg_width, loc[1])[0] - node_info.left_x
-    
+
     # 文本换行
     font_id = get_font_id()
     blf.size(font_id, fs)
     lines = text_split_lines(text) if txt_width_mode == 'FIT' else _wrap_text(font_id, text, txt_width_mode, note_width, pad)
     text_note_height = (len(lines) * fs * 1.3) + pad * 2 if lines else 0
-    
+
     return TextDimensions(width=note_width, height=text_note_height, lines=lines, font_size=fs, should_draw=True)
 
-def _calculate_image_dimensions(node: NotedNode, node_info: NodeInfo) -> ImageDimensions:
+def _calc_image_dimensions(node_info: NodeInfo, scale: float) -> ImageDimensions:
     """计算图像注释的尺寸和纹理"""
+    node = node_info.node
     img = node.note_image
     show_img = node.note_show_img
-    
+
     if not (img and show_img):
         return ImageDimensions(width=0, height=0, texture=None, should_draw=False)
-    
-    scaled_zoom = node_info.scaled_zoom
+
     node_width_px = node_info.right_x - node_info.left_x
     loc = node_info.loc
     ref_width = max(node_width_px, (view_to_region_scaled(loc[0] + MinAutoWidth, loc[1])[0] - node_info.left_x))
-    
+
     # 计算宽度
     img_width_mode = node.note_img_width_mode
     if img_width_mode == 'ORIGINAL':
-        base_width = img.size[0] * scaled_zoom
+        base_width = img.size[0] * scale
     elif img_width_mode == 'AUTO':
         base_width = ref_width
     else:
         base_width = view_to_region_scaled(loc[0] + node.note_img_width, loc[1])[0] - node_info.left_x
-    
+
     img_draw_h = base_width * (img.size[1] / img.size[0]) if img.size[0] > 0 else 0
     texture = get_gpu_texture(img) if img.size[0] > 0 else None
-    
+
     return ImageDimensions(width=base_width, height=img_draw_h, texture=texture, should_draw=True)
 
-def _calculate_non_stacked_positions(node: NotedNode, node_info: NodeInfo, text_dims: TextDimensions, 
-                                    image_dims: ImageDimensions, is_visible: bool) -> ElementPositions:
+def _calc_non_stacked_positions(node_info: NodeInfo, scale: float, text_dims: TextDimensions, image_dims: ImageDimensions) -> ElementPosition:
     """计算非堆叠情况下的元素位置"""
-    scaled_zoom = node_info.scaled_zoom
     txt_x = txt_y = img_x = img_y = 0.0
-    
-    if text_dims.should_draw:
-        txt_x, txt_y = _calc_note_pos(node_info, node.note_txt_pos, node.note_txt_offset, 
-                                      text_dims.width, text_dims.height, scaled_zoom)
-    if image_dims.should_draw:
-        img_x, img_y = _calc_note_pos(node_info, node.note_img_pos, node.note_img_offset, 
-                                      image_dims.width, image_dims.height, scaled_zoom)
-    
-    return ElementPositions(txt_x=txt_x, txt_y=txt_y, img_x=img_x, img_y=img_y)
 
-def _calculate_stacked_positions(node: NotedNode, node_info: NodeInfo, text_dims: TextDimensions, 
-                                image_dims: ImageDimensions, alignment: AlignMode) -> ElementPositions:
+    node = node_info.node
+    if text_dims.should_draw:
+        txt_x, txt_y = _calc_note_pos(node_info, node.note_txt_pos, node.note_txt_offset,
+                                      text_dims.width, text_dims.height, scale)
+    if image_dims.should_draw:
+        img_x, img_y = _calc_note_pos(node_info, node.note_img_pos, node.note_img_offset,
+                                      image_dims.width, image_dims.height, scale)
+
+    return ElementPosition(txt_x=txt_x, txt_y=txt_y, img_x=img_x, img_y=img_y)
+
+def _calc_stacked_positions(node_info: NodeInfo, scale: float, text_dims: TextDimensions,
+                                image_dims: ImageDimensions, alignment: AlignMode) -> ElementPosition:
     """计算堆叠情况下的元素位置"""
-    scaled_zoom = node_info.scaled_zoom
-    swap = node.note_swap_order
-    
+    node = node_info.node
+    swap = node_info.node.note_swap_order
+
     # 确定内外层
     if not swap:
-        inner_w, inner_h, inner_off = text_dims.width, text_dims.height, getattr(node, "note_txt_offset", (0, 0))
-        outer_w, outer_h, outer_off = image_dims.width, image_dims.height, getattr(node, "note_img_offset", (0, 0))
+        inner_w, inner_h, inner_off = text_dims.width, text_dims.height, node.note_txt_offset
+        outer_w, outer_h, outer_off = image_dims.width, image_dims.height, node.note_img_offset
     else:
         inner_w, inner_h, inner_off = image_dims.width, image_dims.height, node.note_img_offset
-        outer_w, outer_h, outer_off = text_dims.width, text_dims.height, getattr(node, "note_txt_offset", (0, 0))
-    
-    inner_x, inner_y = _calc_note_pos(node_info, alignment, inner_off, inner_w, inner_h, scaled_zoom)
-    offset_x_scaled, offset_y_scaled = outer_off[0] * scaled_zoom, outer_off[1] * scaled_zoom
-    
+        outer_w, outer_h, outer_off = text_dims.width, text_dims.height, node.note_txt_offset
+
+    inner_x, inner_y = _calc_note_pos(node_info, alignment, inner_off, inner_w, inner_h, scale)
+    offset_x_scaled, offset_y_scaled = outer_off[0] * scale, outer_off[1] * scale
+
     # 计算外层位置
     if alignment == 'TOP':
         outer_x, outer_y = inner_x + offset_x_scaled, inner_y + inner_h + offset_y_scaled
@@ -404,23 +394,23 @@ def _calculate_stacked_positions(node: NotedNode, node_info: NodeInfo, text_dims
         outer_x, outer_y = inner_x - outer_w + offset_x_scaled, node_info.top_y - outer_h + offset_y_scaled
     else:  # RIGHT
         outer_x, outer_y = inner_x + inner_w + offset_x_scaled, node_info.top_y - outer_h + offset_y_scaled
-    
+
     txt_x, txt_y = (inner_x, inner_y) if not swap else (outer_x, outer_y)
     img_x, img_y = (outer_x, outer_y) if not swap else (inner_x, inner_y)
-    
-    return ElementPositions(txt_x=txt_x, txt_y=txt_y, img_x=img_x, img_y=img_y)
 
-def _apply_centering_offset(positions: ElementPositions, node: NotedNode, node_width_px: float, 
-                           text_dims: TextDimensions, image_dims: ImageDimensions) -> ElementPositions:
+    return ElementPosition(txt_x=txt_x, txt_y=txt_y, img_x=img_x, img_y=img_y)
+
+def _apply_centering_offset(positions: ElementPosition, node: NotedNode, node_width_px: float,
+                           text_dims: TextDimensions, image_dims: ImageDimensions) -> ElementPosition:
     """应用居中偏移(仅对TOP/BOTTOM对齐有效)"""
     txt_x, txt_y, img_x, img_y = positions.txt_x, positions.txt_y, positions.img_x, positions.img_y
-    
+
     if text_dims.should_draw and node.note_txt_center and node.note_txt_pos in {'TOP', 'BOTTOM'}:
         txt_x += (node_width_px - text_dims.width) / 2
     if image_dims.should_draw and node.note_img_center and node.note_img_pos in {'TOP', 'BOTTOM'}:
         img_x += (node_width_px - image_dims.width) / 2
-    
-    return ElementPositions(txt_x=txt_x, txt_y=txt_y, img_x=img_x, img_y=img_y)
+
+    return ElementPosition(txt_x=txt_x, txt_y=txt_y, img_x=img_x, img_y=img_y)
 
 # region 基础绘制函数
 
@@ -547,18 +537,16 @@ def draw_image_error_placeholder(x: float, y: float, width: float, height: float
 
 # region 核心绘制函数
 
-def _draw_text_note(node: NotedNode, text: str, bg_color: RGBA, node_info: NodeInfo, txt_x: float, txt_y: float, 
-                    text_dims: TextDimensions) -> None:
+def _draw_text_note(node_info: NodeInfo, scale:float, bg_color: RGBA, txt_x: float, txt_y: float, text_dims: TextDimensions) -> None:
     """绘制文本+背景"""
-    scaled_zoom = node_info.scaled_zoom
-    pad = PaddingX * scaled_zoom
+    pad = PaddingX * scale
     font_id = get_font_id()
-    
+
     # 绘制背景
-    draw_rounded_rect_batch(txt_x, txt_y, text_dims.width, text_dims.height, bg_color, CornerRadius * scaled_zoom)
-    
+    draw_rounded_rect_batch(txt_x, txt_y, text_dims.width, text_dims.height, bg_color, CornerRadius * scale)
+
     # 绘制文本
-    blf.color(font_id, *node.note_text_color)
+    blf.color(font_id, *node_info.node.note_text_color)
     blf.disable(font_id, blf.SHADOW)
     blf.size(font_id, text_dims.font_size)
     line_y = txt_y + pad
@@ -573,10 +561,10 @@ def _draw_image_note(texture: GPUTexture | None, img_x: float, img_y: float, img
     else:
         draw_image_error_placeholder(img_x, img_y, img_draw_w, img_draw_h)
 
-def _collect_badge_coords(badge_idx: int, node_info: NodeInfo, badge_infos: dict[int, list[BadgeInfo]], params: DrawParams) -> None:
+def _collect_badge_coords(node_info: NodeInfo, badge_infos: dict[int, list[BadgeInfo]]) -> None:
     """收集序号坐标"""
     badge_pos = (node_info.left_x, node_info.top_y)
-
+    badge_idx = node_info.node.note_badge_index
     if badge_idx not in badge_infos:
         badge_infos[badge_idx] = []
     badge_infos[badge_idx].append(BadgeInfo(badge_pos, node_info.node.note_badge_color))
@@ -625,29 +613,30 @@ def _process_and_draw_text_and_image_note(node: NotedNode, params: DrawParams, b
 
     if not (text and show_txt) and not (img and show_img) and not (badge_idx > 0 and show_badge):
         return
-    
+
     bg_color = node.note_txt_bg_color
     is_visible = check_color_visibility(bg_color)
     if pref().hide_img_by_bg and not is_visible and badge_idx == 0:
         return
-    
+
     # 计算尺寸和位置
-    node_info = _calculate_node_position(node, params)
-    text_dims = _calculate_text_dimensions(node, node_info, is_visible)
-    image_dims = _calculate_image_dimensions(node, node_info)
-    
+    scale = params.scale
+    node_info = _get_node_info(node)
+    text_dims = _calc_text_dimensions(node_info, scale, is_visible)
+    image_dims = _calc_image_dimensions(node_info, scale)
+
     is_stacked = (node.note_txt_pos == node.note_img_pos)
-    positions = (_calculate_stacked_positions(node, node_info, text_dims, image_dims, node.note_txt_pos) if is_stacked 
-                else _calculate_non_stacked_positions(node, node_info, text_dims, image_dims, is_visible))
+    positions = (_calc_stacked_positions(node_info, scale, text_dims, image_dims, node.note_txt_pos) if is_stacked
+                else _calc_non_stacked_positions(node_info, scale, text_dims, image_dims))
     positions = _apply_centering_offset(positions, node, node_info.right_x - node_info.left_x, text_dims, image_dims)
-    
+
     # 绘制
     if image_dims.should_draw:
         _draw_image_note(image_dims.texture, positions.img_x, positions.img_y, image_dims.width, image_dims.height)
     if text_dims.should_draw:
-        _draw_text_note(node, text, bg_color, node_info, positions.txt_x, positions.txt_y, text_dims)
+        _draw_text_note(node_info, scale, bg_color,  positions.txt_x, positions.txt_y, text_dims)
     if badge_idx > 0 and show_badge:
-        _collect_badge_coords(badge_idx, node_info, badge_infos, params)
+        _collect_badge_coords(node_info, badge_infos)
 
 # region 主入口和注册函数
 
