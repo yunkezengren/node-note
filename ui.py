@@ -1,5 +1,5 @@
 from bpy.types import Panel, UILayout, Context, Menu, Image
-from .preferences import pref
+from .preferences import pref, sort_mode_items
 from .utils import text_split_lines
 from .typings import NotedNode
 
@@ -194,7 +194,7 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
 
         header, body = layout.panel("setting4", default_closed=True)
         header.label(text=f"列表({all_notes_count})", icon="ALIGN_JUSTIFY")
-        header.prop(prefs, "sort_by_badge", text="按序号排列")
+        header.prop(prefs, "list_sort_mode", text="")
         if body:
             draw_search_list(body, context, filter_noted_nodes, all_notes_count)
 
@@ -202,12 +202,19 @@ def draw_search_list(layout: UILayout, context: Context, filter_noted_nodes: lis
     row = layout.row(align=True)
     row.prop(pref(), "navigator_search", text="", icon='VIEWZOOM')
 
-    # todo 改进
-    if pref().sort_by_badge:
-        filter_noted_nodes.sort(key=lambda node: (node.note_badge_index == 0, node.note_badge_index))
+    list_sort_mode = pref().list_sort_mode
+    if list_sort_mode == 'COLOR_BADGE':
+        filter_noted_nodes.sort(key=lambda node: (
+            node.note_txt_bg_color[:3] if node.note_text else (2, 2, 2),
+            node.note_badge_index == 0,
+            node.note_badge_index,
+        ))
     else:
-        filter_noted_nodes.sort(key=lambda n: (getattr(n, "location", (0,0))[0], -getattr(n, "location", (0,0))[1]))
-
+        filter_noted_nodes.sort(key=lambda node: (
+            node.note_badge_index == 0,
+            node.note_badge_index,
+            node.note_txt_bg_color[:3] if node.note_text else (2, 2, 2),
+        ))
     if not filter_noted_nodes and all_notes_count > 0:
         box = layout.box()
         col = box.column(align=True)
@@ -218,9 +225,13 @@ def draw_search_list(layout: UILayout, context: Context, filter_noted_nodes: lis
         layout.label(text="暂无注记", icon='INFO')
         return
 
-    sort_icon = 'SORT_ASC' if pref().sort_by_badge else 'GRID'
+    list_sort_mode = pref().list_sort_mode
     if pref().navigator_search.strip().lower():
         sort_icon = 'FILTER'
+    elif list_sort_mode == 'BADGE_COLOR':
+        sort_icon = 'SORT_ASC'
+    else:
+        sort_icon = 'COLOR'
 
     layout.label(text=f"列表 ({len(filter_noted_nodes)}):", icon=sort_icon)
     col = layout.column()
@@ -247,18 +258,16 @@ def draw_search_list(layout: UILayout, context: Context, filter_noted_nodes: lis
         badge_idx = getattr(node, "note_badge_index", 0)
         txt_content = getattr(node, "note_text", "").strip()
 
-        display_text = ""
+        display_text = "无文本"
         split_lines: list[str] = []
         if txt_content:
             split_lines = text_split_lines(txt_content)
-            display_text += split_lines[0]
-        else:
-            display_text += node.name
+            display_text = split_lines[0]
         op = split_text.operator("node.note_jump_to_note", text=display_text, icon='VIEW_ZOOM', emboss=True)
         op.node_name = node.name
 
         image: Image = node.note_image
-        split_img_name.label(text=image.name if image else "无")
+        split_img_name.label(text=image.name if image else "无图片")
         split_badge.label(text=f"{badge_idx:0>2}" if badge_idx else "无")
 
         if body:

@@ -30,6 +30,11 @@ def tag_redraw(self, context: Context):
             if area.type == 'NODE_EDITOR':
                 area.tag_redraw()
 
+sort_mode_items: list[tuple[str, str, str]] = [
+    ('COLOR_BADGE', "颜色+序号", "按颜色升序，然后按序号升序"),
+    ('BADGE_COLOR', "序号+颜色", "按序号升序，然后按颜色升序"),
+]
+
 class NodeNoteAddonPreferences(AddonPreferences):
     bl_idname = __package__  # type: ignore
 
@@ -39,7 +44,7 @@ class NodeNoteAddonPreferences(AddonPreferences):
     dependent_overlay      : BoolProperty(name="跟随叠加层", default=True, description="当节点编辑器叠加层关闭时，是否隐藏笔记")
     show_badge_lines       : BoolProperty(name="显示逻辑连线", default=True, description="显示节点之间的序号连线")
     is_interactive_mode    : BoolProperty(name="交互模式", default=False, description="点击节点即可编号，右键或ESC退出")
-    sort_by_badge          : BoolProperty(name="按序号排序", default=True, description="勾选后，有序号的节点将优先显示在列表顶部")
+    list_sort_mode         : EnumProperty(name="排序模式", items=sort_mode_items, default='BADGE_COLOR', description="选择列表排序方式")
     # todo 改进遮挡
     use_occlusion          : BoolProperty(name="自动遮挡", default=False)
     tag_mode_prepend       : BoolProperty(name="前缀模式", default=True, description="特殊字符添加到已有文本前")
