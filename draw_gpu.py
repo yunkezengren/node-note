@@ -68,7 +68,6 @@ class BadgeInfo:
 class TextImgInfo:
     """文本和图像的尺寸、纹理与位置 屏幕空间 信息"""
     node: NotedNode | None = None
-    """ 所属节点 """
     top_y: float = 0
     """ 节点顶部屏幕Y坐标 """
     bottom_y: float = 0
@@ -252,26 +251,6 @@ def _wrap_text(font_id: int, text: str, txt_width_mode: TextWidthMode, note_widt
     else:
         return _wrap_text_pure(font_id, text, max(1, note_width - pad*2))
 
-def _get_node_info(node: NotedNode) -> TextImgInfo:
-    """计算节点位置信息"""
-    loc = nd_abs_loc(node)
-    h_logical = node.dimensions.y / ui_scale()
-    logical_top_y = max(loc.y - (h_logical/2 + 9), loc.y + (h_logical/2 - 9)) if node.hide else loc.y
-    logical_bottom_y = min(loc.y - (h_logical/2 + 9), loc.y + (h_logical/2 - 9)) if node.hide else (loc.y - h_logical)
-
-    left_x, top_y = view_to_region_scaled(loc.x, logical_top_y)
-    _, bottom_y = view_to_region_scaled(loc.x, logical_bottom_y)
-    right_x, _ = view_to_region_scaled(loc.x + node.width + 1.0, loc.y)
-
-    return TextImgInfo(
-        node=node,
-        top_y=top_y,
-        bottom_y=bottom_y,
-        left_x=left_x,
-        right_x=right_x,
-        loc=loc,
-    )
-
 def _calc_note_pos(info: TextImgInfo, alignment: AlignMode, offset_vec: float2, self_width: float, self_height: float,
                    scale: float) -> float2:
     """计算元素位置"""
@@ -299,137 +278,6 @@ def _calc_note_pos(info: TextImgInfo, alignment: AlignMode, offset_vec: float2, 
 
     return pos_x + offset_x, pos_y + offset_y
 
-# region 尺寸和位置计算函数
-
-def _get_text_note_info(info: TextImgInfo, scale: float, is_visible: bool) -> TextImgInfo:
-    """计算文本注释的尺寸和换行"""
-    node = info.node
-    text = node.note_text
-    show_txt = node.note_show_txt
-
-    if not (text and show_txt and is_visible):
-        return info
-
-    pad = PaddingX * scale
-    node_width_px = info.right_x - info.left_x
-    loc = info.loc
-
-    fs = max(1, int(node.note_font_size * scale))
-    txt_width_mode = node.note_txt_width_mode
-
-    # 计算宽度
-    if txt_width_mode == 'FIT' and text:
-        font_id = get_font_id()
-        blf.size(font_id, fs)
-        max_line_w = max(blf.dimensions(font_id, line)[0] for line in text_split_lines(text))
-        note_width = max_line_w + (pad * 2)
-    elif txt_width_mode == 'AUTO':
-        min_w = view_to_region_scaled(loc[0] + MinAutoWidth, loc[1])[0] - info.left_x
-        note_width = max(node_width_px, min_w)
-    else:
-        note_width = view_to_region_scaled(loc[0] + node.note_txt_bg_width, loc[1])[0] - info.left_x
-
-    # 文本换行
-    font_id = get_font_id()
-    blf.size(font_id, fs)
-    lines = text_split_lines(text) if txt_width_mode == 'FIT' else _wrap_text(font_id, text, txt_width_mode, note_width, pad)
-    text_note_height = (len(lines) * fs * 1.3) + pad * 2 if lines else 0
-
-    info.txt_width = note_width
-    info.txt_height = text_note_height
-    info.txt_lines = lines
-    info.txt_font_size = fs
-    info.txt_should_draw = True
-    return info
-
-def _get_image_note_info(info: TextImgInfo, scale: float) -> TextImgInfo:
-    """计算图像注释的尺寸和纹理"""
-    node = info.node
-    img = node.note_image
-    show_img = node.note_show_img
-
-    if not (img and show_img):
-        return info
-
-    node_width_px = info.right_x - info.left_x
-    loc = info.loc
-    ref_width = max(node_width_px, (view_to_region_scaled(loc[0] + MinAutoWidth, loc[1])[0] - info.left_x))
-
-    # 计算宽度
-    img_width_mode = node.note_img_width_mode
-    if img_width_mode == 'ORIGINAL':
-        base_width = img.size[0] * scale
-    elif img_width_mode == 'AUTO':
-        base_width = ref_width
-    else:
-        base_width = view_to_region_scaled(loc[0] + node.note_img_width, loc[1])[0] - info.left_x
-
-    img_draw_h = base_width * (img.size[1] / img.size[0]) if img.size[0] > 0 else 0
-    texture = get_gpu_texture(img) if img.size[0] > 0 else None
-
-    info.img_width = base_width
-    info.img_height = img_draw_h
-    info.img_texture = texture
-    info.img_should_draw = True
-    return info
-
-def _calc_non_stacked_positions(info: TextImgInfo, scale: float) -> TextImgInfo:
-    """计算非堆叠情况下的元素位置"""
-    node = info.node
-    txt_x = txt_y = img_x = img_y = 0.0
-    if info.txt_should_draw:
-        txt_x, txt_y = _calc_note_pos(info, node.note_txt_pos, node.note_txt_offset,
-                                      info.txt_width, info.txt_height, scale)
-    if info.img_should_draw:
-        img_x, img_y = _calc_note_pos(info, node.note_img_pos, node.note_img_offset,
-                                      info.img_width, info.img_height, scale)
-    info.txt_x, info.txt_y = txt_x, txt_y
-    info.img_x, info.img_y = img_x, img_y
-    return info
-
-def _calc_stacked_positions(info: TextImgInfo, scale: float, alignment: AlignMode) -> TextImgInfo:
-    """计算堆叠情况下的元素位置"""
-    node = info.node
-    swap = node.note_swap_order
-    txt_w, txt_h = info.txt_width, info.txt_height
-    img_w, img_h = info.img_width, info.img_height
-
-    if not swap:
-        inner_w, inner_h, inner_off = txt_w, txt_h, node.note_txt_offset
-        outer_w, outer_h, outer_off = img_w, img_h, node.note_img_offset
-    else:
-        inner_w, inner_h, inner_off = img_w, img_h, node.note_img_offset
-        outer_w, outer_h, outer_off = txt_w, txt_h, node.note_txt_offset
-
-    inner_x, inner_y = _calc_note_pos(info, alignment, inner_off, inner_w, inner_h, scale)
-    offset_x_scaled, offset_y_scaled = outer_off[0] * scale, outer_off[1] * scale
-
-    if alignment == 'TOP':
-        outer_x, outer_y = inner_x + offset_x_scaled, inner_y + inner_h + offset_y_scaled
-    elif alignment == 'BOTTOM':
-        outer_x, outer_y = inner_x + offset_x_scaled, inner_y - outer_h + offset_y_scaled
-    elif alignment == 'LEFT':
-        outer_x, outer_y = inner_x - outer_w + offset_x_scaled, info.top_y - outer_h + offset_y_scaled
-    else:
-        outer_x, outer_y = inner_x + inner_w + offset_x_scaled, info.top_y - outer_h + offset_y_scaled
-
-    if not swap:
-        info.txt_x, info.txt_y = inner_x, inner_y
-        info.img_x, info.img_y = outer_x, outer_y
-    else:
-        info.txt_x, info.txt_y = outer_x, outer_y
-        info.img_x, info.img_y = inner_x, inner_y
-
-    return info
-
-def _apply_centering_offset(info: TextImgInfo) -> None:
-    """应用居中偏移(仅对TOP/BOTTOM对齐有效)"""
-    node = info.node
-    node_width = info.right_x - info.left_x
-    if info.txt_should_draw and node.note_txt_center and node.note_txt_pos in {'TOP', 'BOTTOM'}:
-        info.txt_x += (node_width - info.txt_width) / 2
-    if info.img_should_draw and node.note_img_center and node.note_img_pos in {'TOP', 'BOTTOM'}:
-        info.img_x += (node_width - info.img_width) / 2
 # region 基础绘制函数
 
 def draw_rounded_rect_batch(x: float, y: float, width: float, height: float, color: RGBA, radius: float = 3.0) -> None:
@@ -554,6 +402,162 @@ def draw_texture_batch(info: TextImgInfo) -> None:
 def draw_image_error_placeholder(info: TextImgInfo) -> None:
     draw_rounded_rect_batch(info.img_x, info.img_y, max(info.img_width, 70), max(info.img_height, 70), (1, 0, 0, 1))
 
+# region 辅助函数
+
+def _get_node_info(node: NotedNode) -> TextImgInfo:
+    """计算节点位置信息"""
+    loc = nd_abs_loc(node)
+    h_logical = node.dimensions.y / ui_scale()
+    logical_top_y = max(loc.y - (h_logical/2 + 9), loc.y + (h_logical/2 - 9)) if node.hide else loc.y
+    logical_bottom_y = min(loc.y - (h_logical/2 + 9), loc.y + (h_logical/2 - 9)) if node.hide else (loc.y - h_logical)
+
+    left_x, top_y = view_to_region_scaled(loc.x, logical_top_y)
+    _, bottom_y = view_to_region_scaled(loc.x, logical_bottom_y)
+    right_x, _ = view_to_region_scaled(loc.x + node.width + 1.0, loc.y)
+
+    return TextImgInfo(
+        node=node,
+        top_y=top_y,
+        bottom_y=bottom_y,
+        left_x=left_x,
+        right_x=right_x,
+        loc=loc,
+    )
+
+def _set_text_note_info(info: TextImgInfo, scale: float, is_visible: bool) -> None:
+    """设置文本注释的尺寸和换行信息"""
+    node = info.node
+    text = node.note_text
+    show_txt = node.note_show_txt
+
+    if not (text and show_txt and is_visible):
+        return
+
+    pad = PaddingX * scale
+    node_width_px = info.right_x - info.left_x
+    loc = info.loc
+
+    fs = max(1, int(node.note_font_size * scale))
+    txt_width_mode = node.note_txt_width_mode
+
+    # 计算宽度
+    if txt_width_mode == 'FIT' and text:
+        font_id = get_font_id()
+        blf.size(font_id, fs)
+        max_line_w = max(blf.dimensions(font_id, line)[0] for line in text_split_lines(text))
+        note_width = max_line_w + (pad * 2)
+    elif txt_width_mode == 'AUTO':
+        min_w = view_to_region_scaled(loc[0] + MinAutoWidth, loc[1])[0] - info.left_x
+        note_width = max(node_width_px, min_w)
+    else:
+        note_width = view_to_region_scaled(loc[0] + node.note_txt_bg_width, loc[1])[0] - info.left_x
+
+    # 文本换行
+    font_id = get_font_id()
+    blf.size(font_id, fs)
+    lines = text_split_lines(text) if txt_width_mode == 'FIT' else _wrap_text(font_id, text, txt_width_mode, note_width, pad)
+    text_note_height = (len(lines) * fs * 1.3) + pad * 2 if lines else 0
+
+    info.txt_width = note_width
+    info.txt_height = text_note_height
+    info.txt_lines = lines
+    info.txt_font_size = fs
+    info.txt_should_draw = True
+
+def _set_image_note_info(info: TextImgInfo, scale: float) -> None:
+    """设置图像注释的尺寸和纹理信息"""
+    node = info.node
+    img = node.note_image
+    show_img = node.note_show_img
+
+    if not (img and show_img):
+        return
+
+    node_width_px = info.right_x - info.left_x
+    loc = info.loc
+    ref_width = max(node_width_px, (view_to_region_scaled(loc[0] + MinAutoWidth, loc[1])[0] - info.left_x))
+
+    # 计算宽度
+    img_width_mode = node.note_img_width_mode
+    if img_width_mode == 'ORIGINAL':
+        base_width = img.size[0] * scale
+    elif img_width_mode == 'AUTO':
+        base_width = ref_width
+    else:
+        base_width = view_to_region_scaled(loc[0] + node.note_img_width, loc[1])[0] - info.left_x
+
+    img_draw_h = base_width * (img.size[1] / img.size[0]) if img.size[0] > 0 else 0
+    texture = get_gpu_texture(img) if img.size[0] > 0 else None
+
+    info.img_width = base_width
+    info.img_height = img_draw_h
+    info.img_texture = texture
+    info.img_should_draw = True
+
+def _set_note_position(info: TextImgInfo, scale: float) -> None:
+    def _set_stacked_position(info: TextImgInfo, scale: float, alignment: AlignMode) -> None:
+        """计算堆叠情况下的元素位置"""
+        node = info.node
+        swap = node.note_swap_order
+        txt_w, txt_h = info.txt_width, info.txt_height
+        img_w, img_h = info.img_width, info.img_height
+
+        if not swap:
+            inner_w, inner_h, inner_off = txt_w, txt_h, node.note_txt_offset
+            outer_w, outer_h, outer_off = img_w, img_h, node.note_img_offset
+        else:
+            inner_w, inner_h, inner_off = img_w, img_h, node.note_img_offset
+            outer_w, outer_h, outer_off = txt_w, txt_h, node.note_txt_offset
+
+        inner_x, inner_y = _calc_note_pos(info, alignment, inner_off, inner_w, inner_h, scale)
+        offset_x_scaled, offset_y_scaled = outer_off[0] * scale, outer_off[1] * scale
+
+        if alignment == 'TOP':
+            outer_x, outer_y = inner_x + offset_x_scaled, inner_y + inner_h + offset_y_scaled
+        elif alignment == 'BOTTOM':
+            outer_x, outer_y = inner_x + offset_x_scaled, inner_y - outer_h + offset_y_scaled
+        elif alignment == 'LEFT':
+            outer_x, outer_y = inner_x - outer_w + offset_x_scaled, info.top_y - outer_h + offset_y_scaled
+        else:
+            outer_x, outer_y = inner_x + inner_w + offset_x_scaled, info.top_y - outer_h + offset_y_scaled
+
+        if not swap:
+            info.txt_x, info.txt_y = inner_x, inner_y
+            info.img_x, info.img_y = outer_x, outer_y
+        else:
+            info.txt_x, info.txt_y = outer_x, outer_y
+            info.img_x, info.img_y = inner_x, inner_y
+
+    def _set_non_stacked_position(info: TextImgInfo, scale: float) -> None:
+        """计算非堆叠情况下的元素位置"""
+        node = info.node
+        txt_x = txt_y = img_x = img_y = 0.0
+        if info.txt_should_draw:
+            txt_x, txt_y = _calc_note_pos(info, node.note_txt_pos, node.note_txt_offset,
+                                        info.txt_width, info.txt_height, scale)
+        if info.img_should_draw:
+            img_x, img_y = _calc_note_pos(info, node.note_img_pos, node.note_img_offset,
+                                        info.img_width, info.img_height, scale)
+        info.txt_x, info.txt_y = txt_x, txt_y
+        info.img_x, info.img_y = img_x, img_y
+
+    def _set_center_align(info: TextImgInfo) -> None:
+        """应用居中偏移(仅对TOP/BOTTOM对齐有效)"""
+        node = info.node
+        node_width = info.right_x - info.left_x
+        if info.txt_should_draw and node.note_txt_center and node.note_txt_pos in {'TOP', 'BOTTOM'}:
+            info.txt_x += (node_width - info.txt_width) / 2
+        if info.img_should_draw and node.note_img_center and node.note_img_pos in {'TOP', 'BOTTOM'}:
+            info.img_x += (node_width - info.img_width) / 2
+
+    node = info.node
+    is_stacked = (node.note_txt_pos == node.note_img_pos)
+    if is_stacked:
+        _set_stacked_position(info, scale, node.note_txt_pos)
+    else:
+        _set_non_stacked_position(info, scale)
+    _set_center_align(info)
+
 # region 核心绘制函数
 
 def _draw_text_note(info: TextImgInfo, scale: float, bg_color: RGBA) -> None:
@@ -640,17 +644,10 @@ def _process_and_draw_text_and_image_note(node: NotedNode, params: DrawParams, b
     # 计算尺寸和位置
     scale = params.scale
     info = _get_node_info(node)
-    info = _get_text_note_info(info, scale, is_visible)
-    info = _get_image_note_info(info, scale)
+    _set_text_note_info(info, scale, is_visible)
+    _set_image_note_info(info, scale)
+    _set_note_position(info, scale)
 
-    is_stacked = (node.note_txt_pos == node.note_img_pos)
-    if is_stacked:
-        info = _calc_stacked_positions(info, scale, node.note_txt_pos)
-    else:
-        info = _calc_non_stacked_positions(info, scale)
-    _apply_centering_offset(info)
-
-    # 绘制
     if info.img_should_draw:
         _draw_image_note(info)
     if info.txt_should_draw:

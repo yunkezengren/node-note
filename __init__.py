@@ -1,5 +1,4 @@
 import bpy
-# 导入新模块
 from . import draw_gpu
 from . import operators
 from . import ui
