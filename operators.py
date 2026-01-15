@@ -1,7 +1,7 @@
 from re import S
 import bpy
 from bpy.types import Operator, Node, Nodes, NodeTree, Context
-from .preferences import pref
+from .preferences import pref, tag_redraw
 from .utils import import_clipboard_image
 from .ui import draw_panel_for_shortcut
 
