@@ -300,12 +300,12 @@ def _calc_note_pos(node_info: NodeInfo, alignment: AlignMode, offset_vec: float2
 
 # region 尺寸和位置计算函数
 
-def _calculate_text_dimensions(node: NotedNode, node_info: NodeInfo, visible_by_bg_color: bool) -> TextDimensions:
+def _calculate_text_dimensions(node: NotedNode, node_info: NodeInfo, is_visible: bool) -> TextDimensions:
     """计算文本注释的尺寸和换行"""
     text = node.note_text
     show_txt = node.note_show_txt
     
-    if not (text and show_txt and visible_by_bg_color):
+    if not (text and show_txt and is_visible):
         return TextDimensions(width=0, height=0, lines=[], font_size=0, should_draw=False)
     
     scaled_zoom = node_info.scaled_zoom
@@ -336,12 +336,12 @@ def _calculate_text_dimensions(node: NotedNode, node_info: NodeInfo, visible_by_
     
     return TextDimensions(width=note_width, height=text_note_height, lines=lines, font_size=fs, should_draw=True)
 
-def _calculate_image_dimensions(node: NotedNode, node_info: NodeInfo, visible_by_bg_color: bool) -> ImageDimensions:
+def _calculate_image_dimensions(node: NotedNode, node_info: NodeInfo) -> ImageDimensions:
     """计算图像注释的尺寸和纹理"""
     img = node.note_image
     show_img = node.note_show_img
     
-    if not (img and show_img and (not pref().hide_img_by_bg or visible_by_bg_color)):
+    if not (img and show_img):
         return ImageDimensions(width=0, height=0, texture=None, should_draw=False)
     
     scaled_zoom = node_info.scaled_zoom
@@ -364,7 +364,7 @@ def _calculate_image_dimensions(node: NotedNode, node_info: NodeInfo, visible_by
     return ImageDimensions(width=base_width, height=img_draw_h, texture=texture, should_draw=True)
 
 def _calculate_non_stacked_positions(node: NotedNode, node_info: NodeInfo, text_dims: TextDimensions, 
-                                    image_dims: ImageDimensions, visible_by_bg_color: bool) -> ElementPositions:
+                                    image_dims: ImageDimensions, is_visible: bool) -> ElementPositions:
     """计算非堆叠情况下的元素位置"""
     scaled_zoom = node_info.scaled_zoom
     txt_x = txt_y = img_x = img_y = 0.0
@@ -627,18 +627,18 @@ def _process_and_draw_text_and_image_note(node: NotedNode, params: DrawParams, b
         return
     
     bg_color = node.note_txt_bg_color
-    visible_by_bg_color = check_color_visibility(bg_color)
-    if not visible_by_bg_color and badge_idx == 0:
+    is_visible = check_color_visibility(bg_color)
+    if pref().hide_img_by_bg and not is_visible and badge_idx == 0:
         return
     
     # 计算尺寸和位置
     node_info = _calculate_node_position(node, params)
-    text_dims = _calculate_text_dimensions(node, node_info, visible_by_bg_color)
-    image_dims = _calculate_image_dimensions(node, node_info, visible_by_bg_color)
+    text_dims = _calculate_text_dimensions(node, node_info, is_visible)
+    image_dims = _calculate_image_dimensions(node, node_info)
     
     is_stacked = (node.note_txt_pos == node.note_img_pos)
     positions = (_calculate_stacked_positions(node, node_info, text_dims, image_dims, node.note_txt_pos) if is_stacked 
-                else _calculate_non_stacked_positions(node, node_info, text_dims, image_dims, visible_by_bg_color))
+                else _calculate_non_stacked_positions(node, node_info, text_dims, image_dims, is_visible))
     positions = _apply_centering_offset(positions, node, node_info.right_x - node_info.left_x, text_dims, image_dims)
     
     # 绘制
