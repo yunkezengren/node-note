@@ -44,8 +44,8 @@ def init_props():
     Node.note_txt_center     = BoolProperty(name="居中", default=False, description="顶/底对齐时居中")
     Node.note_img_center     = BoolProperty(name="居中", default=True, description="顶/底对齐时居中")
 
-    Node.note_txt_offset     = IntVectorProperty(name="偏移", size=2, default=(0, 0), subtype='XYZ', description="文本偏移")
-    Node.note_img_offset     = IntVectorProperty(name="偏移", size=2, default=(0, 0), subtype='XYZ', description="图像偏移")
+    Node.note_txt_offset     = IntVectorProperty(name="偏移", size=2, default=(0, 0), subtype='XYZ', description="文本偏移", update=tag_redraw)
+    Node.note_img_offset     = IntVectorProperty(name="偏移", size=2, default=(0, 0), subtype='XYZ', description="图像偏移", update=tag_redraw)
 
 def delete_props():
     props = [

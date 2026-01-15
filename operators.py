@@ -49,7 +49,7 @@ def delete_notes(nodes: Nodes | list[Node]):
 
 class NODE_OT_note_delete_selected_txt(NoteBaseOperator):
     bl_idname = "node.note_delete_selected_txt"
-    bl_label = "删除文本"
+    bl_label = "删除文本(多选)"
     bl_description = "删除选中节点的文字笔记"
 
     def execute(self, context):
@@ -60,7 +60,7 @@ class NODE_OT_note_delete_selected_txt(NoteBaseOperator):
 
 class NODE_OT_note_delete_selected_badge(NoteBaseOperator):
     bl_idname = "node.note_delete_selected_badge"
-    bl_label = "删除序号"
+    bl_label = "删除序号(多选)"
     bl_description = "删除选中节点的序号笔记"
 
     def execute(self, context):
@@ -80,7 +80,7 @@ class NoteDeleteOperator(NoteBaseOperator):
 
 class NODE_OT_note_delete_selected_img(NoteDeleteOperator):
     bl_idname = "node.note_delete_selected_img"
-    bl_label = "删除图片"
+    bl_label = "删除图片(多选)"
     bl_description = "删除选中节点图片笔记对应的图片"
 
     def execute(self, context):
@@ -94,7 +94,7 @@ class NODE_OT_note_delete_selected_img(NoteDeleteOperator):
 
 class NODE_OT_note_delete_selected_notes(NoteDeleteOperator):
     bl_idname = "node.note_delete_selected_notes"
-    bl_label = "删除选中三种笔记"
+    bl_label = "删除选中三种笔记(多选)"
     bl_description = "删除选中节点的三种笔记"
 
     def execute(self, context):
@@ -139,7 +139,7 @@ class NODE_OT_note_delete_all_notes(NoteDeleteOperator):
 
 class NODE_OT_note_show_selected_txt(NoteBaseOperator):
     bl_idname = "node.note_show_selected_txt"
-    bl_label = "显示文本"
+    bl_label = "显示文本(多选)"
     bl_description = "显示选中节点的文字笔记"
 
     def execute(self, context):
@@ -151,7 +151,7 @@ class NODE_OT_note_show_selected_txt(NoteBaseOperator):
 
 class NODE_OT_note_show_selected_img(NoteBaseOperator):
     bl_idname = "node.note_show_selected_img"
-    bl_label = "显示图片"
+    bl_label = "显示图片(多选)"
     bl_description = "显示选中节点的图片笔记"
 
     def execute(self, context):
@@ -163,7 +163,7 @@ class NODE_OT_note_show_selected_img(NoteBaseOperator):
 
 class NODE_OT_note_show_selected_badge(NoteBaseOperator):
     bl_idname = "node.note_show_selected_badge"
-    bl_label = "显示序号"
+    bl_label = "显示序号(多选)"
     bl_description = "显示选中节点的序号笔记"
 
     def execute(self, context):
@@ -175,7 +175,7 @@ class NODE_OT_note_show_selected_badge(NoteBaseOperator):
 
 class NODE_OT_note_apply_preset(NoteBaseOperator):
     bl_idname = "node.note_apply_preset"
-    bl_label = "应用预设给选中节点"
+    bl_label = "应用预设给选中节点(多选)"
     bg_color: bpy.props.FloatVectorProperty(size=4)
 
     def execute(self, context):
@@ -186,7 +186,7 @@ class NODE_OT_note_apply_preset(NoteBaseOperator):
 
 class NODE_OT_note_copy_active_to_selected(NoteBaseOperator):
     bl_idname = "node.note_copy_to_selected"
-    bl_label = "同步活动样式给选中"
+    bl_label = "同步活动样式给选中(多选)"
 
     def execute(self, context):
         # todo 改为从偏好设置导入
@@ -214,20 +214,17 @@ class NODE_OT_note_add_quick_tag(NoteBaseOperator):
             node.note_text = (self.tag_text + " " + node.note_text) if pref().tag_mode_prepend else (node.note_text + " " + self.tag_text)
         return {'FINISHED'}
 
-class NODE_OT_note_reset_txt_offset(NoteBaseOperator):
-    bl_idname = "node.note_reset_txt_offset"
-    bl_label = "复位文本偏移"
+class NODE_OT_note_reset_offset(NoteBaseOperator):
+    bl_idname = "node.note_reset_offset"
+    bl_label = "复位偏移(多选)"
+    is_txt: bpy.props.BoolProperty()
 
     def execute(self, context):
-        context.active_node.note_txt_offset = (0, 0)
-        return {'FINISHED'}
-
-class NODE_OT_note_reset_img_offset(NoteBaseOperator):
-    bl_idname = "node.note_reset_img_offset"
-    bl_label = "复位图片偏移"
-
-    def execute(self, context):
-        context.active_node.note_img_offset = (0, 0)
+        for node in self.get_target_nodes(context):
+            if self.is_txt:
+                node.note_txt_offset = (0, 0)
+            else:
+                node.note_img_offset = (0, 0)
         return {'FINISHED'}
 
 class NODE_OT_note_paste_image(NoteBaseOperator):
@@ -365,8 +362,7 @@ classes = [
     NODE_OT_note_show_selected_badge,
     NODE_OT_note_note_swap_order,
     NODE_OT_note_interactive_badge,
-    NODE_OT_note_reset_txt_offset,
-    NODE_OT_note_reset_img_offset,
+    NODE_OT_note_reset_offset,
     NODE_OT_note_paste_image,
     NODE_OT_note_apply_preset,
     NODE_OT_note_copy_active_to_selected,

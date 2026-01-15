@@ -74,8 +74,7 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
                 body_split = body.split(factor=0.01)
                 body_split.label(text="")
                 txt_box = body_split.box()
-                col = txt_box.column(align=True)
-                col.prop(node, "note_text", text="描述: ")
+                txt_box.prop(node, "note_text", text="")
 
                 row_pos = txt_box.column()
                 row_tag = row_pos.row(align=True)
@@ -112,7 +111,8 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
                 if node.note_txt_pos in ('TOP', 'BOTTOM'):
                     row_pos.prop(node, "note_txt_center", text="居中", toggle=True)
                 row_pos.prop(node, "note_txt_offset", text="")
-                row_pos.operator("node.note_reset_txt_offset", text="", icon='LOOP_BACK')
+                op = row_pos.operator("node.note_reset_offset", text="", icon='LOOP_BACK')
+                op.is_txt = True
 
         if show_image:
             header, body = layout.panel("setting2", default_closed=True)
@@ -144,7 +144,8 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
                 if node.note_img_pos in ('TOP', 'BOTTOM'):
                     row_pos.prop(node, "note_img_center", text="居中", toggle=True)
                 row_pos.prop(node, "note_img_offset", text="")
-                row_pos.operator("node.note_reset_img_offset", text="", icon='LOOP_BACK')
+                op = row_pos.operator("node.note_reset_offset", text="", icon='LOOP_BACK')
+                op.is_txt = False
 
         if show_badge:
             header, body = layout.panel("setting3", default_closed=True)
