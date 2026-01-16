@@ -400,7 +400,7 @@ def draw_texture_batch(info: TextImgInfo) -> None:
     gpu.state.blend_set('NONE')
 
 def draw_image_error_placeholder(info: TextImgInfo) -> None:
-    draw_rounded_rect_batch(info.img_x, info.img_y, max(info.img_width, 70), max(info.img_height, 70), (1, 0, 0, 1))
+    draw_rounded_rect_batch(info.img_x, info.img_y, max(info.img_width, 70), 70, (1, 0.2, 1, 1))
 
 # region 辅助函数
 
@@ -671,15 +671,15 @@ def draw_callback_px() -> None:
     nodes_to_draw: list[NotedNode] = []
 
     if pref().show_selected_only:
-        nodes_to_draw = bpy.context.selected_nodes
+        nodes_to_draw = bpy.context.selected_nodes # type: ignore
     else:
-        nodes_to_draw = tree.nodes
+        nodes_to_draw = tree.nodes # type: ignore
 
     for node in nodes_to_draw:
         if node == active: continue
         _process_and_draw_text_and_image_note(node, params, badge_infos)
     if active:
-        _process_and_draw_text_and_image_note(active, params, badge_infos)
+        _process_and_draw_text_and_image_note(active, params, badge_infos)  # type: ignore
     _draw_badge_notes(badge_infos, params)
 
 def register_draw_handler() -> None:

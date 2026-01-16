@@ -1,6 +1,7 @@
-from re import S
+import os
 import bpy
-from bpy.types import Operator, Node, Nodes, NodeTree, Context
+from bpy.types import Operator, Node, Nodes, NodeTree, Context, Image
+from bpy.props import EnumProperty, BoolProperty
 from .preferences import pref, tag_redraw
 from .utils import import_clipboard_image
 from .ui import draw_panel_for_shortcut
@@ -11,9 +12,9 @@ class NoteBaseOperator(Operator):
     def poll(cls, context):
         return context.active_node is not None
 
-    def get_target_nodes(self, context: Context, skip_active: bool = False) -> list[Node]:
+    def get_selected_nodes(self, context: Context, skip_active: bool = False) -> list[Node]:
         nodes = context.selected_nodes
-        active = context.active_node 
+        active = context.active_node
         if active and not active.select and not skip_active:
             nodes.append(active)
         return nodes
@@ -24,7 +25,7 @@ class NODE_OT_note_note_swap_order(NoteBaseOperator):
     bl_description = "交换选中节点文本笔记和图像笔记顺序"
 
     def execute(self, context):
-        nodes = self.get_target_nodes(context)
+        nodes = self.get_selected_nodes(context)
         for node in nodes:
             if hasattr(node, "note_txt_pos") and hasattr(node, "note_img_pos"):
                 align_txt = node.note_txt_pos
@@ -53,7 +54,7 @@ class NODE_OT_note_delete_selected_txt(NoteBaseOperator):
     bl_description = "删除选中节点的文字笔记"
 
     def execute(self, context):
-        for node in self.get_target_nodes(context):
+        for node in self.get_selected_nodes(context):
             if node.note_text:
                 node.note_text = ""
         return {'FINISHED'}
@@ -64,7 +65,7 @@ class NODE_OT_note_delete_selected_badge(NoteBaseOperator):
     bl_description = "删除选中节点的序号笔记"
 
     def execute(self, context):
-        for node in self.get_target_nodes(context):
+        for node in self.get_selected_nodes(context):
             if node.note_badge_index:
                 node.note_badge_index = 0
         return {'FINISHED'}
@@ -84,7 +85,7 @@ class NODE_OT_note_delete_selected_img(NoteDeleteOperator):
     bl_description = "删除选中节点图片笔记对应的图片"
 
     def execute(self, context):
-        for node in self.get_target_nodes(context):
+        for node in self.get_selected_nodes(context):
             if node.note_image:
                 image = node.note_image
                 node.note_image = None
@@ -99,7 +100,7 @@ class NODE_OT_note_delete_selected_notes(NoteDeleteOperator):
 
     def execute(self, context):
         images_to_delete = []
-        for node in self.get_target_nodes(context):
+        for node in self.get_selected_nodes(context):
             if node.note_image:
                 image = node.note_image
                 node.note_image = None
@@ -145,7 +146,7 @@ class NODE_OT_note_show_selected_txt(NoteBaseOperator):
     def execute(self, context):
         active_node = context.active_node
         new_value = not active_node.note_show_txt
-        for node in self.get_target_nodes(context):
+        for node in self.get_selected_nodes(context):
             node.note_show_txt = new_value
         return {'FINISHED'}
 
@@ -157,7 +158,7 @@ class NODE_OT_note_show_selected_img(NoteBaseOperator):
     def execute(self, context):
         active_node = context.active_node
         new_value = not active_node.note_show_img
-        for node in self.get_target_nodes(context):
+        for node in self.get_selected_nodes(context):
             node.note_show_img = new_value
         return {'FINISHED'}
 
@@ -169,7 +170,7 @@ class NODE_OT_note_show_selected_badge(NoteBaseOperator):
     def execute(self, context):
         active_node = context.active_node
         new_value = not active_node.note_show_badge
-        for node in self.get_target_nodes(context):
+        for node in self.get_selected_nodes(context):
             node.note_show_badge = new_value
         return {'FINISHED'}
 
@@ -179,7 +180,7 @@ class NODE_OT_note_apply_preset(NoteBaseOperator):
     bg_color: bpy.props.FloatVectorProperty(size=4)
 
     def execute(self, context):
-        for node in self.get_target_nodes(context):
+        for node in self.get_selected_nodes(context):
             node.note_txt_bg_color = self.bg_color
             node.note_text_color = (1, 1, 1, 1)
         return {'FINISHED'}
@@ -196,7 +197,7 @@ class NODE_OT_note_copy_active_to_selected(NoteBaseOperator):
         ]
         count = 0
         active = context.active_node
-        for node in self.get_target_nodes(context, skip_active=True):
+        for node in self.get_selected_nodes(context, skip_active=True):
             for prop in strict_sync_props:
                 setattr(node, prop, getattr(active, prop))
             count += 1
@@ -210,7 +211,7 @@ class NODE_OT_note_add_quick_tag(NoteBaseOperator):
     tag_text: bpy.props.StringProperty()
 
     def execute(self, context):
-        for node in self.get_target_nodes(context):
+        for node in self.get_selected_nodes(context):
             node.note_text = (self.tag_text + " " + node.note_text) if pref().tag_mode_prepend else (node.note_text + " " + self.tag_text)
         return {'FINISHED'}
 
@@ -220,7 +221,7 @@ class NODE_OT_note_reset_offset(NoteBaseOperator):
     is_txt: bpy.props.BoolProperty()
 
     def execute(self, context):
-        for node in self.get_target_nodes(context):
+        for node in self.get_selected_nodes(context):
             if self.is_txt:
                 node.note_txt_offset = (0, 0)
             else:
@@ -244,6 +245,107 @@ class NODE_OT_note_paste_image(NoteBaseOperator):
         else:
             self.report({'WARNING'}, "剪贴板无图像或粘贴失败")
             return {'CANCELLED'}
+
+class NODE_OT_note_pack_unpack_images(NoteBaseOperator):
+    bl_idname = "node.note_pack_unpack_images"
+    bl_label = "打包/解包图片"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    is_pack: BoolProperty(name="打包模式", default=False)
+    pack_scope: EnumProperty(
+        name="操作范围",
+        items=[
+            ('ALL', "所有节点树", "遍历所有节点树中的节点"),
+            ('CURRENT', "当前节点树", "仅当前节点树的节点"),
+            ('SELECTED', "选中节点", "仅选中的节点"),
+        ],
+        default='SELECTED',
+    )
+    unpack_method: EnumProperty(
+        name="解包方式",
+        items=[
+            ('USE_LOCAL', "使用当前目录", "在blend文件所在目录创建文件(不覆盖)", 'FILE_FOLDER', 0),
+            ('WRITE_LOCAL', "写入当前目录", "在blend文件所在目录写入文件(覆盖)", 'EXPORT', 1),
+            ('USE_ORIGINAL', "使用原始位置", "在图片原始目录创建文件(不覆盖)", 'FILE', 2),
+            ('WRITE_ORIGINAL', "写入原始位置", "在图片原始目录写入文件(覆盖)", 'EXPORT', 3),
+        ],
+        default='USE_LOCAL',
+    )
+
+    @classmethod
+    def description(cls, context, properties):
+        if properties.is_pack:
+            return "外部图片将打包到Blend文件"
+        else:
+            return "将图片将解包到原始目录或当前目录"
+
+    def draw(self, context):
+        layout = self.layout
+        row1 = layout.split(factor=0.2)
+        row1.label(text="范围:")
+        row1.column().prop(self, "pack_scope", expand=True)
+        if not self.is_pack:
+            row2 = layout.split(factor=0.2)
+            row2.label(text="位置:")
+            row2.column().prop(self, "unpack_method", expand=True)
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self, width=300)
+
+    def execute(self, context):
+        nodes = []
+        if self.pack_scope == 'ALL':
+            for tree in bpy.data.node_groups:
+                nodes.extend(tree.nodes)
+        elif self.pack_scope == 'CURRENT':
+            tree = context.space_data.edit_tree
+            if tree:
+                nodes = list(tree.nodes)
+        elif self.pack_scope == 'SELECTED':
+            nodes = self.get_selected_nodes(context)
+
+        if self.is_pack:
+            return self._pack_images(nodes)
+        else:
+            return self._unpack_images(nodes)
+
+    def _unpack_images(self, nodes):
+        if not bpy.data.filepath:
+            self.report({'WARNING'}, "请先保存Blend文件")
+            return {'CANCELLED'}
+
+        return self._process_images(nodes, process=lambda img: (img.save(), img.unpack(method=self.unpack_method)))
+
+    def _pack_images(self, nodes):
+        return self._process_images(nodes, process=lambda img: img.pack())
+
+    def _process_images(self, nodes, process):
+        pack_status = self.is_pack
+        count = found = valid = 0
+        action = "打包" if pack_status else "解包"
+        status_name = "外部图片" if pack_status else "已打包"
+
+        for node in nodes:
+            if not node.note_image:
+                continue
+
+            found += 1
+            image: Image = node.note_image
+            if image.packed_file is not None if pack_status else image.packed_file is None:
+                continue
+            valid += 1
+            try:
+                process(image)
+                count += 1
+            except Exception as e:
+                print(f"无法{action}图片 {image.name}: {e}")
+
+        if count > 0:
+            self.report({'INFO'}, f"已{action} {count} 张图片")
+        else:
+            self.report({'WARNING'}, f"未找到需要{action}的图片 (找到: {found}, {status_name}: {valid})")
+
+        return {'FINISHED'}
 
 class NODE_OT_note_jump_to_note(Operator):
     """跳转到指定注记节点"""
@@ -323,7 +425,7 @@ class NODE_OT_note_interactive_badge(Operator):
         return {'PASS_THROUGH'}
 
     def invoke(self, context, event):
-        # 如果已经是交互模式，再次点击则关闭（自开关逻辑）
+        # 如果已经是交互模式，再次点击则关闭(自开关逻辑)
         if pref().is_interactive_mode:
             pref().is_interactive_mode = False
             return {'FINISHED'}
@@ -367,6 +469,7 @@ classes = [
     NODE_OT_note_apply_preset,
     NODE_OT_note_copy_active_to_selected,
     NODE_OT_note_add_quick_tag,
+    NODE_OT_note_pack_unpack_images,
     NODE_OT_note_note_quick_edit,
     NODE_OT_note_jump_to_note,
 ]

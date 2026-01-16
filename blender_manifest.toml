@@ -17,6 +17,5 @@ paths_exclude_pattern = [
   ".*",
   "*.zip",
   "*.log",
-  "nul",
   "A*.md",
 ]

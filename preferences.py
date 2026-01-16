@@ -60,12 +60,12 @@ class NodeNoteAddonPreferences(AddonPreferences):
 
     default_txt_width_mode : EnumProperty(name="宽度模式", items=txt_width_items, default=0)
     default_txt_bg_width   : IntProperty(name="默认文本背景宽度", default=200, min=50, max=2000)
-    default_txt_pos       : EnumProperty(name="默认对齐", items=align_items, default='TOP')
+    default_txt_pos        : EnumProperty(name="默认对齐", items=align_items, default='TOP')
 
     # 3. 图像设置区
     default_img_width_mode : EnumProperty(name="宽度模式", items=img_width_items, default=0)
     default_img_width      : IntProperty(name="默认图像宽度", default=300, min=10, max=4000)
-    default_img_pos      : EnumProperty(name="默认对齐", items=align_items, default='TOP')
+    default_img_pos        : EnumProperty(name="默认对齐", items=align_items, default='TOP')
 
     # 4. 序号设置区
     default_badge_color    : FloatVectorProperty(name="圆背景色", subtype='COLOR', size=4, default=(0.8, 0.1, 0.1, 1.0), min=0, max=1)
@@ -108,6 +108,7 @@ class NodeNoteAddonPreferences(AddonPreferences):
 
     def draw(self, context):
         layout = self.layout
+        layout.label(text="插件位置: 右键菜单  +  N面板-节点-节点随记", icon='INFO')
         box = layout.box()
         row = box.row()
         row.label(text="全局设置", icon='WORLD_DATA')

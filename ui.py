@@ -1,3 +1,4 @@
+import bpy
 from bpy.types import Panel, UILayout, Context, Menu, Image
 from .preferences import pref, sort_mode_items
 from .utils import text_split_lines
@@ -133,7 +134,19 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
                 img_split.label(text="")
                 img_preview = img_split.box()
                 img_preview.template_ID_preview(node, "note_image", open="image.open", rows=4, cols=4)
-                img_preview.operator("node.note_delete_selected_img", text="删除图片", icon='TRASH')
+                row_img = img_preview.row()
+                row_img.label(text="图片:")
+                op_unpack = row_img.operator("node.note_pack_unpack_images", text="解包", icon='PACKAGE')
+                op_unpack.is_pack = False
+                op_pack = row_img.operator("node.note_pack_unpack_images", text="打包", icon='UGLYPACKAGE')
+                op_pack.is_pack = True
+                row_img.operator("node.note_delete_selected_img", text="删除", icon='TRASH')
+
+                if node.note_image and node.note_image.packed_file is None:
+                    img_filepath = node.note_image.filepath
+                    if img_filepath:
+                        abs_path = bpy.path.abspath(img_filepath)
+                        img_preview.label(text=abs_path, icon='FILE_IMAGE')
 
                 width_row = img_box.row(align=True)
                 width_row.prop(node, "note_img_width_mode", text="宽度")
