@@ -667,13 +667,19 @@ def draw_callback_px() -> None:
 
     active = tree.nodes.active
     params = _get_draw_params()
-    # 收集序号坐标
     badge_infos: dict[int, list[BadgeInfo]] = {}
-    for node in tree.nodes:
+    nodes_to_draw: list[NotedNode] = []
+
+    if pref().show_selected_only:
+        nodes_to_draw = bpy.context.selected_nodes
+    else:
+        nodes_to_draw = tree.nodes
+
+    for node in nodes_to_draw:
         if node == active: continue
-        _process_and_draw_text_and_image_note(node, params, badge_infos)  # type: ignore
+        _process_and_draw_text_and_image_note(node, params, badge_infos)
     if active:
-        _process_and_draw_text_and_image_note(active, params, badge_infos)  # type: ignore
+        _process_and_draw_text_and_image_note(active, params, badge_infos)
     _draw_badge_notes(badge_infos, params)
 
 def register_draw_handler() -> None:

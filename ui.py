@@ -37,7 +37,8 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
         if body:
             row_pos = body.row()
             row_pos.operator("preferences.addon_show", text="偏好", icon='PREFERENCES').module = __package__
-            row_pos.prop(prefs, "show_all_notes", text="显示", icon='HIDE_OFF', toggle=True)
+            row_pos.prop(prefs, "show_all_notes", text="全部", icon="HIDE_OFF" if prefs.show_all_notes else "HIDE_ON", toggle=True)
+            row_pos.prop(prefs, "show_selected_only", text="仅选中", toggle=True)
             row_pos.prop(prefs, "dependent_overlay", text="叠加层", toggle=True, icon='OVERLAY')
             row_del = body.row()
             row_del.operator("node.note_delete_all_notes", text="全部笔记", icon='TRASH')

@@ -41,6 +41,7 @@ class NodeNoteAddonPreferences(AddonPreferences):
     # 1. 全局设置
     cursor_warp_x          : IntProperty(default=0, min=1, max=500, description="快捷键唤出面板时鼠标偏移")
     show_all_notes         : BoolProperty(name="显示所有", default=True)
+    show_selected_only     : BoolProperty(name="仅显示选中", default=False, description="仅显示选中节点的笔记")
     dependent_overlay      : BoolProperty(name="跟随叠加层", default=True, description="当节点编辑器叠加层关闭时，是否隐藏笔记")
     show_badge_lines       : BoolProperty(name="显示逻辑连线", default=True, description="显示节点之间的序号连线")
     is_interactive_mode    : BoolProperty(name="交互模式", default=False, description="点击节点即可编号，右键或ESC退出")
