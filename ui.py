@@ -70,6 +70,8 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
             h_split = header.row().split(factor=0.4)
             h_split.operator("node.note_show_selected_txt", text="文字", icon="HIDE_OFF" if node.note_show_txt else "HIDE_ON")
             h_split.prop(node, "note_text", text="")
+            header.operator("node.note_paste_text_from_clipboard", text="", icon='PASTEDOWN')
+            header.operator("node.note_copy_text_to_clipboard", text="", icon='COPYDOWN')
             header.operator("node.note_delete_selected_txt", text="", icon='TRASH')
             if body:
                 body.active = node.note_show_txt

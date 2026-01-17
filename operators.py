@@ -2,7 +2,7 @@ import bpy
 from bpy.types import Operator, Node, Nodes, NodeTree, Context, Image
 from bpy.props import EnumProperty, BoolProperty
 from .preferences import pref
-from .utils import import_clipboard_image
+from .utils import import_clipboard_image, text_split_lines
 from .ui import draw_panel_for_shortcut
 
 class NoteBaseOperator(Operator):
@@ -419,7 +419,7 @@ class NODE_OT_note_interactive_badge(Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def modal(self, context, event):
-        # 检查标记，如果被外部关闭则退出
+        # 检查标记,如果被外部关闭则退出
         if not pref().is_interactive_mode:
             context.window.cursor_modal_restore()
             context.area.header_text_set(None)
@@ -458,7 +458,7 @@ class NODE_OT_note_interactive_badge(Operator):
         return {'PASS_THROUGH'}
 
     def invoke(self, context, event):
-        # 如果已经是交互模式，再次点击则关闭(自开关逻辑)
+        # 如果已经是交互模式,再次点击则关闭(自开关逻辑)
         if pref().is_interactive_mode:
             pref().is_interactive_mode = False
             return {'FINISHED'}
@@ -486,6 +486,40 @@ class NODE_OT_note_interactive_badge(Operator):
             pref().is_interactive_mode = False
             return {'CANCELLED'}
 
+
+class NODE_OT_note_paste_text_from_clipboard(NoteBaseOperator):
+    bl_idname = "node.note_paste_text_from_clipboard"
+    bl_label = "从剪贴板粘贴文本"
+    bl_description = "从剪贴板粘贴文本,并根据设置替换换行符"
+
+    def execute(self, context):
+        node = context.active_node
+        text = context.window_manager.clipboard
+        if not text:
+            self.report({'WARNING'}, "剪贴板为空")
+            return {'CANCELLED'}
+
+        separator = pref().line_separator
+        if separator:
+            first_sep = separator.split('|')[0]
+            text = text.replace('\n', first_sep)
+        
+        node.note_text = text
+        return {'FINISHED'}
+
+class NODE_OT_note_copy_text_to_clipboard(NoteBaseOperator):
+    bl_idname = "node.note_copy_text_to_clipboard"
+    bl_label = "复制文本到剪贴板"
+    bl_description = "复制文本到剪贴板,并将换行符还原为\\n"
+
+    def execute(self, context):
+        node = context.active_node
+        lines = text_split_lines(node.note_text)
+        text = "\n".join(lines)
+        context.window_manager.clipboard = text
+        self.report({'INFO'}, "已复制到剪贴板")
+        return {'FINISHED'}
+
 classes = [
     NODE_OT_note_delete_selected_txt,
     NODE_OT_note_delete_selected_img,
@@ -506,6 +540,8 @@ classes = [
     NODE_OT_note_note_quick_edit,
     NODE_OT_note_jump_to_note,
     NODE_OT_note_open_image_editor,
+    NODE_OT_note_paste_text_from_clipboard,
+    NODE_OT_note_copy_text_to_clipboard,
 ]
 
 def register():
