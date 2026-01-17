@@ -376,28 +376,24 @@ class NODE_OT_note_open_image_editor(NoteBaseOperator):
             return {'CANCELLED'}
 
         image = node.note_image
-        screen = context.screen
 
-        for area in screen.areas:
-            if area.type == 'IMAGE_EDITOR':
-                area.spaces.active.image = image
-                area.tag_redraw()
-                return {'FINISHED'}
+        window = context.window
+        bpy.ops.wm.window_new()
+        new_window = context.window_manager.windows[-1]
 
-        original_area = context.area
-        original_type = original_area.type if original_area else 'NODE_EDITOR'
+        import ctypes
+        try:
+            # 获取新窗口句柄 (window_new 会自动聚焦新窗口)
+            hwnd = ctypes.windll.user32.GetActiveWindow()
+            # SWP_NOMOVE(0x0002) | SWP_NOZORDER(0x0004) = 0x0006
+            ctypes.windll.user32.SetWindowPos(hwnd, 0, 0, 0, int(window.width / 2), int(window.height / 2), 0x0006)
+        except Exception as e:
+            print(f"Window resize failed: {e}")
 
-        bpy.ops.screen.area_split(direction='VERTICAL', factor=0.5)
-        new_area = context.screen.areas[-1]
-        new_area.type = 'IMAGE_EDITOR'
-        new_area.spaces.active.image = image
-
-        context.area = new_area
-        new_area.tag_redraw()
-
-        if original_area:
-            original_area.type = original_type
-            original_area.tag_redraw()
+        for area in new_window.screen.areas:
+            area.type = 'IMAGE_EDITOR'
+            area.spaces.active.image = image
+            area.tag_redraw()
 
         return {'FINISHED'}
 
