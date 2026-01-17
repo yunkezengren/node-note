@@ -278,8 +278,8 @@ def draw_search_list(layout: UILayout, context: Context, filter_noted_nodes: lis
         else:
             split_color.label(text="无")
 
-        badge_idx = getattr(node, "note_badge_index", 0)
-        txt_content = getattr(node, "note_text", "").strip()
+        badge_idx = node.note_badge_index
+        txt_content = node.note_text.strip()
 
         display_text = "无文本"
         split_lines: list[str] = []

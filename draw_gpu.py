@@ -161,10 +161,9 @@ def get_image_shader() -> GPUShader:
 def get_gpu_texture(image: Image) -> GPUTexture | None:
     if not image: return None
     if image.size[0] == 0 or image.size[1] == 0: return None
-    try:
-        if hasattr(image, "gpu_texture") and image.gpu_texture: return image.gpu_texture
-    except:
-        pass
+    if hasattr(image, "gpu_texture"):
+        return image.gpu_texture
+
     try:
         texture = gpu.texture.from_image(image)
         if texture: return texture

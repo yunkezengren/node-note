@@ -4,7 +4,6 @@ from bpy.props import EnumProperty, BoolProperty
 from .preferences import pref
 from .utils import import_clipboard_image, text_split_lines
 
-
 class NoteBaseOperator(Operator):
     bl_options = {'REGISTER', 'UNDO'}
     @classmethod
@@ -26,15 +25,13 @@ class NODE_OT_note_note_swap_order(NoteBaseOperator):
     def execute(self, context):
         nodes = self.get_selected_nodes(context)
         for node in nodes:
-            if hasattr(node, "note_txt_pos") and hasattr(node, "note_img_pos"):
-                align_txt = node.note_txt_pos
-                align_img = node.note_img_pos
-                if align_txt != align_img:
-                    node.note_txt_pos = align_img
-                    node.note_img_pos = align_txt
-                else:
-                    if hasattr(node, "note_swap_order"):
-                        node.note_swap_order = not node.note_swap_order
+            align_txt = node.note_txt_pos
+            align_img = node.note_img_pos
+            if align_txt != align_img:
+                node.note_txt_pos = align_img
+                node.note_img_pos = align_txt
+            else:
+                node.note_swap_order = not node.note_swap_order
         context.area.tag_redraw()
         return {'FINISHED'}
 
@@ -347,10 +344,8 @@ class NODE_OT_note_pack_unpack_images(NoteBaseOperator):
         return {'FINISHED'}
 
 class NODE_OT_note_jump_to_note(Operator):
-    """跳转到指定注记节点"""
     bl_idname = "node.note_jump_to_note"
-    bl_label = "跳转到注记"
-    bl_description = "聚焦视图到该节点"
+    bl_label = "跳转到笔记所在节点"
     node_name: bpy.props.StringProperty()
 
     def execute(self, context):
@@ -502,9 +497,7 @@ class NODE_OT_note_interactive_badge(Operator):
             max_idx = 0
             tree = context.space_data.edit_tree
             if tree:
-                for node in tree.nodes:
-                    if hasattr(node, "note_badge_index"):
-                        max_idx = max(max_idx, node.note_badge_index)
+                max_idx = max((node.note_badge_index for node in tree.nodes), default=0)
 
             self.current_idx = max_idx
             self.last_node = None
