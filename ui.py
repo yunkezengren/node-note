@@ -3,6 +3,7 @@ from bpy.types import Panel, UILayout, Context, Menu, Image
 from .preferences import pref
 from .utils import text_split_lines
 from .typings import NotedNode
+from . import operators as ops
 
 class NODE_PT_node_note_gpu_panel(Panel):
     bl_label = "节点随记"
@@ -42,8 +43,8 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
             row_pos.prop(prefs, "show_selected_only", text="仅选中", toggle=True)
             row_pos.prop(prefs, "dependent_overlay", text="叠加层", toggle=True, icon='OVERLAY')
             row_del = body.row()
-            row_del.operator("node.note_delete_all_notes", text="全部笔记", icon='TRASH')
-            row_del.operator("node.note_delete_selected_notes", text="选中笔记", icon='TRASH')
+            row_del.operator(ops.NODE_OT_note_delete_all_notes.bl_idname, text="全部笔记", icon='TRASH')
+            row_del.operator(ops.NODE_OT_note_delete_selected_notes.bl_idname, text="选中笔记", icon='TRASH')
             # 还很不完善
             # body.column().prop(prefs, "use_occlusion", text="被遮挡时自动隐藏")
 
@@ -60,7 +61,7 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
                 split.prop(prefs, "show_other", text="其余", toggle=True)
 
             if len(context.selected_nodes) > 1:
-                body.row().operator("node.note_copy_to_selected", text="同步活动样式到选中", icon='DUPLICATE')
+                body.row().operator(ops.NODE_OT_note_copy_active_to_selected.bl_idname, text="同步活动样式到选中", icon='DUPLICATE')
 
     node: NotedNode = context.active_node
     if node:
@@ -68,11 +69,11 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
             header, body = layout.panel("setting1", default_closed=False)
             header.label(text="", icon='FILE_TEXT')
             h_split = header.row().split(factor=0.4)
-            h_split.operator("node.note_show_selected_txt", text="文字", icon="HIDE_OFF" if node.note_show_txt else "HIDE_ON")
+            h_split.operator(ops.NODE_OT_note_show_selected_txt.bl_idname, text="文字", icon="HIDE_OFF" if node.note_show_txt else "HIDE_ON")
             h_split.prop(node, "note_text", text="")
-            header.operator("node.note_paste_text_from_clipboard", text="", icon='PASTEDOWN')
-            header.operator("node.note_copy_text_to_clipboard", text="", icon='COPYDOWN')
-            header.operator("node.note_delete_selected_txt", text="", icon='TRASH')
+            header.operator(ops.NODE_OT_note_paste_text_from_clipboard.bl_idname, text="", icon='PASTEDOWN')
+            header.operator(ops.NODE_OT_note_copy_text_to_clipboard.bl_idname, text="", icon='COPYDOWN')
+            header.operator(ops.NODE_OT_note_delete_selected_txt.bl_idname, text="", icon='TRASH')
             if body:
                 body.active = node.note_show_txt
                 body_split = body.split(factor=0.01)
@@ -84,7 +85,7 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
                 row_tag = row_pos.row(align=True)
                 row_tag.prop(pref(), "tag_mode_prepend", text="", icon='ALIGN_LEFT' if pref().tag_mode_prepend else 'ALIGN_RIGHT', toggle=True)
                 for tag in ["★", "⚠", "?", "!"]:
-                    op = row_tag.operator("node.note_add_quick_tag", text=tag)
+                    op = row_tag.operator(ops.NODE_OT_note_add_quick_tag.bl_idname, text=tag)
                     op.tag_text = tag
 
                 txt_box.separator(factor=0.05)
@@ -102,7 +103,7 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
                 for i in range(len(def_labels)):
                     split_color = row_pos.split(factor=0.1, align=True)
                     split_color.prop(pref(), f"col_preset_{i+1}", text="")
-                    op = split_color.operator("node.note_apply_preset", text=def_labels[i])
+                    op = split_color.operator(ops.NODE_OT_note_apply_preset.bl_idname, text=def_labels[i])
                     op.bg_color = col_vals[i]
 
                 width_row = txt_box.row(align=True)
@@ -115,18 +116,20 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
                 if node.note_txt_pos in ('TOP', 'BOTTOM'):
                     row_pos.prop(node, "note_txt_center", text="居中", toggle=True)
                 row_pos.prop(node, "note_txt_offset", text="")
-                op = row_pos.operator("node.note_reset_offset", text="", icon='LOOP_BACK')
+                op = row_pos.operator(ops.NODE_OT_note_reset_offset.bl_idname, text="", icon='LOOP_BACK')
                 op.is_txt = True
 
         if show_image:
             header, body = layout.panel("setting2", default_closed=True)
             header.label(text="", icon='IMAGE_DATA')
             h_split = header.row().split(factor=0.4)
-            h_split.operator("node.note_show_selected_img", text="图片", icon="HIDE_OFF" if node.note_show_img else "HIDE_ON")
-            h_split.operator("node.note_paste_image", text="", icon='PASTEDOWN')
+            h_split.operator(ops.NODE_OT_note_show_selected_img.bl_idname, text="图片", icon="HIDE_OFF" if node.note_show_img else "HIDE_ON")
+            h_split.operator(ops.NODE_OT_note_paste_image.bl_idname, text="", icon='PASTEDOWN')
             if node.note_show_txt and node.note_text and node.note_show_img and node.note_image:
-                h_split.operator("node.note_swap_order", text="⇅")
-            header.operator("node.note_delete_selected_img", text="", icon='TRASH')
+                h_split.operator(ops.NODE_OT_note_note_swap_order.bl_idname, text="⇅")
+            if node.note_image:
+                header.operator(ops.NODE_OT_note_open_image_editor.bl_idname, text="", icon='IMAGE')
+            header.operator(ops.NODE_OT_note_delete_selected_img.bl_idname, text="", icon='TRASH')
             if body:
                 body.active = node.note_show_img
                 body_split = body.split(factor=0.01)
@@ -139,8 +142,6 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
                 sub_body: UILayout
                 sub_header, sub_body = img_preview.panel("setting_sub", default_closed=True)
                 sub_header.template_ID(node, "note_image", open="image.open")
-                if node.note_image:
-                    sub_header.operator("node.note_open_image_editor", text="", icon='IMAGE')
                 if sub_body:
                     sub_body.template_ID_preview(node, "note_image", rows=4, cols=4, filter="AVAILABLE", hide_buttons=True)
                     if node.note_image and node.note_image.packed_file is None:  # type: ignore
@@ -149,11 +150,11 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
                             abs_path = bpy.path.abspath(img_filepath)
                             sub_body.label(text=abs_path, icon='FILE_IMAGE')
                 row_img = img_preview.row()
-                op_unpack = row_img.operator("node.note_pack_unpack_images", text="解包", icon='PACKAGE')
+                op_unpack = row_img.operator(ops.NODE_OT_note_pack_unpack_images.bl_idname, text="解包", icon='PACKAGE')
                 op_unpack.is_pack = False
-                op_pack = row_img.operator("node.note_pack_unpack_images", text="打包", icon='UGLYPACKAGE')
+                op_pack = row_img.operator(ops.NODE_OT_note_pack_unpack_images.bl_idname, text="打包", icon='UGLYPACKAGE')
                 op_pack.is_pack = True
-                row_img.operator("node.note_delete_selected_img", text="移除", icon='TRASH')
+                row_img.operator(ops.NODE_OT_note_delete_selected_img.bl_idname, text="移除", icon='TRASH')
 
                 width_row = img_box.row(align=True)
                 width_row.prop(node, "note_img_width_mode", text="宽度")
@@ -165,17 +166,17 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
                 if node.note_img_pos in ('TOP', 'BOTTOM'):
                     row_pos.prop(node, "note_img_center", text="居中", toggle=True)
                 row_pos.prop(node, "note_img_offset", text="")
-                op = row_pos.operator("node.note_reset_offset", text="", icon='LOOP_BACK')
+                op = row_pos.operator(ops.NODE_OT_note_reset_offset.bl_idname, text="", icon='LOOP_BACK')
                 op.is_txt = False
 
         if show_badge:
             header, body = layout.panel("setting3", default_closed=True)
             header.label(text="", icon='EVENT_NDOF_BUTTON_1')
             h_split = header.row().split(factor=0.4, align=True)
-            h_split.operator("node.note_show_selected_badge", text="序号", icon="HIDE_OFF" if node.note_show_badge else "HIDE_ON")
+            h_split.operator(ops.NODE_OT_note_show_selected_badge.bl_idname, text="序号", icon="HIDE_OFF" if node.note_show_badge else "HIDE_ON")
             h_split.prop(node, "note_badge_index", text="")
-            h_split.operator("node.note_interactive_badge", text="", icon='BRUSH_DATA', depress=prefs.is_interactive_mode)
-            header.operator("node.note_delete_selected_badge", text="", icon='TRASH')
+            h_split.operator(ops.NODE_OT_note_interactive_badge.bl_idname, text="", icon='BRUSH_DATA', depress=prefs.is_interactive_mode)
+            header.operator(ops.NODE_OT_note_delete_selected_badge.bl_idname, text="", icon='TRASH')
             if body:
                 body.active = node.note_show_badge
                 body_split = body.split(factor=0.01)
@@ -285,7 +286,7 @@ def draw_search_list(layout: UILayout, context: Context, filter_noted_nodes: lis
         if txt_content:
             split_lines = text_split_lines(txt_content)
             display_text = split_lines[0]
-        op = split_text.operator("node.note_jump_to_note", text=display_text, icon='VIEW_ZOOM', emboss=True)
+        op = split_text.operator(ops.NODE_OT_note_jump_to_note.bl_idname, text=display_text, icon='VIEW_ZOOM', emboss=True)
         op.node_name = node.name
 
         image: Image = node.note_image
@@ -337,7 +338,7 @@ def draw_panel_for_shortcut(layout: UILayout, context: Context):
 def draw_to_context_menu(self: Menu, context: Context):
     layout = self.layout
     layout.operator_context = 'INVOKE_DEFAULT'
-    layout.operator("node.note_quick_edit", icon='TEXT')
+    layout.operator(ops.NODE_OT_note_note_quick_edit.bl_idname, icon='TEXT')
 
 def draw_to_overlay_panel(self: Panel, context):
     self.layout.prop(pref(), "show_all_notes", text="节点笔记", icon='HIDE_OFF', toggle=True)

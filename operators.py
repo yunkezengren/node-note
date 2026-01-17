@@ -3,7 +3,7 @@ from bpy.types import Operator, Node, Nodes, NodeTree, Context, Image
 from bpy.props import EnumProperty, BoolProperty
 from .preferences import pref
 from .utils import import_clipboard_image, text_split_lines
-from .ui import draw_panel_for_shortcut
+
 
 class NoteBaseOperator(Operator):
     bl_options = {'REGISTER', 'UNDO'}
@@ -441,6 +441,7 @@ class NODE_OT_note_note_quick_edit(Operator):
         return context.window_manager.invoke_popup(self, width=220)
 
     def draw(self, context):
+        from .ui import draw_panel_for_shortcut
         draw_panel_for_shortcut(self.layout, context)
 
 class NODE_OT_note_interactive_badge(Operator):
