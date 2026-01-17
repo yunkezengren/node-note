@@ -364,36 +364,67 @@ class NODE_OT_note_jump_to_note(Operator):
         return {'FINISHED'}
 
 class NODE_OT_note_open_image_editor(NoteBaseOperator):
-    """在浮动图像编辑器中打开图片"""
     bl_idname = "node.note_open_image_editor"
     bl_label = "打开图像编辑器"
     bl_description = "在浮动的图像编辑器中查看图片"
 
     def execute(self, context):
         node = context.active_node
-        if not node or not node.note_image:
-            self.report({'WARNING'}, "没有可显示的图片")
-            return {'CANCELLED'}
 
-        image = node.note_image
+        # Use render resolution to control window size
+        render = context.scene.render
+        view = context.preferences.view
 
-        window = context.window
-        bpy.ops.wm.window_new()
-        new_window = context.window_manager.windows[-1]
+        # Save original settings
+        old_res_x = render.resolution_x
+        old_res_y = render.resolution_y
+        old_res_percent = render.resolution_percentage
+        old_display_type = view.render_display_type
 
-        import ctypes
         try:
-            # 获取新窗口句柄 (window_new 会自动聚焦新窗口)
-            hwnd = ctypes.windll.user32.GetActiveWindow()
-            # SWP_NOMOVE(0x0002) | SWP_NOZORDER(0x0004) = 0x0006
-            ctypes.windll.user32.SetWindowPos(hwnd, 0, 0, 0, int(window.width / 2), int(window.height / 2), 0x0006)
-        except Exception as e:
-            print(f"Window resize failed: {e}")
+            # Set target resolution to fit image within half window size
+            # Calculate scale based on area (target: 1/4 of window area)
+            image_width, image_height = node.note_image.size
+            window_width = context.window.width
+            window_height = context.window.height
 
-        for area in new_window.screen.areas:
-            area.type = 'IMAGE_EDITOR'
-            area.spaces.active.image = image
-            area.tag_redraw()
+            target_area = (window_width*window_height) / 4
+            image_area = image_width * image_height
+            scale = (target_area / image_area)**0.5
+            scale = min(scale, (window_width*0.8) / image_width, (window_height*0.8) / image_height)
+
+            res_x = int(image_width * scale)
+            res_y = int(image_height * scale)
+            render.resolution_x = res_x
+            render.resolution_y = res_y
+            render.resolution_percentage = 100
+            view.render_display_type = 'WINDOW'
+
+            # Open window
+            bpy.ops.render.view_show('INVOKE_DEFAULT')
+
+            # Configure new window
+            new_window = context.window_manager.windows[-1]
+            area = next((_area for _area in new_window.screen.areas if _area.type == 'IMAGE_EDITOR'), None)
+            if area:
+                space = area.spaces.active
+                space.image = node.note_image
+                space.show_region_toolbar = True
+
+                for region in area.regions:
+                    if region.type == 'WINDOW':
+                        with context.temp_override(window=new_window, area=area, region=region):
+                            bpy.ops.image.view_all(fit_view=True)
+                            bpy.ops.image.view_zoom_out(location=(0.5, 0.5))
+                        break
+        except Exception as e:
+            self.report({'WARNING'}, f"打开图像编辑器失败: {e}")
+        finally:
+            # Restore settings
+            render.resolution_x = old_res_x
+            render.resolution_y = old_res_y
+            render.resolution_percentage = old_res_percent
+            view.render_display_type = old_display_type
 
         return {'FINISHED'}
 
@@ -503,7 +534,7 @@ class NODE_OT_note_paste_text_from_clipboard(NoteBaseOperator):
         if separator:
             first_sep = separator.split('|')[0]
             text = text.replace('\n', first_sep)
-        
+
         node.note_text = text
         return {'FINISHED'}
 

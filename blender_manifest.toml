@@ -1,6 +1,6 @@
 schema_version = "1.0.0"
 id = "node_note"
-version = "1.0.0"
+version = "1.1.0"
 name = "Node Note/节点随记"
 tagline = "为节点思路设置清晰的路标和精准的导航"
 maintainer = "無東;W_Cloud"

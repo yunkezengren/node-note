@@ -140,7 +140,7 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
                 sub_header, sub_body = img_preview.panel("setting_sub", default_closed=True)
                 sub_header.template_ID(node, "note_image", open="image.open")
                 if node.note_image:
-                    sub_header.operator("node.note_open_image_editor", text="", icon='IMAGE_DATA')
+                    sub_header.operator("node.note_open_image_editor", text="", icon='IMAGE')
                 if sub_body:
                     sub_body.template_ID_preview(node, "note_image", rows=4, cols=4, filter="AVAILABLE", hide_buttons=True)
                     if node.note_image and node.note_image.packed_file is None:  # type: ignore
