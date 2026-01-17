@@ -1,6 +1,6 @@
 import bpy
 from bpy.types import Panel, UILayout, Context, Menu, Image
-from .preferences import pref, sort_mode_items
+from .preferences import pref
 from .utils import text_split_lines
 from .typings import NotedNode
 
@@ -130,23 +130,28 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
                 body_split = body.split(factor=0.01)
                 body_split.label(text="")
                 img_box = body_split.box()
-                img_split = img_box.split(factor=0.03)
+                img_split = img_box.split(factor=0.01)
                 img_split.label(text="")
                 img_preview = img_split.box()
-                img_preview.template_ID_preview(node, "note_image", open="image.open", rows=4, cols=4)
+                sub_header: UILayout
+                sub_body: UILayout
+                sub_header, sub_body = img_preview.panel("setting_sub", default_closed=True)
+                sub_header.template_ID(node, "note_image", open="image.open")
+                if node.note_image:
+                    sub_header.operator("node.note_open_image_editor", text="", icon='IMAGE_DATA')
+                if sub_body:
+                    sub_body.template_ID_preview(node, "note_image", rows=4, cols=4, filter="AVAILABLE", hide_buttons=True)
+                    if node.note_image and node.note_image.packed_file is None:  # type: ignore
+                        img_filepath = node.note_image.filepath
+                        if img_filepath:
+                            abs_path = bpy.path.abspath(img_filepath)
+                            sub_body.label(text=abs_path, icon='FILE_IMAGE')
                 row_img = img_preview.row()
-                row_img.label(text="图片:")
                 op_unpack = row_img.operator("node.note_pack_unpack_images", text="解包", icon='PACKAGE')
                 op_unpack.is_pack = False
                 op_pack = row_img.operator("node.note_pack_unpack_images", text="打包", icon='UGLYPACKAGE')
                 op_pack.is_pack = True
-                row_img.operator("node.note_delete_selected_img", text="删除", icon='TRASH')
-
-                if node.note_image and node.note_image.packed_file is None:
-                    img_filepath = node.note_image.filepath
-                    if img_filepath:
-                        abs_path = bpy.path.abspath(img_filepath)
-                        img_preview.label(text=abs_path, icon='FILE_IMAGE')
+                row_img.operator("node.note_delete_selected_img", text="移除", icon='TRASH')
 
                 width_row = img_box.row(align=True)
                 width_row.prop(node, "note_img_width_mode", text="宽度")
@@ -299,14 +304,15 @@ def draw_search_list(layout: UILayout, context: Context, filter_noted_nodes: lis
                 img_split = note_col.split(factor=0.03)
                 img_split.label(text="")
                 img_box = img_split.box()
-                img_box.template_ID_preview(node, "note_image", open="image.open", rows=10, cols=4)
+                img_box.template_ID_preview(node, "note_image", open="image.open", rows=4, cols=4, filter="AVAILABLE")
 
             row_text = note_col.column()
             if split_lines:
-                row_text.label(text=f"文本:  {split_lines[0]}", icon='FILE_TEXT')
-                if len(split_lines) == 1: continue
-                for line in split_lines[1:]:
-                    row_text.label(text=" "*20 + line)
+                row_text0 = row_text.split(factor=0.2)
+                row_text0.label(text=f"文本: ", icon='FILE_TEXT')
+                row_text0.prop(node, "note_text", text="")
+                for line in split_lines:
+                    row_text.label(text=" "*10 + line)
             else:
                 row_text.label(text="文本:  无", icon='FILE_TEXT')
 

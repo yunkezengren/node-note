@@ -28,8 +28,8 @@ def init_props():
     Node.note_show_badge     = BoolProperty(name="显示序号", default=True, update=tag_redraw)
     Node.note_swap_order     = BoolProperty(name="交换位置", default=False, description="交换图片与文字的顺序", update=tag_redraw)
     Node.note_text           = StringProperty(name="文本", default="", options={'TEXTEDIT_UPDATE'}, update=tag_redraw)
-    Node.note_image          = PointerProperty(name="图像", type=bpy.types.Image)  # type: ignore
-    Node.note_badge_index    = IntProperty(name="序号", default=0, min=0, description="徽章序号 (0为不显示)")
+    Node.note_image          = PointerProperty(name="图像", type=bpy.types.Image, update=tag_redraw)  # type: ignore
+    Node.note_badge_index    = IntProperty(name="序号", default=0, min=0, description="徽章序号 (0为不显示)", update=tag_redraw)
     
     Node.note_text_color     = FloatVectorProperty(name="字体色", subtype='COLOR', size=4, default=prefs.default_text_color, min=0.0, max=1.0, update=tag_redraw)
     Node.note_txt_bg_color   = FloatVectorProperty(name="背景色", subtype='COLOR', size=4, default=prefs.default_txt_bg_color, min=0.0, max=1.0, update=tag_redraw)

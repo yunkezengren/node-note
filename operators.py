@@ -1,8 +1,7 @@
-import os
 import bpy
 from bpy.types import Operator, Node, Nodes, NodeTree, Context, Image
 from bpy.props import EnumProperty, BoolProperty
-from .preferences import pref, tag_redraw
+from .preferences import pref
 from .utils import import_clipboard_image
 from .ui import draw_panel_for_shortcut
 
@@ -71,18 +70,18 @@ class NODE_OT_note_delete_selected_badge(NoteBaseOperator):
         return {'FINISHED'}
 
 class NoteDeleteOperator(NoteBaseOperator):
-    confirm_delete: bpy.props.BoolProperty(name="同时删除图片", default=False)
+    confirm_delete: bpy.props.BoolProperty(name="同时从Blender文件里移除图片", default=False)
 
     def draw(self, context):
-        self.layout.prop(self, "confirm_delete", text="同时删除图片")
+        self.layout.prop(self, "confirm_delete", text="同时移除图片")
 
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self, width=300)
 
 class NODE_OT_note_delete_selected_img(NoteDeleteOperator):
     bl_idname = "node.note_delete_selected_img"
-    bl_label = "删除图片(多选)"
-    bl_description = "删除选中节点图片笔记对应的图片"
+    bl_label = "移除图片(多选)"
+    bl_description = "从Blender文件里移除选中节点图片笔记对应的图片"
 
     def execute(self, context):
         for node in self.get_selected_nodes(context):
@@ -364,6 +363,44 @@ class NODE_OT_note_jump_to_note(Operator):
         bpy.ops.node.view_selected()
         return {'FINISHED'}
 
+class NODE_OT_note_open_image_editor(NoteBaseOperator):
+    """在浮动图像编辑器中打开图片"""
+    bl_idname = "node.note_open_image_editor"
+    bl_label = "打开图像编辑器"
+    bl_description = "在浮动的图像编辑器中查看图片"
+
+    def execute(self, context):
+        node = context.active_node
+        if not node or not node.note_image:
+            self.report({'WARNING'}, "没有可显示的图片")
+            return {'CANCELLED'}
+
+        image = node.note_image
+        screen = context.screen
+
+        for area in screen.areas:
+            if area.type == 'IMAGE_EDITOR':
+                area.spaces.active.image = image
+                area.tag_redraw()
+                return {'FINISHED'}
+
+        original_area = context.area
+        original_type = original_area.type if original_area else 'NODE_EDITOR'
+
+        bpy.ops.screen.area_split(direction='VERTICAL', factor=0.5)
+        new_area = context.screen.areas[-1]
+        new_area.type = 'IMAGE_EDITOR'
+        new_area.spaces.active.image = image
+
+        context.area = new_area
+        new_area.tag_redraw()
+
+        if original_area:
+            original_area.type = original_type
+            original_area.tag_redraw()
+
+        return {'FINISHED'}
+
 class NODE_OT_note_note_quick_edit(Operator):
     bl_idname = "node.note_quick_edit"
     bl_label = "节点随记"
@@ -472,6 +509,7 @@ classes = [
     NODE_OT_note_pack_unpack_images,
     NODE_OT_note_note_quick_edit,
     NODE_OT_note_jump_to_note,
+    NODE_OT_note_open_image_editor,
 ]
 
 def register():
