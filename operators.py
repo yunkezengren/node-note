@@ -1,5 +1,6 @@
 import bpy
 from bpy.types import Operator, Node, Nodes, NodeTree, Context, Image
+from typing import Callable
 from bpy.props import EnumProperty, BoolProperty
 from .preferences import pref
 from .utils import import_clipboard_image, text_split_lines
@@ -68,23 +69,21 @@ class NoteDeleteOperator(NoteBaseOperator):
         ],
         default='SELECTED'
     )
-    confirm_delete: bpy.props.BoolProperty(name="Also remove images from Blender file", default=False)
+    delete_image: BoolProperty(name="Also remove images from Blender file", default=False)
 
-    def get_scoped_nodes(self, context):
+    def get_scoped_nodes(self, context)-> list[Node]:
         if self.scope == 'SELECTED':
             return self.get_selected_nodes(context)
         elif self.scope == 'CURRENT':
-            tree = context.space_data.edit_tree
-            return list(tree.nodes) if tree else []
-        elif self.scope == 'ALL':
+            return context.space_data.edit_tree
+        else:            # 'ALL':
             nodes = []
             for tree in bpy.data.node_groups:
                 nodes.extend(tree.nodes)
             return nodes
-        return []
 
     def draw(self, context):
-        self.layout.prop(self, "confirm_delete", text="Also Remove Image")
+        self.layout.prop(self, "delete_image", text="Also Remove Image")
 
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self, width=300)
@@ -99,7 +98,7 @@ class NODE_OT_note_delete_selected_img(NoteDeleteOperator):
             if node.note_image:
                 image = node.note_image
                 node.note_image = None
-                if self.confirm_delete:
+                if self.delete_image:
                     bpy.data.images.remove(image)
         return {'FINISHED'}
 
@@ -126,7 +125,7 @@ class NODE_OT_note_delete_notes(NoteDeleteOperator):
         row3.prop(self, "del_index", toggle=True, text=iface("Index"))
         if self.del_image:
             layout.separator()
-            layout.prop(self, "confirm_delete", text=iface("Also Remove Image"))
+            layout.prop(self, "delete_image", text=iface("Also Remove Image"))
 
     def execute(self, context):
         nodes_to_process = self.get_scoped_nodes(context)
@@ -137,12 +136,12 @@ class NODE_OT_note_delete_notes(NoteDeleteOperator):
             if self.del_image and node.note_image:
                 img = node.note_image
                 node.note_image = None
-                if self.confirm_delete:
+                if self.delete_image:
                     images_to_remove.append(img)
             if self.del_index and node.note_badge_index:
                 node.note_badge_index = 0
 
-        if self.confirm_delete:
+        if self.delete_image:
             for img in set(images_to_remove):
                 try:
                     bpy.data.images.remove(img)
@@ -232,7 +231,7 @@ class NODE_OT_note_add_quick_tag(NoteBaseOperator):
 class NODE_OT_note_reset_offset(NoteBaseOperator):
     bl_idname = "node.note_reset_offset"
     bl_label = "Reset Offset (Multi-Select)"
-    is_txt: bpy.props.BoolProperty()
+    is_txt: BoolProperty()
 
     def execute(self, context):
         for node in self.get_selected_nodes(context):
@@ -294,28 +293,26 @@ class NODE_OT_note_pack_unpack_images(NoteDeleteOperator):
             row2.label(text="Unpack Method")
             row2.column().prop(self, "unpack_method", expand=True)
 
-    def invoke(self, context, event):
-        return context.window_manager.invoke_props_dialog(self, width=300)
-
     def execute(self, context):
         nodes = self.get_scoped_nodes(context)
-
         if self.is_pack:
             return self._pack_images(nodes)
         else:
             return self._unpack_images(nodes)
 
-    def _unpack_images(self, nodes):
+    def _unpack_images(self, nodes: list[Node]):
         if not bpy.data.filepath:
             self.report({'WARNING'}, "Please save Blend file first")
             return {'CANCELLED'}
+        def process(img: Image):
+            img.save()
+            bpy.ops.file.unpack_item(method=self.unpack_method, id_name=img.name)
+        return self._process_images(nodes, process)
 
-        return self._process_images(nodes, process=lambda img: (img.save(), img.unpack(method=self.unpack_method)))
-
-    def _pack_images(self, nodes):
+    def _pack_images(self, nodes: list[Node]):
         return self._process_images(nodes, process=lambda img: img.pack())
 
-    def _process_images(self, nodes, process):
+    def _process_images(self, nodes: list[Node], process: Callable[[Image], None]):
         pack_status = self.is_pack
         count = found = valid = 0
         action = "Pack" if pack_status else "Unpack"
@@ -327,7 +324,8 @@ class NODE_OT_note_pack_unpack_images(NoteDeleteOperator):
 
             found += 1
             image: Image = node.note_image
-            if image.packed_file is not None if pack_status else image.packed_file is None:
+            is_packed = bool(image.packed_file)
+            if is_packed == pack_status:
                 continue
             valid += 1
             try:
@@ -338,6 +336,8 @@ class NODE_OT_note_pack_unpack_images(NoteDeleteOperator):
 
         if count > 0:
             self.report({'INFO'}, iface("{action}ed {count} images").format(action=iface(action), count=count))
+            # 强制重绘所有区域，确保外部/打包图标状态同步更新
+            bpy.context.area.tag_redraw()
         else:
             self.report({'WARNING'}, iface("No images found to {action} (found: {found}, {status_name}: {valid})").format(action=iface(action), found=found, status_name=iface(status_name), valid=valid))
 

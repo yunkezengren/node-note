@@ -2,7 +2,7 @@ schema_version = "1.0.0"
 id = "node_note"
 version = "1.1.0"
 name = "Node Note/节点随记"
-tagline = "为节点思路设置清晰的路标和精准的导航"
+tagline = "Powerful node notes with text and images/强大的节点图文笔记工具"
 maintainer = "無東;W_Cloud"
 type = "add-on"
 tags = ["Node"]
@@ -10,7 +10,7 @@ blender_version_min = "4.2.0"
 license = ["SPDX:GPL-3.0-or-later"]
 [permissions]
 files = "Import image and use font from disk"
-clipboard = "Paste image from the Clipboard"
+clipboard = "Paste text/image from the clipboard and copy text to clipboard"
 [build]
 paths_exclude_pattern = [
   "__pycache__/",
