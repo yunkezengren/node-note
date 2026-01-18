@@ -44,7 +44,7 @@ class NodeNoteAddonPreferences(AddonPreferences):
     show_all_notes         : BoolProperty(name="Show All", default=True)
     show_selected_only     : BoolProperty(name="Show Selected Only", default=False, description="Only show notes of selected nodes")
     dependent_overlay      : BoolProperty(name="Follow Overlay", default=True, description="Whether to hide notes when node editor overlay is closed")
-    show_badge_lines       : BoolProperty(name="Show Connection Lines", default=True, description="Show index lines between nodes")
+    show_badge_lines       : BoolProperty(name="Show Connection Lines", default=False, description="Show index lines between nodes")
     is_interactive_mode    : BoolProperty(name="Interactive Mode", default=False, description="Click nodes to number, right-click or ESC to exit")
     list_sort_mode         : EnumProperty(name="Sort Mode", items=sort_mode_items, default='BADGE_COLOR', description="Choose list sort method")
     use_occlusion          : BoolProperty(name="Auto Occlusion", default=False)

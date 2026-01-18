@@ -524,7 +524,7 @@ class NODE_OT_note_paste_text_from_clipboard(NoteBaseOperator):
             self.report({'WARNING'}, "Clipboard is empty")
             return {'CANCELLED'}
 
-        separator = pref().line_separatore
+        separator = pref().line_separator
         if separator:
             first_sep = separator.split('|')[0]
             text = text.replace('\n', first_sep)

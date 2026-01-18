@@ -66,7 +66,7 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
     node: NotedNode = context.active_node
     if node:
         if show_text:
-            header, body = layout.panel("setting1", default_closed=False)
+            header, body = layout.panel("setting1", default_closed=True)
             header.label(text="", icon='FILE_TEXT')
             h_split = header.row().split(factor=0.4)
             h_split.operator(ops.NODE_OT_note_show_selected_txt.bl_idname, text=iface("Text"), icon="HIDE_OFF" if node.note_show_txt else "HIDE_ON")
