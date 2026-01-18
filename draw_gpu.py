@@ -69,13 +69,9 @@ class TextImgInfo:
     """文本和图像的尺寸、纹理与位置 屏幕空间 信息"""
     node: NotedNode | None = None
     top_y: float = 0
-    """ 节点顶部屏幕Y坐标 """
     bottom_y: float = 0
-    """ 节点底部屏幕Y坐标 """
     left_x: float = 0
-    """ 节点左侧屏幕X坐标 """
     right_x: float = 0
-    """ 节点右侧屏幕X坐标 """
     loc: Vec2 = Vec2((0, 0))
     """ 节点屏幕空间位置 """
 
@@ -86,22 +82,17 @@ class TextImgInfo:
     txt_lines: list[str] | None = None
     """ 换行后的文本内容 """
     txt_font_size: int = 0
-    """ 字体大小 """
 
     img_width: float = 0
-    """ 图像显示宽度 """
     img_height: float = 0
-    """ 图像显示高度 """
     img_texture: GPUTexture | None = None
 
     txt_x: float = 0
     """ 文本注释左上角X """
     txt_y: float = 0
-    """ 文本注释左上角Y """
     img_x: float = 0
     """ 图像注释左上角X """
     img_y: float = 0
-    """ 图像注释左上角Y """
     txt_should_draw: bool = False
     img_should_draw: bool = False
 
@@ -214,17 +205,17 @@ def _get_draw_params() -> DrawParams:
     prefs_ui_scale = context.preferences.view.ui_scale
     scale = zoom * prefs_ui_scale
     # scale = ui_scale()
-    # 遮挡检测
+    # todo 遮挡检测
     occluders = []
-    if prefs.use_occlusion and context.selected_nodes:
-        occluders = [get_node_screen_rect(n) for n in context.selected_nodes]
+    # if prefs.use_occlusion and context.selected_nodes:
+    #     occluders = [get_node_screen_rect(node) for node in context.space_data.edi_tree]
     # 序号样式参数
     badge_rel_scale = prefs.badge_rel_scale
     badge_abs_scale = prefs.badge_abs_scale
     badge_scale_mode: BadgeScaleMode = prefs.badge_scale_mode
     if badge_scale_mode == 'RELATIVE':
         badge_radius = 7 * badge_rel_scale * scale
-        arrow_size = 8.0 * badge_rel_scale * scale
+        arrow_size = 8 * badge_rel_scale * scale
         badge_font_size = 8 * badge_rel_scale * scale
     elif badge_scale_mode == 'ABSOLUTE':
         max_diameter = view_to_region_scaled(140, 0)[0] - view_to_region_scaled(0, 0)[0]
@@ -233,7 +224,7 @@ def _get_draw_params() -> DrawParams:
         badge_font_size = min(16, max_diameter / 2) * badge_abs_scale
     else:
         badge_radius = 7 * scale
-        arrow_size = 8.0 * scale
+        arrow_size = 8 * scale
         badge_font_size = 8 * scale
     return DrawParams(
         scale,
@@ -406,13 +397,13 @@ def draw_image_error_placeholder(info: TextImgInfo) -> None:
 def _get_node_info(node: NotedNode) -> TextImgInfo:
     """计算节点位置信息"""
     loc = nd_abs_loc(node)
-    h_logical = node.dimensions.y / ui_scale()
-    logical_top_y = max(loc.y - (h_logical/2 + 9), loc.y + (h_logical/2 - 9)) if node.hide else loc.y
-    logical_bottom_y = min(loc.y - (h_logical/2 + 9), loc.y + (h_logical/2 - 9)) if node.hide else (loc.y - h_logical)
+    height = node.dimensions.y / ui_scale()
+    top_y = loc.y + (height/2 - 9) if node.hide else loc.y
+    bottom_y = loc.y - (height/2 + 9) if node.hide else (loc.y - height)
 
-    left_x, top_y = view_to_region_scaled(loc.x, logical_top_y)
-    _, bottom_y = view_to_region_scaled(loc.x, logical_bottom_y)
-    right_x, _ = view_to_region_scaled(loc.x + node.width + 1.0, loc.y)
+    # Screen Space
+    left_x, top_y = view_to_region_scaled(loc.x, top_y)
+    right_x, bottom_y = view_to_region_scaled(loc.x + node.width, bottom_y)
 
     return TextImgInfo(
         node=node,
