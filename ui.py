@@ -39,19 +39,19 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
         header.label(text="Global Settings", icon='TOOL_SETTINGS')
         if body:
             row_pos = body.row()
-            row_pos.operator("preferences.addon_show", text="Preferences", icon='PREFERENCES').module = __package__
+            row_pos.operator("preferences.addon_show", text=iface("Preferences"), icon='PREFERENCES').module = __package__
             row_pos.prop(prefs, "show_all_notes", text="All", icon="HIDE_OFF" if prefs.show_all_notes else "HIDE_ON", toggle=True)
             row_pos.prop(prefs, "show_selected_only", text="Selected Only", toggle=True)
             row_pos.prop(prefs, "dependent_overlay", text="Overlay", toggle=True, icon='OVERLAY')
             row_del = body.row()
-            row_del.operator(ops.NODE_OT_note_delete_all_notes.bl_idname, text="All Notes", icon='TRASH')
-            row_del.operator(ops.NODE_OT_note_delete_selected_notes.bl_idname, text="Selected Notes", icon='TRASH')
+            row_del.operator(ops.NODE_OT_note_delete_all_notes.bl_idname, text=iface("All Notes"), icon='TRASH')
+            row_del.operator(ops.NODE_OT_note_delete_selected_notes.bl_idname, text=iface("Selected Notes"), icon='TRASH')
             # 还很不完善
             # body.column().prop(prefs, "use_occlusion", text="Hide when occluded")
 
             if prefs.show_all_notes:
                 _txt = " and images" if prefs.hide_img_by_bg else ""
-                label_text = f"Show text by background color{_txt}:"
+                label_text = f"Show text{_txt} by background color:"
                 body.prop(prefs, "hide_img_by_bg", text=label_text, toggle=True, icon='FILTER')
                 split = body.split(factor=0.1, align=True)
                 split.label(text="    ")
@@ -63,7 +63,7 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
                 split.prop(prefs, "show_other", text="Others", toggle=True)
 
             if len(context.selected_nodes) > 1:
-                body.row().operator(ops.NODE_OT_note_copy_active_to_selected.bl_idname, text="Sync Active Style to Selected", icon='DUPLICATE')
+                body.row().operator(ops.NODE_OT_note_copy_active_to_selected.bl_idname, text=iface("Sync Active Style to Selected"), icon='DUPLICATE')
 
     node: NotedNode = context.active_node
     if node:
@@ -71,7 +71,7 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
             header, body = layout.panel("setting1", default_closed=False)
             header.label(text="", icon='FILE_TEXT')
             h_split = header.row().split(factor=0.4)
-            h_split.operator(ops.NODE_OT_note_show_selected_txt.bl_idname, text="Text", icon="HIDE_OFF" if node.note_show_txt else "HIDE_ON")
+            h_split.operator(ops.NODE_OT_note_show_selected_txt.bl_idname, text=iface("Text"), icon="HIDE_OFF" if node.note_show_txt else "HIDE_ON")
             h_split.prop(node, "note_text", text="")
             header.operator(ops.NODE_OT_note_paste_text_from_clipboard.bl_idname, text="", icon='PASTEDOWN')
             header.operator(ops.NODE_OT_note_copy_text_to_clipboard.bl_idname, text="", icon='COPYDOWN')
@@ -105,7 +105,7 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
                 for i in range(len(def_labels)):
                     split_color = row_pos.split(factor=0.1, align=True)
                     split_color.prop(pref(), f"col_preset_{i+1}", text="")
-                    op = split_color.operator(ops.NODE_OT_note_apply_preset.bl_idname, text=def_labels[i])
+                    op = split_color.operator(ops.NODE_OT_note_apply_preset.bl_idname, text=iface(def_labels[i]))
                     op.bg_color = col_vals[i]
 
                 width_row = txt_box.row(align=True)
@@ -125,7 +125,7 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
             header, body = layout.panel("setting2", default_closed=True)
             header.label(text="", icon='IMAGE_DATA')
             h_split = header.row().split(factor=0.4)
-            h_split.operator(ops.NODE_OT_note_show_selected_img.bl_idname, text="Image", icon="HIDE_OFF" if node.note_show_img else "HIDE_ON")
+            h_split.operator(ops.NODE_OT_note_show_selected_img.bl_idname, text=iface("Image"), icon="HIDE_OFF" if node.note_show_img else "HIDE_ON")
             h_split.operator(ops.NODE_OT_note_paste_image.bl_idname, text="", icon='PASTEDOWN')
             if node.note_show_txt and node.note_text and node.note_show_img and node.note_image:
                 h_split.operator(ops.NODE_OT_note_note_swap_order.bl_idname, text="⇅")
@@ -152,11 +152,11 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
                             abs_path = bpy.path.abspath(img_filepath)
                             sub_body.label(text=abs_path, icon='FILE_IMAGE')
                 row_img = img_preview.row()
-                op_unpack = row_img.operator(ops.NODE_OT_note_pack_unpack_images.bl_idname, text="Unpack", icon='PACKAGE')
+                op_unpack = row_img.operator(ops.NODE_OT_note_pack_unpack_images.bl_idname, text=iface("Unpack"), icon='PACKAGE')
                 op_unpack.is_pack = False
-                op_pack = row_img.operator(ops.NODE_OT_note_pack_unpack_images.bl_idname, text="Pack", icon='UGLYPACKAGE')
+                op_pack = row_img.operator(ops.NODE_OT_note_pack_unpack_images.bl_idname, text=iface("Pack"), icon='UGLYPACKAGE')
                 op_pack.is_pack = True
-                row_img.operator(ops.NODE_OT_note_delete_selected_img.bl_idname, text="Remove", icon='TRASH')
+                row_img.operator(ops.NODE_OT_note_delete_selected_img.bl_idname, text=iface("Remove"), icon='TRASH')
 
                 width_row = img_box.row(align=True)
                 width_row.prop(node, "note_img_width_mode", text="Width")
@@ -175,7 +175,7 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
             header, body = layout.panel("setting3", default_closed=True)
             header.label(text="", icon='EVENT_NDOF_BUTTON_1')
             h_split = header.row().split(factor=0.4, align=True)
-            h_split.operator(ops.NODE_OT_note_show_selected_badge.bl_idname, text="Index", icon="HIDE_OFF" if node.note_show_badge else "HIDE_ON")
+            h_split.operator(ops.NODE_OT_note_show_selected_badge.bl_idname, text=iface("Index"), icon="HIDE_OFF" if node.note_show_badge else "HIDE_ON")
             h_split.prop(node, "note_badge_index", text="")
             h_split.operator(ops.NODE_OT_note_interactive_badge.bl_idname, text="", icon='BRUSH_DATA', depress=prefs.is_interactive_mode)
             header.operator(ops.NODE_OT_note_delete_selected_badge.bl_idname, text="", icon='TRASH')
@@ -218,7 +218,7 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
                 filter_noted_nodes.append(node)
 
         header, body = layout.panel("setting4", default_closed=True)
-        header.label(text=f"List ({all_notes_count})", icon="ALIGN_JUSTIFY")
+        header.label(text=iface("List ({count})").format(count=all_notes_count), icon="ALIGN_JUSTIFY")
         header.prop(prefs, "list_sort_mode", text="")
         if body:
             draw_search_list(body, context, filter_noted_nodes, all_notes_count)
@@ -258,7 +258,7 @@ def draw_search_list(layout: UILayout, context: Context, filter_noted_nodes: lis
     else:
         sort_icon = 'COLOR'
 
-    layout.label(text=f"List ({len(filter_noted_nodes)}):", icon=sort_icon)
+    layout.label(text=iface("List ({count})").format(count=len(filter_noted_nodes)), icon=sort_icon)
     col = layout.column()
     header: UILayout
     body: UILayout
@@ -288,7 +288,7 @@ def draw_search_list(layout: UILayout, context: Context, filter_noted_nodes: lis
         if txt_content:
             split_lines = text_split_lines(txt_content)
             display_text = split_lines[0]
-        op = split_text.operator(ops.NODE_OT_note_jump_to_note.bl_idname, text=display_text, icon='VIEW_ZOOM', emboss=True)
+        op = split_text.operator(ops.NODE_OT_note_jump_to_note.bl_idname, text=iface(display_text), icon='VIEW_ZOOM', emboss=True)
         op.node_name = node.name
 
         image: Image = node.note_image
@@ -301,9 +301,9 @@ def draw_search_list(layout: UILayout, context: Context, filter_noted_nodes: lis
             note_box = body_split.box()
             note_col = note_box.column(align=True)
             row_node = note_col.row()
-            row_node.label(text=f"Node:  {node.name}", icon='NODE')
+            row_node.label(text=iface("Node:  {name}").format(name=node.name), icon='NODE')
             row_img = note_col.row()
-            row_img.label(text=f"Image:  {image.name if image else 'No Image'}", icon='IMAGE_DATA')
+            row_img.label(text=iface("Image:  {name}").format(name=image.name if image else "No Image"), icon='IMAGE_DATA')
 
             if image:
                 img_split = note_col.split(factor=0.03)
@@ -340,7 +340,7 @@ def draw_panel_for_shortcut(layout: UILayout, context: Context):
 def draw_to_context_menu(self: Menu, context: Context):
     layout = self.layout
     layout.operator_context = 'INVOKE_DEFAULT'
-    layout.operator(ops.NODE_OT_note_note_quick_edit.bl_idname, text="Node Notes", icon='TEXT')
+    layout.operator(ops.NODE_OT_note_note_quick_edit.bl_idname, text=iface("Node Notes"), icon='TEXT')
 
 def draw_to_overlay_panel(self: Panel, context):
     self.layout.prop(pref(), "show_all_notes", text="Node Notes", icon='HIDE_OFF', toggle=True)

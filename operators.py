@@ -3,7 +3,7 @@ from bpy.types import Operator, Node, Nodes, NodeTree, Context, Image
 from bpy.props import EnumProperty, BoolProperty
 from .preferences import pref
 from .utils import import_clipboard_image, text_split_lines
-from bpy.app.translations import pgettext as _
+from bpy.app.translations import pgettext_iface as iface
 
 class NoteBaseOperator(Operator):
     bl_options = {'REGISTER', 'UNDO'}
@@ -198,7 +198,7 @@ class NODE_OT_note_copy_active_to_selected(NoteBaseOperator):
             for prop in strict_sync_props:
                 setattr(node, prop, getattr(active, prop))
             count += 1
-        self.report({'INFO'}, _("Style synced to {count} nodes").format(count=count))
+        self.report({'INFO'}, iface("Style synced to {count} nodes").format(count=count))
         context.area.tag_redraw()
         return {'FINISHED'}
 
@@ -227,7 +227,7 @@ class NODE_OT_note_reset_offset(NoteBaseOperator):
 
 class NODE_OT_note_paste_image(NoteBaseOperator):
     bl_idname = "node.note_paste_image"
-    bl_label = "Paste Image from Clipboard"
+    bl_label = "Paste Image"
     bl_description = "Paste Image from Clipboard"
 
     def execute(self, context):
@@ -237,7 +237,7 @@ class NODE_OT_note_paste_image(NoteBaseOperator):
             image.use_fake_user = False
             active_node.note_image = image
             active_node.note_show_img = True
-            self.report({'INFO'}, _("Successfully imported image: {image_name}").format(image_name=image.name))
+            self.report({'INFO'}, iface("Successfully imported image: {image_name}").format(image_name=image.name))
             return {'FINISHED'}
         else:
             self.report({'WARNING'}, "Clipboard is empty")
@@ -272,18 +272,18 @@ class NODE_OT_note_pack_unpack_images(NoteBaseOperator):
     @classmethod
     def description(cls, context, properties):
         if properties.is_pack:
-            return "外部图片将打包到Blend文件"
+            return iface("External images will be packed into Blend file")
         else:
-            return "将图片将解包到原始目录或当前目录"
+            return iface("Images will be unpacked to original or current directory")
 
     def draw(self, context):
         layout = self.layout
-        row1 = layout.split(factor=0.2)
-        row1.label(text="Scope:")
+        row1 = layout.split(factor=0.3)
+        row1.label(text="Operation Scope")
         row1.column().prop(self, "pack_scope", expand=True)
         if not self.is_pack:
-            row2 = layout.split(factor=0.2)
-            row2.label(text="Location:")
+            row2 = layout.split(factor=0.3)
+            row2.label(text="Unpack Method")
             row2.column().prop(self, "unpack_method", expand=True)
 
     def invoke(self, context, event):
@@ -338,15 +338,16 @@ class NODE_OT_note_pack_unpack_images(NoteBaseOperator):
                 print(f"Cannot {action} image {image.name}: {e}")
 
         if count > 0:
-            self.report({'INFO'}, _("{action}ed {count} images").format(action=_(action), count=count))
+            self.report({'INFO'}, iface("{action}ed {count} images").format(action=iface(action), count=count))
         else:
-            self.report({'WARNING'}, _("No images found to {action} (found: {found}, {status_name}: {valid})").format(action=_(action), found=found, status_name=_(status_name), valid=valid))
+            self.report({'WARNING'}, iface("No images found to {action} (found: {found}, {status_name}: {valid})").format(action=iface(action), found=found, status_name=iface(status_name), valid=valid))
 
         return {'FINISHED'}
 
 class NODE_OT_note_jump_to_note(Operator):
     bl_idname = "node.note_jump_to_note"
     bl_label = "Jump to Node with Note"
+    bl_description = "Jump to the node containing the note"
     node_name: bpy.props.StringProperty()
 
     def execute(self, context):
@@ -414,7 +415,7 @@ class NODE_OT_note_open_image_editor(NoteBaseOperator):
                             bpy.ops.image.view_zoom_out(location=(0.5, 0.5))
                         break
         except Exception as e:
-            self.report({'WARNING'}, _("Failed to open image editor: {error}").format(error=e))
+            self.report({'WARNING'}, iface("Failed to open image editor: {error}").format(error=e))
         finally:
             # Restore settings
             render.resolution_x = old_res_x
@@ -476,7 +477,7 @@ class NODE_OT_note_interactive_badge(Operator):
 
                     self.last_node = node
 
-                    msg = _("Interactive Mode [Right-click/ESC to exit] | Market: {node_name} -> #{index}").format(node_name=node.name, index=self.current_idx)
+                    msg = iface("Interactive Mode [Right-click/ESC to exit] | Market: {node_name} -> #{index}").format(node_name=node.name, index=self.current_idx)
                     context.area.header_text_set(msg)
                     context.area.tag_redraw()
                 return {'RUNNING_MODAL'}
@@ -505,13 +506,12 @@ class NODE_OT_note_interactive_badge(Operator):
 
             context.window_manager.modal_handler_add(self)
             context.window.cursor_modal_set('PAINT_BRUSH')
-            context.area.header_text_set(_("Interactive Mode [Right-click/ESC to exit] | Current max index: #{max_idx}").format(max_idx=max_idx))
+            context.area.header_text_set(iface("Interactive Mode [Right-click/ESC to exit] | Current max index: #{max_idx}").format(max_idx=max_idx))
             return {'RUNNING_MODAL'}
         else:
             self.report({'WARNING'}, "Node editor not found")
             pref().is_interactive_mode = False
             return {'CANCELLED'}
-
 
 class NODE_OT_note_paste_text_from_clipboard(NoteBaseOperator):
     bl_idname = "node.note_paste_text_from_clipboard"
@@ -525,7 +525,7 @@ class NODE_OT_note_paste_text_from_clipboard(NoteBaseOperator):
             self.report({'WARNING'}, "Clipboard is empty")
             return {'CANCELLED'}
 
-        separator = pref().line_separator
+        separator = pref().line_separatore
         if separator:
             first_sep = separator.split('|')[0]
             text = text.replace('\n', first_sep)

@@ -32,8 +32,6 @@ def register():
     bpy.types.NODE_PT_overlay.append(ui.draw_to_overlay_panel)
 
 def unregister():
-    bpy.app.translations.unregister(__package__)
-    
     bpy.types.NODE_PT_overlay.remove(ui.draw_to_overlay_panel)
     bpy.types.NODE_MT_context_menu.remove(ui.draw_to_context_menu)
 
@@ -48,4 +46,6 @@ def unregister():
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
     node_properties.delete_props()
+
+    bpy.app.translations.unregister(__package__)
 
