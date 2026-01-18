@@ -36,15 +36,6 @@ class NODE_OT_note_note_swap_order(NoteBaseOperator):
         context.area.tag_redraw()
         return {'FINISHED'}
 
-def delete_notes(nodes: Nodes | list[Node]):
-    for node in nodes:
-        if node.note_text:
-            node.note_text = ""
-        if node.note_image:
-            node.note_image = None
-        if node.note_badge_index:
-            node.note_badge_index = 0
-
 class NODE_OT_note_delete_selected_txt(NoteBaseOperator):
     bl_idname = "node.note_delete_selected_txt"
     bl_label = "Delete Text (Multi-Select)"
@@ -68,7 +59,29 @@ class NODE_OT_note_delete_selected_badge(NoteBaseOperator):
         return {'FINISHED'}
 
 class NoteDeleteOperator(NoteBaseOperator):
+    scope: EnumProperty(
+        name="Scope",
+        items=[
+            ('SELECTED', "Selected Nodes", "Only nodes currently selected"),
+            ('CURRENT', "Current Node Tree", "All nodes in the active node tree"),
+            ('ALL', "All Node Trees", "All nodes in all node groups/trees"),
+        ],
+        default='SELECTED'
+    )
     confirm_delete: bpy.props.BoolProperty(name="Also remove images from Blender file", default=False)
+
+    def get_scoped_nodes(self, context):
+        if self.scope == 'SELECTED':
+            return self.get_selected_nodes(context)
+        elif self.scope == 'CURRENT':
+            tree = context.space_data.edit_tree
+            return list(tree.nodes) if tree else []
+        elif self.scope == 'ALL':
+            nodes = []
+            for tree in bpy.data.node_groups:
+                nodes.extend(tree.nodes)
+            return nodes
+        return []
 
     def draw(self, context):
         self.layout.prop(self, "confirm_delete", text="Also Remove Image")
@@ -90,49 +103,53 @@ class NODE_OT_note_delete_selected_img(NoteDeleteOperator):
                     bpy.data.images.remove(image)
         return {'FINISHED'}
 
-class NODE_OT_note_delete_selected_notes(NoteDeleteOperator):
-    bl_idname = "node.note_delete_selected_notes"
-    bl_label = "Delete All Three Note Types (Multi-Select)"
-    bl_description = "Delete all three types of notes from selected nodes"
+class NODE_OT_note_delete_notes(NoteDeleteOperator):
+    bl_idname = "node.note_delete_notes"
+    bl_label = "Delete Notes"
+    bl_description = "Delete notes with customizable scope and types"
+
+    del_text: BoolProperty(name="Text", default=True)
+    del_image: BoolProperty(name="Image", default=True)
+    del_index: BoolProperty(name="Index", default=True)
+
+    def draw(self, context):
+        layout = self.layout
+        row1 = layout.split(factor=0.3)
+        row1.label(text="Operation Scope")
+        row1.column().prop(self, "scope", expand=True)
+
+        row2 = layout.split(factor=0.3)
+        row2.label(text=iface("Delete Types"))
+        row3 = row2.row()
+        row3.prop(self, "del_text", toggle=True, text=iface("Text"))
+        row3.prop(self, "del_image", toggle=True, text=iface("Image"))
+        row3.prop(self, "del_index", toggle=True, text=iface("Index"))
+        if self.del_image:
+            layout.separator()
+            layout.prop(self, "confirm_delete", text=iface("Also Remove Image"))
 
     def execute(self, context):
-        images_to_delete = []
-        for node in self.get_selected_nodes(context):
-            if node.note_image:
-                image = node.note_image
+        nodes_to_process = self.get_scoped_nodes(context)
+        images_to_remove = []
+        for node in nodes_to_process:
+            if self.del_text and node.note_text:
+                node.note_text = ""
+            if self.del_image and node.note_image:
+                img = node.note_image
                 node.note_image = None
                 if self.confirm_delete:
-                    images_to_delete.append(image)
-            if node.note_text:
-                node.note_text = ""
-            if node.note_badge_index:
+                    images_to_remove.append(img)
+            if self.del_index and node.note_badge_index:
                 node.note_badge_index = 0
+
         if self.confirm_delete:
-            for image in images_to_delete:
-                bpy.data.images.remove(image)
-        return {'FINISHED'}
+            for img in set(images_to_remove):
+                try:
+                    bpy.data.images.remove(img)
+                except:
+                    pass
 
-class NODE_OT_note_delete_all_notes(NoteDeleteOperator):
-    bl_idname = "node.note_delete_all_notes"
-    bl_label = "Delete All Notes"
-    bl_description = "Delete all notes in node tree, excluding those in node groups"
-
-    def execute(self, context):
-        tree: NodeTree = context.space_data.edit_tree
-        if tree:
-            images_to_delete = []
-            for node in tree.nodes:
-                if node.note_image:
-                    image = node.note_image
-                    node.note_image = None
-                    images_to_delete.append(image)
-                if node.note_text:
-                    node.note_text = ""
-                if node.note_badge_index:
-                    node.note_badge_index = 0
-            if self.confirm_delete:
-                for image in images_to_delete:
-                    bpy.data.images.remove(image)
+        context.area.tag_redraw()
         return {'FINISHED'}
 
 class NODE_OT_note_show_selected_txt(NoteBaseOperator):
@@ -243,21 +260,12 @@ class NODE_OT_note_paste_image(NoteBaseOperator):
             self.report({'WARNING'}, "Clipboard is empty")
             return {'CANCELLED'}
 
-class NODE_OT_note_pack_unpack_images(NoteBaseOperator):
+class NODE_OT_note_pack_unpack_images(NoteDeleteOperator):
     bl_idname = "node.note_pack_unpack_images"
     bl_label = "Pack/Unpack Images"
     bl_options = {'REGISTER', 'UNDO'}
 
     is_pack: BoolProperty(name="Pack Mode", default=False)
-    pack_scope: EnumProperty(
-        name="Operation Scope",
-        items=[
-            ('ALL', "All Node Trees", "Traverse nodes in all node trees"),
-            ('CURRENT', "Current Node Tree", "Only nodes in the current node tree"),
-            ('SELECTED', "Selected Nodes", "Only selected nodes"),
-        ],
-        default='SELECTED',
-    )
     unpack_method: EnumProperty(
         name="Unpack Method",
         items=[
@@ -280,7 +288,7 @@ class NODE_OT_note_pack_unpack_images(NoteBaseOperator):
         layout = self.layout
         row1 = layout.split(factor=0.3)
         row1.label(text="Operation Scope")
-        row1.column().prop(self, "pack_scope", expand=True)
+        row1.column().prop(self, "scope", expand=True)
         if not self.is_pack:
             row2 = layout.split(factor=0.3)
             row2.label(text="Unpack Method")
@@ -290,16 +298,7 @@ class NODE_OT_note_pack_unpack_images(NoteBaseOperator):
         return context.window_manager.invoke_props_dialog(self, width=300)
 
     def execute(self, context):
-        nodes = []
-        if self.pack_scope == 'ALL':
-            for tree in bpy.data.node_groups:
-                nodes.extend(tree.nodes)
-        elif self.pack_scope == 'CURRENT':
-            tree = context.space_data.edit_tree
-            if tree:
-                nodes = list(tree.nodes)
-        elif self.pack_scope == 'SELECTED':
-            nodes = self.get_selected_nodes(context)
+        nodes = self.get_scoped_nodes(context)
 
         if self.is_pack:
             return self._pack_images(nodes)
@@ -550,8 +549,7 @@ classes = [
     NODE_OT_note_delete_selected_txt,
     NODE_OT_note_delete_selected_img,
     NODE_OT_note_delete_selected_badge,
-    NODE_OT_note_delete_selected_notes,
-    NODE_OT_note_delete_all_notes,
+    NODE_OT_note_delete_notes,
     NODE_OT_note_show_selected_txt,
     NODE_OT_note_show_selected_img,
     NODE_OT_note_show_selected_badge,

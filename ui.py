@@ -39,13 +39,12 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
         header.label(text="Global Settings", icon='TOOL_SETTINGS')
         header.prop(prefs, "show_all_notes", text="All", icon="HIDE_OFF" if prefs.show_all_notes else "HIDE_ON", toggle=True)
         header.prop(prefs, "show_selected_only", text="Selected", toggle=True)
+        header.operator(ops.NODE_OT_note_delete_notes.bl_idname, text="", icon='TRASH')
         if body:
             row_pos = body.row()
-            row_pos.operator("preferences.addon_show", text="", icon='PREFERENCES').module = __package__
+            row_pos.operator("preferences.addon_show", text=iface("Preferences"), icon='PREFERENCES').module = __package__
             row_pos.prop(prefs, "dependent_overlay", text="Overlay", toggle=True, icon='OVERLAY')
             row_del = body.row()
-            row_del.operator(ops.NODE_OT_note_delete_all_notes.bl_idname, text=iface("All Notes"), icon='TRASH')
-            row_del.operator(ops.NODE_OT_note_delete_selected_notes.bl_idname, text=iface("Selected Notes"), icon='TRASH')
             # 还很不完善
             # body.column().prop(prefs, "use_occlusion", text="Hide when occluded")
 
