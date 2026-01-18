@@ -47,7 +47,7 @@ class NodeNoteAddonPreferences(AddonPreferences):
     show_badge_lines       : BoolProperty(name="Show Connection Lines", default=True, description="Show index lines between nodes")
     is_interactive_mode    : BoolProperty(name="Interactive Mode", default=False, description="Click nodes to number, right-click or ESC to exit")
     list_sort_mode         : EnumProperty(name="Sort Mode", items=sort_mode_items, default='BADGE_COLOR', description="Choose list sort method")
-    use_occlusion          : BoolProperty(name="Auto Occlusion", default=True)
+    use_occlusion          : BoolProperty(name="Auto Occlusion", default=False)
     tag_mode_prepend       : BoolProperty(name="Prepend Mode", default=True, description="Add special characters before existing text")
     navigator_search       : StringProperty(name="Search", default="", options={'TEXTEDIT_UPDATE'})
     line_separator         : StringProperty(name="Line Separator", default=";|\\", options={'TEXTEDIT_UPDATE'}, description="Line break separator in text, supports multiple (separated by |), e.g.: ;|\\ ")
