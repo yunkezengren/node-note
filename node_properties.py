@@ -23,29 +23,29 @@ def enum_to_int(enum: str):
 
 def init_props():
     prefs = pref()
-    Node.note_show_txt       = BoolProperty(name="显示文本", default=True, update=tag_redraw)
-    Node.note_show_img       = BoolProperty(name="显示图像", default=True, update=tag_redraw)
-    Node.note_show_badge     = BoolProperty(name="显示序号", default=True, update=tag_redraw)
-    Node.note_swap_order     = BoolProperty(name="交换位置", default=False, description="交换图片与文字的顺序", update=tag_redraw)
-    Node.note_text           = StringProperty(name="文本", default="", options={'TEXTEDIT_UPDATE'}, update=tag_redraw)
-    Node.note_image          = PointerProperty(name="图像", type=bpy.types.Image, update=tag_redraw)  # type: ignore
-    Node.note_badge_index    = IntProperty(name="序号", default=0, min=0, description="徽章序号 (0为不显示)", update=tag_redraw)
+    Node.note_show_txt       = BoolProperty(name="Show Text", default=True, update=tag_redraw)
+    Node.note_show_img       = BoolProperty(name="Show Image", default=True, update=tag_redraw)
+    Node.note_show_badge     = BoolProperty(name="Show Index", default=True, update=tag_redraw)
+    Node.note_swap_order     = BoolProperty(name="Swap Position", default=False, description="Swap image and text order", update=tag_redraw)
+    Node.note_text           = StringProperty(name="Text", default="", options={'TEXTEDIT_UPDATE'}, update=tag_redraw)
+    Node.note_image          = PointerProperty(name="Image", type=bpy.types.Image, update=tag_redraw) # type: ignore
+    Node.note_badge_index    = IntProperty(name="Index", default=0, min=0, description="Badge Index (0 to hide)", update=tag_redraw)
     
-    Node.note_text_color     = FloatVectorProperty(name="字体色", subtype='COLOR', size=4, default=prefs.default_text_color, min=0.0, max=1.0, update=tag_redraw)
-    Node.note_txt_bg_color   = FloatVectorProperty(name="背景色", subtype='COLOR', size=4, default=prefs.default_txt_bg_color, min=0.0, max=1.0, update=tag_redraw)
-    Node.note_badge_color    = FloatVectorProperty(name="背景色", subtype='COLOR', size=4, default=prefs.default_badge_color, min=0.0, max=1.0, update=tag_redraw)
-    Node.note_font_size      = IntProperty(name="字号", default=prefs.default_font_size, min=4, max=500)
-    Node.note_txt_bg_width   = IntProperty(name="背景宽度", default=prefs.default_txt_bg_width, min=1)
-    Node.note_img_width      = IntProperty(name="图像宽度", default=prefs.default_img_width, min=10)
-    Node.note_txt_width_mode = EnumProperty(name="宽度模式", items=get_txt_width_items, default=enum_to_int(prefs.default_txt_width_mode))
-    Node.note_img_width_mode = EnumProperty(name="宽度模式", items=get_img_width_items, default=enum_to_int(prefs.default_img_width_mode))
-    Node.note_txt_pos        = EnumProperty(name="对齐模式", items=align_items, default=prefs.default_txt_pos, description="文本位置")
-    Node.note_img_pos        = EnumProperty(name="对齐模式", items=align_items, default=prefs.default_img_pos, description="图像位置")
-    Node.note_txt_center     = BoolProperty(name="居中", default=False, description="顶/底对齐时居中")
-    Node.note_img_center     = BoolProperty(name="居中", default=True, description="顶/底对齐时居中")
+    Node.note_text_color     = FloatVectorProperty(name="Font Color", subtype='COLOR', size=4, default=prefs.default_text_color, min=0.0, max=1.0, update=tag_redraw)
+    Node.note_txt_bg_color   = FloatVectorProperty(name="Background Color", subtype='COLOR', size=4, default=prefs.default_txt_bg_color, min=0.0, max=1.0, update=tag_redraw)
+    Node.note_badge_color    = FloatVectorProperty(name="Background Color", subtype='COLOR', size=4, default=prefs.default_badge_color, min=0.0, max=1.0, update=tag_redraw)
+    Node.note_font_size      = IntProperty(name="Font Size", default=prefs.default_font_size, min=4, max=500)
+    Node.note_txt_bg_width   = IntProperty(name="Background Width", default=prefs.default_txt_bg_width, min=1)
+    Node.note_img_width      = IntProperty(name="Image Width", default=prefs.default_img_width, min=10)
+    Node.note_txt_width_mode = EnumProperty(name="Width Mode", items=get_txt_width_items, default=enum_to_int(prefs.default_txt_width_mode))
+    Node.note_img_width_mode = EnumProperty(name="Width Mode", items=get_img_width_items, default=enum_to_int(prefs.default_img_width_mode))
+    Node.note_txt_pos        = EnumProperty(name="Alignment Mode", items=align_items, default=prefs.default_txt_pos, description="Text Position")
+    Node.note_img_pos        = EnumProperty(name="Alignment Mode", items=align_items, default=prefs.default_img_pos, description="Image Position")
+    Node.note_txt_center     = BoolProperty(name="Center", default=False, description="Center when top/bottom aligned")
+    Node.note_img_center     = BoolProperty(name="Center", default=True, description="Center when top/bottom aligned")
 
-    Node.note_txt_offset     = IntVectorProperty(name="偏移", size=2, default=(0, 0), subtype='XYZ', description="文本偏移", update=tag_redraw)
-    Node.note_img_offset     = IntVectorProperty(name="偏移", size=2, default=(0, 0), subtype='XYZ', description="图像偏移", update=tag_redraw)
+    Node.note_txt_offset     = IntVectorProperty(name="Offset", size=2, default=(0, 0), subtype='XYZ', description="Text offset", update=tag_redraw)
+    Node.note_img_offset     = IntVectorProperty(name="Offset", size=2, default=(0, 0), subtype='XYZ', description="Image offset", update=tag_redraw)
 
 def delete_props():
     props = [

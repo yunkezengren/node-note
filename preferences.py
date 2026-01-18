@@ -4,24 +4,24 @@ from bpy.props import BoolProperty, StringProperty, FloatProperty, FloatVectorPr
 from .typings import AlignMode, TextWidthMode, ImageWidthMode, BadgeScaleMode
 
 align_items: list[tuple[AlignMode, str, str]] = [
-    ('TOP', "顶部", ""),
-    ('BOTTOM', "底部", ""),
-    ('LEFT', "左侧", ""),
-    ('RIGHT', "右侧", ""),
+    ('TOP', "Top", ""),
+    ('BOTTOM', "Bottom", ""),
+    ('LEFT', "Left", ""),
+    ('RIGHT', "Right", ""),
 ]
 txt_width_items: list[tuple[TextWidthMode, str, str]] = [
-    ('AUTO', "跟随节点", "宽度自动跟随节点宽度"),
-    ('FIT', "适应内容", "宽度自动适应文本内容"),
-    ('MANUAL', "手动设置", "手动设置宽度"),
+    ('AUTO', "Follow Node", "Width automatically follows node width"),
+    ('FIT', "Fit Content", "Width automatically fits text content"),
+    ('MANUAL', "Manual", "Manually set width"),
 ]
 img_width_items: list[tuple[ImageWidthMode, str, str]] = [
-    ('AUTO', "跟随节点", "宽度自动跟随节点宽度"),
-    ('ORIGINAL', "原始宽度", "显示图像原始宽度"),
-    ('MANUAL', "手动设置", "手动设置宽度"),
+    ('AUTO', "Follow Node", "Width automatically follows node width"),
+    ('ORIGINAL', "Original Width", "Display image at original width"),
+    ('MANUAL', "Manual", "Manually set width"),
 ]
 badge_width_items: list[tuple[BadgeScaleMode, str, str]] = [
-    ('RELATIVE', "相对缩放", "跟随节点编辑器缩放"),
-    ('ABSOLUTE', "屏幕空间", "固定屏幕像素大小"),
+    ('RELATIVE', "Relative Scale", "Follow node editor zoom"),
+    ('ABSOLUTE', "Screen Space", "Fixed screen pixel size"),
 ]
 
 def tag_redraw(self, context: Context):
@@ -31,93 +31,89 @@ def tag_redraw(self, context: Context):
                 area.tag_redraw()
 
 sort_mode_items: list[tuple[str, str, str]] = [
-    ('COLOR_BADGE', "颜色+序号", "按颜色升序，然后按序号升序"),
-    ('BADGE_COLOR', "序号+颜色", "按序号升序，然后按颜色升序"),
+    ('COLOR_BADGE', "Color + Index", "Sort by color ascending, then by index ascending"),
+    ('BADGE_COLOR', "Index + Color", "Sort by index ascending, then by color ascending"),
 ]
 
 class NodeNoteAddonPreferences(AddonPreferences):
     bl_idname = __package__  # type: ignore
 
-    # 1. 全局设置
-    cursor_warp_x          : IntProperty(default=0, min=1, max=500, description="快捷键唤出面板时鼠标偏移")
-    show_all_notes         : BoolProperty(name="显示所有", default=True)
-    show_selected_only     : BoolProperty(name="仅显示选中", default=False, description="仅显示选中节点的笔记")
-    dependent_overlay      : BoolProperty(name="跟随叠加层", default=True, description="当节点编辑器叠加层关闭时，是否隐藏笔记")
-    show_badge_lines       : BoolProperty(name="显示逻辑连线", default=True, description="显示节点之间的序号连线")
-    is_interactive_mode    : BoolProperty(name="交互模式", default=False, description="点击节点即可编号，右键或ESC退出")
-    list_sort_mode         : EnumProperty(name="排序模式", items=sort_mode_items, default='BADGE_COLOR', description="选择列表排序方式")
-    # todo 改进遮挡
-    use_occlusion          : BoolProperty(name="自动遮挡", default=False)
-    tag_mode_prepend       : BoolProperty(name="前缀模式", default=True, description="特殊字符添加到已有文本前")
-    navigator_search       : StringProperty(name="搜索", default="", options={'TEXTEDIT_UPDATE'})
-    line_separator         : StringProperty(name="换行符", default=";|\\", options={'TEXTEDIT_UPDATE'}, description="文本中用于换行的分隔符，支持多个（用 | 分隔），如 : ;|\\ ")
+    # 1. Global Settings
+    cursor_warp_x          : IntProperty(default=0, min=1, max=500, description="Shortcut key cursor offset")
+    show_all_notes         : BoolProperty(name="Show All", default=True)
+    show_selected_only     : BoolProperty(name="Show Selected Only", default=False, description="Only show notes of selected nodes")
+    dependent_overlay      : BoolProperty(name="Follow Overlay", default=True, description="Whether to hide notes when node editor overlay is closed")
+    show_badge_lines       : BoolProperty(name="Show Connection Lines", default=True, description="Show index lines between nodes")
+    is_interactive_mode    : BoolProperty(name="Interactive Mode", default=False, description="Click nodes to number, right-click or ESC to exit")
+    list_sort_mode         : EnumProperty(name="Sort Mode", items=sort_mode_items, default='BADGE_COLOR', description="Choose list sort method")
+    use_occlusion          : BoolProperty(name="Auto Occlusion", default=False)
+    tag_mode_prepend       : BoolProperty(name="Prepend Mode", default=True, description="Add special characters before existing text")
+    navigator_search       : StringProperty(name="Search", default="", options={'TEXTEDIT_UPDATE'})
+    line_separator         : StringProperty(name="Line Separator", default=";|\\", options={'TEXTEDIT_UPDATE'}, description="Line break separator in text, supports multiple (separated by |), e.g.: ;|\\ ")
 
     # 2. 文本设置区
-    default_font_size      : IntProperty(name="默认字号", default=8, min=4, max=100)
-    font_path              : StringProperty(default='', subtype='FILE_PATH', options={'TEXTEDIT_UPDATE'}, description="字体文件路径,留空使用默认字体")
-    default_text_color     : FloatVectorProperty(name="默认字色", subtype='COLOR', size=4, default=(1.0, 1.0, 1.0, 1.0), min=0, max=1)
-    default_txt_bg_color   : FloatVectorProperty(name="默认背景色", subtype='COLOR', size=4, default=(0.2, 0.3, 0.5, 0.9), min=0, max=1)
+    default_font_size      : IntProperty(name="Default Font Size", default=8, min=4, max=100)
+    font_path              : StringProperty(default='', subtype='FILE_PATH', options={'TEXTEDIT_UPDATE'}, description="Font file path, leave empty to use default font")
+    default_text_color     : FloatVectorProperty(name="Default Text Color", subtype='COLOR', size=4, default=(1.0, 1.0, 1.0, 1.0), min=0, max=1)
+    default_txt_bg_color   : FloatVectorProperty(name="Default Background Color", subtype='COLOR', size=4, default=(0.2, 0.3, 0.5, 0.9), min=0, max=1)
 
-    default_txt_width_mode : EnumProperty(name="宽度模式", items=txt_width_items, default=0)
-    default_txt_bg_width   : IntProperty(name="默认文本背景宽度", default=200, min=50, max=2000)
-    default_txt_pos        : EnumProperty(name="默认对齐", items=align_items, default='TOP')
+    default_txt_width_mode : EnumProperty(name="Width Mode", items=txt_width_items, default=0)
+    default_txt_bg_width   : IntProperty(name="Default Text Background Width", default=200, min=50, max=2000)
+    default_txt_pos        : EnumProperty(name="Default Alignment", items=align_items, default='TOP')
 
-    # 3. 图像设置区
-    default_img_width_mode : EnumProperty(name="宽度模式", items=img_width_items, default=0)
-    default_img_width      : IntProperty(name="默认图像宽度", default=300, min=10, max=4000)
-    default_img_pos        : EnumProperty(name="默认对齐", items=align_items, default='TOP')
+    default_img_width_mode : EnumProperty(name="Width Mode", items=img_width_items, default=0)
+    default_img_width      : IntProperty(name="Default Image Width", default=300, min=10, max=4000)
+    default_img_pos        : EnumProperty(name="Default Alignment", items=align_items, default='TOP')
 
-    # 4. 序号设置区
-    default_badge_color    : FloatVectorProperty(name="圆背景色", subtype='COLOR', size=4, default=(0.8, 0.1, 0.1, 1.0), min=0, max=1)
-    badge_scale_mode       : EnumProperty(name="缩放模式", items=badge_width_items, default='ABSOLUTE')
-    badge_rel_scale        : FloatProperty(name="序号缩放", default=1.0, min=0.1, max=20.0)
-    badge_abs_scale        : FloatProperty(name="屏幕空间缩放", default=1.0, min=0.1, max=10.0)
-    badge_font_color       : FloatVectorProperty(name="数字颜色", subtype='COLOR', size=4, default=(1.0, 1.0, 1.0, 1.0), min=0, max=1, description="所有序号的数字颜色")
-    badge_line_color       : FloatVectorProperty(name="连线颜色", subtype='COLOR', size=4, default=(1.0, 0.8, 0.2, 0.8), min=0, max=1)
-    badge_line_thickness   : IntProperty(name="连线宽度", default=4, min=1, max=40)
+    default_badge_color    : FloatVectorProperty(name="Circle Background Color", subtype='COLOR', size=4, default=(0.8, 0.1, 0.1, 1.0), min=0, max=1)
+    badge_scale_mode       : EnumProperty(name="Scale Mode", items=badge_width_items, default='ABSOLUTE')
+    badge_rel_scale        : FloatProperty(name="Index Scale", default=1.0, min=0.1, max=20.0)
+    badge_abs_scale        : FloatProperty(name="Screen Space Scale", default=1.0, min=0.1, max=10.0)
+    badge_font_color       : FloatVectorProperty(name="Number Color", subtype='COLOR', size=4, default=(1.0, 1.0, 1.0, 1.0), min=0, max=1, description="Number color for all indexes")
+    badge_line_color       : FloatVectorProperty(name="Line Color", subtype='COLOR', size=4, default=(1.0, 0.8, 0.2, 0.8), min=0, max=1)
+    badge_line_thickness   : IntProperty(name="Line Width", default=4, min=1, max=40)
 
     # 预设颜色
-    col_preset_1           : FloatVectorProperty(name="预设红", subtype='COLOR', size=4, default=(0.6, 0.1, 0.1, 0.9), min=0, max=1)
-    col_preset_2           : FloatVectorProperty(name="预设绿", subtype='COLOR', size=4, default=(0.2, 0.5, 0.2, 0.9), min=0, max=1)
-    col_preset_3           : FloatVectorProperty(name="预设蓝", subtype='COLOR', size=4, default=(0.2, 0.3, 0.5, 0.9), min=0, max=1)
-    col_preset_4           : FloatVectorProperty(name="预设橙", subtype='COLOR', size=4, default=(0.8, 0.35, 0.05, 0.9), min=0, max=1)
-    col_preset_5           : FloatVectorProperty(name="预设紫", subtype='COLOR', size=4, default=(0.4, 0.1, 0.5, 0.9), min=0, max=1)
-    col_preset_6           : FloatVectorProperty(name="预设无", subtype='COLOR', size=4, default=(0.0, 0.0, 0.0, 0.0), min=0, max=1)
+    col_preset_1           : FloatVectorProperty(name="Preset Red", subtype='COLOR', size=4, default=(0.6, 0.1, 0.1, 0.9), min=0, max=1)
+    col_preset_2           : FloatVectorProperty(name="Preset Green", subtype='COLOR', size=4, default=(0.2, 0.5, 0.2, 0.9), min=0, max=1)
+    col_preset_3           : FloatVectorProperty(name="Preset Blue", subtype='COLOR', size=4, default=(0.2, 0.3, 0.5, 0.9), min=0, max=1)
+    col_preset_4           : FloatVectorProperty(name="Preset Orange", subtype='COLOR', size=4, default=(0.8, 0.35, 0.05, 0.9), min=0, max=1)
+    col_preset_5           : FloatVectorProperty(name="Preset Purple", subtype='COLOR', size=4, default=(0.4, 0.1, 0.5, 0.9), min=0, max=1)
+    col_preset_6           : FloatVectorProperty(name="Preset None", subtype='COLOR', size=4, default=(0.0, 0.0, 0.0, 0.0), min=0, max=1)
 
-    # 预设标签
-    label_preset_1         : StringProperty(name="标签1", default="红")
-    label_preset_2         : StringProperty(name="标签2", default="绿")
-    label_preset_3         : StringProperty(name="标签3", default="蓝")
-    label_preset_4         : StringProperty(name="标签4", default="橙")
-    label_preset_5         : StringProperty(name="标签5", default="紫")
-    label_preset_6         : StringProperty(name="标签6", default="无")
+    label_preset_1         : StringProperty(name="Label 1", default="Red")
+    label_preset_2         : StringProperty(name="Label 2", default="Green")
+    label_preset_3         : StringProperty(name="Label 3", default="Blue")
+    label_preset_4         : StringProperty(name="Label 4", default="Orange")
+    label_preset_5         : StringProperty(name="Label 5", default="Purple")
+    label_preset_6         : StringProperty(name="Label 6", default="None")
 
-    show_global      : BoolProperty(name="显示全局设置", default=True)
-    show_text        : BoolProperty(name="显示文字笔记", default=True)
-    show_image       : BoolProperty(name="显示图片笔记", default=True)
-    show_badge       : BoolProperty(name="显示序号笔记", default=True)
-    show_list        : BoolProperty(name="显示笔记列表", default=True)
+    show_global      : BoolProperty(name="Show Global Settings", default=True)
+    show_text        : BoolProperty(name="Show Text Notes", default=True)
+    show_image       : BoolProperty(name="Show Image Notes", default=True)
+    show_badge       : BoolProperty(name="Show Index Notes", default=True)
+    show_list        : BoolProperty(name="Show Notes List", default=True)
 
-    show_red             : BoolProperty(name="显示红", default=True, description="显示红")
-    show_green           : BoolProperty(name="显示绿", default=True, description="显示绿")
-    show_blue            : BoolProperty(name="显示蓝", default=True, description="显示蓝")
-    show_orange          : BoolProperty(name="显示橙", default=True, description="显示橙")
-    show_purple          : BoolProperty(name="显示紫", default=True, description="显示紫")
-    show_other           : BoolProperty(name="显示杂", default=True, description="显示杂")
-    hide_img_by_bg       : BoolProperty(name="同时过滤图片", default=True, description="过滤文本时是否同时过滤对应节点的图片")
+    show_red             : BoolProperty(name="Show Red", default=True, description="Show Red")
+    show_green           : BoolProperty(name="Show Green", default=True, description="Show Green")
+    show_blue            : BoolProperty(name="Show Blue", default=True, description="Show Blue")
+    show_orange          : BoolProperty(name="Show Orange", default=True, description="Show Orange")
+    show_purple          : BoolProperty(name="Show Purple", default=True, description="Show Purple")
+    show_other           : BoolProperty(name="Show Others", default=True, description="Show Others")
+    hide_img_by_bg       : BoolProperty(name="Also Filter Images", default=True, description="Filter images when filtering text")
 
     def draw(self, context):
         layout = self.layout
-        layout.label(text="插件位置: 右键菜单  +  N面板-节点-节点随记", icon='INFO')
+        layout.label(text="Plugin Location: Right-click Menu + N-Panel-Node-Node Notes", icon='INFO')
         box = layout.box()
         row = box.row()
-        row.label(text="全局设置", icon='WORLD_DATA')
+        row.label(text="Global Settings", icon='WORLD_DATA')
         col = box.column()
         split = col.split(factor=0.5)
         split1 = split.row()
-        split.prop(self, "cursor_warp_x", text="默认鼠标偏移")
+        split.prop(self, "cursor_warp_x", text="Default Mouse Offset")
 
-        split1.label(text="面板快捷键:", icon='KEYINGSET')
+        split1.label(text="Panel Shortcut Key:", icon='KEYINGSET')
         wm = context.window_manager
         kc = wm.keyconfigs.user
         km = kc.keymaps.get('Node Editor')
@@ -130,29 +126,29 @@ class NodeNoteAddonPreferences(AddonPreferences):
             if kmi:
                 split1.prop(kmi, "type", text="", full_event=True)
             else:
-                split1.label(text="快捷键未注册", icon='ERROR')
+                split1.label(text="Shortcut key not registered", icon='ERROR')
 
-        layout.label(text="部分属性更改后重启Blender后生效:", icon='INFO')
+        layout.label(text="Some property changes require Blender restart to take effect", icon='INFO')
 
-        # region 文本笔记
+        # region Text Notes
         txt_box = layout.box()
-        txt_box.label(text="文本笔记默认设置", icon='FILE_TEXT')
+        txt_box.label(text="Text Notes Default Settings", icon='FILE_TEXT')
 
         split_txt = txt_box.split(factor=0.5)
-        split_txt.prop(self, "default_font_size", text="字号")
-        split_txt.prop(self, "font_path", text="字体")
+        split_txt.prop(self, "default_font_size", text="Font Size")
+        split_txt.prop(self, "font_path", text="Font")
 
         split_color = txt_box.split(factor=0.5)
-        split_color.row().prop(self, "default_text_color", text="文本色")
-        split_color.row().prop(self, "default_txt_bg_color", text="背景色")
+        split_color.row().prop(self, "default_text_color", text="Text Color")
+        split_color.row().prop(self, "default_txt_bg_color", text="Background Color")
 
         row = txt_box.row()
-        row.prop(self, "default_txt_width_mode", text="宽度")
+        row.prop(self, "default_txt_width_mode", text="Width")
         if self.default_txt_width_mode == 'MANUAL':
             row.prop(self, "default_txt_bg_width", text="")
-        row.prop(self, "default_txt_pos", text="对齐")
+        row.prop(self, "default_txt_pos", text="Alignment")
 
-        txt_box.label(text="背景颜色预设:")
+        txt_box.label(text="Background Color Presets:")
         box_preset = txt_box.box()
         split_preset = box_preset.split(factor=0.05)
         split_preset.label(text="")
@@ -166,38 +162,38 @@ class NodeNoteAddonPreferences(AddonPreferences):
             grid_label.prop(self, f"label_preset_{i}", text="")
         # endregion
 
-        # region 图像笔记
+        # region Image Notes
         box = layout.box()
-        box.label(text="图像笔记默认设置", icon='IMAGE_DATA')
+        box.label(text="Image Notes Default Settings", icon='IMAGE_DATA')
 
         col = box.column()
         row = col.row()
 
-        row.prop(self, "default_img_width_mode", text="宽度")
+        row.prop(self, "default_img_width_mode", text="Width")
         if self.default_img_width_mode == 'MANUAL':
             row.prop(self, "default_img_width", text="")
-        row.prop(self, "default_img_pos", text="对齐")
+        row.prop(self, "default_img_pos", text="Alignment")
         # endregion
 
-        # region 序号笔记
+        # region Index Notes
         badge_box = layout.box()
-        badge_box.label(text="序号笔记默认设置", icon='EVENT_NDOF_BUTTON_1')
+        badge_box.label(text="Index Notes Default Settings", icon='EVENT_NDOF_BUTTON_1')
 
         split = badge_box.split(factor=0.5)
-        split.row().prop(self, "default_badge_color", text="背景色")
-        split.row().prop(self, "badge_font_color", text="文本色")
+        split.row().prop(self, "default_badge_color", text="Background Color")
+        split.row().prop(self, "badge_font_color", text="Text Color")
 
         row_set = badge_box.row(align=True)
-        row_set.prop(self, "badge_scale_mode", text="缩放")
+        row_set.prop(self, "badge_scale_mode", text="Scale")
         if self.badge_scale_mode == 'ABSOLUTE':
-            row_set.prop(self, "badge_abs_scale", text="屏幕缩放")
+            row_set.prop(self, "badge_abs_scale", text="Screen Scale")
         else:
-            row_set.prop(self, "badge_rel_scale", text="相对缩放")
+            row_set.prop(self, "badge_rel_scale", text="Relative Scale")
 
         row_set = badge_box.split(factor=0.3)
-        row_set.prop(self, "show_badge_lines", text="显示连线", icon='EMPTY_ARROWS')
-        row_set.row().prop(self, "badge_line_color", text="颜色")
-        row_set.prop(self, "badge_line_thickness", text="线宽")
+        row_set.prop(self, "show_badge_lines", text="Show Lines", icon='EMPTY_ARROWS')
+        row_set.row().prop(self, "badge_line_color", text="Color")
+        row_set.prop(self, "badge_line_thickness", text="Line Width")
         # endregion
 
 def pref() -> NodeNoteAddonPreferences:

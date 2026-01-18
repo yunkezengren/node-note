@@ -4,6 +4,7 @@ from . import operators
 from . import ui
 from . import node_properties
 from .preferences import NodeNoteAddonPreferences
+from .translations import translations_dict
 
 addon_keymaps = []
 
@@ -13,6 +14,8 @@ classes = [
 ]
 
 def register():
+    bpy.app.translations.register(__package__, translations_dict) # type: ignore
+    
     for cls in classes:
         bpy.utils.register_class(cls)
     operators.register()
@@ -29,6 +32,8 @@ def register():
     bpy.types.NODE_PT_overlay.append(ui.draw_to_overlay_panel)
 
 def unregister():
+    bpy.app.translations.unregister(__package__)
+    
     bpy.types.NODE_PT_overlay.remove(ui.draw_to_overlay_panel)
     bpy.types.NODE_MT_context_menu.remove(ui.draw_to_context_menu)
 
