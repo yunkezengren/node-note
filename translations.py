@@ -83,7 +83,7 @@ translations_dict = {
         ("*", "Global Settings"): "全局设置",
         ("*", "Preferences"): "偏好",
         ("*", "All"): "全部",
-        ("*", "Selected Only"): "仅选中",
+        ("*", "Selected"): "仅选中",
         ("*", "Overlay"): "叠加层",
         ("*", "All Notes"): "全部笔记",
         ("*", "Selected Notes"): "选中笔记",
@@ -221,8 +221,9 @@ translations_dict = {
         ("*", "Swap image and text order"): "交换图片与文字的顺序",
         ("*", "Text Position"): "文本位置",
         ("*", "Image Position"): "图像位置",
+        ("*", "Text and Image offset"): "文本偏移",
+        ("*", "Image offset"): "图像偏移",
         ("*", "Shortcut key cursor offset"): "快捷键唤出面板时鼠标偏移",
-        ("*", " and images"): "和图片",
         ("*", "Node Notes"): "节点笔记",
     }
 }

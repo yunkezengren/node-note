@@ -44,7 +44,7 @@ def init_props():
     Node.note_txt_center     = BoolProperty(name="Center", default=False, description="Center when top/bottom aligned")
     Node.note_img_center     = BoolProperty(name="Center", default=True, description="Center when top/bottom aligned")
 
-    Node.note_txt_offset     = IntVectorProperty(name="Offset", size=2, default=(0, 0), subtype='XYZ', description="Text offset", update=tag_redraw)
+    Node.note_txt_offset     = IntVectorProperty(name="Offset", size=2, default=(0, 0), subtype='XYZ', description="Text and Image offset", update=tag_redraw)
     Node.note_img_offset     = IntVectorProperty(name="Offset", size=2, default=(0, 0), subtype='XYZ', description="Image offset", update=tag_redraw)
 
 def delete_props():
