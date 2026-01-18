@@ -40,13 +40,14 @@ class NodeNoteAddonPreferences(AddonPreferences):
 
     # 1. Global Settings
     cursor_warp_x          : IntProperty(default=0, min=1, max=500, description="Shortcut key cursor offset")
+    panel_width            : IntProperty(name="Panel Width", default=220, min=100, max=2000, description="Width of the shortcut panel")
     show_all_notes         : BoolProperty(name="Show All", default=True)
     show_selected_only     : BoolProperty(name="Show Selected Only", default=False, description="Only show notes of selected nodes")
     dependent_overlay      : BoolProperty(name="Follow Overlay", default=True, description="Whether to hide notes when node editor overlay is closed")
     show_badge_lines       : BoolProperty(name="Show Connection Lines", default=True, description="Show index lines between nodes")
     is_interactive_mode    : BoolProperty(name="Interactive Mode", default=False, description="Click nodes to number, right-click or ESC to exit")
     list_sort_mode         : EnumProperty(name="Sort Mode", items=sort_mode_items, default='BADGE_COLOR', description="Choose list sort method")
-    use_occlusion          : BoolProperty(name="Auto Occlusion", default=False)
+    use_occlusion          : BoolProperty(name="Auto Occlusion", default=True)
     tag_mode_prepend       : BoolProperty(name="Prepend Mode", default=True, description="Add special characters before existing text")
     navigator_search       : StringProperty(name="Search", default="", options={'TEXTEDIT_UPDATE'})
     line_separator         : StringProperty(name="Line Separator", default=";|\\", options={'TEXTEDIT_UPDATE'}, description="Line break separator in text, supports multiple (separated by |), e.g.: ;|\\ ")
@@ -107,13 +108,12 @@ class NodeNoteAddonPreferences(AddonPreferences):
         layout.label(text="Plugin Location: Right-click Menu + N-Panel-Node-Node Notes", icon='INFO')
         box = layout.box()
         row = box.row()
-        row.label(text="Global Settings", icon='WORLD_DATA')
+        row.label(text="Global", icon='WORLD_DATA')
         col = box.column()
-        split = col.split(factor=0.5)
-        split1 = split.row()
-        split.prop(self, "cursor_warp_x", text="Default Mouse Offset")
+        split = col.split(factor=0.33)
+        split0 = split.row()
+        split0.label(text="Panel Shortcut Key:", icon='KEYINGSET')
 
-        split1.label(text="Panel Shortcut Key:", icon='KEYINGSET')
         wm = context.window_manager
         kc = wm.keyconfigs.user
         km = kc.keymaps.get('Node Editor')
@@ -124,9 +124,12 @@ class NodeNoteAddonPreferences(AddonPreferences):
                     kmi = k
                     break
             if kmi:
-                split1.prop(kmi, "type", text="", full_event=True)
+                split0.prop(kmi, "type", text="", full_event=True)
             else:
-                split1.label(text="Shortcut key not registered", icon='ERROR')
+                split0.label(text="Shortcut key not registered", icon='ERROR')
+        split1 = split.row()
+        split1.prop(self, "panel_width", text="Shortcut Panel Width")
+        split1.prop(self, "cursor_warp_x", text="Default Mouse Offset")
 
         layout.label(text="Some property changes require Blender restart to take effect", icon='INFO')
 

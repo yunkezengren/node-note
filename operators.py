@@ -1,5 +1,5 @@
 import bpy
-from bpy.types import Operator, Node, Nodes, NodeTree, Context, Image
+from bpy.types import Operator, Node, Context, Image
 from typing import Callable
 from bpy.props import EnumProperty, BoolProperty
 from .preferences import pref
@@ -434,7 +434,7 @@ class NODE_OT_note_note_quick_edit(Operator):
 
     def invoke(self, context, event):
         context.window.cursor_warp(event.mouse_x + pref().cursor_warp_x, event.mouse_y)
-        return context.window_manager.invoke_popup(self, width=220)
+        return context.window_manager.invoke_popup(self, width=pref().panel_width)
 
     def draw(self, context):
         from .ui import draw_panel_for_shortcut

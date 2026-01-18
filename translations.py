@@ -78,7 +78,7 @@ translations_dict = {
         ("*", "List ({count})"): "列表 ({count})",
         ("*", "Node:  {name}"): "节点:  {name}",
         ("*", "Image:  {name}"): "图片:  {name}",
-        ("*", "Global Settings"): "全局设置",
+        ("*", "Global"): "全局设置",
         ("*", "Preferences"): "偏好",
         ("*", "All"): "全部",
         ("*", "Selected"): "仅选中",
@@ -114,7 +114,7 @@ translations_dict = {
         ("*", "Text: "): "文本: ",
         ("*", "Text:  None"): "文本:  无",
         ("*", "and images"): "和图片",
-        ("*", "Hide when occluded"): "被遮挡时自动隐藏",
+        ("*", "Hide when occluded"): "遮挡剔除",
         ("*", "Plugin Location: Right-click Menu + N-Panel-Node-Node Notes"): "插件位置: 右键菜单  +  N面板-节点-节点随记",
         ("*", "Default Mouse Offset"): "默认鼠标偏移",
         ("*", "Panel Shortcut Key:"): "面板快捷键:",
@@ -220,6 +220,7 @@ translations_dict = {
         ("*", "Text and Image offset"): "文本偏移",
         ("*", "Image offset"): "图像偏移",
         ("*", "Shortcut key cursor offset"): "快捷键唤出面板时鼠标偏移",
+        ("*", "Shortcut Panel Width"): "快捷键面板宽度",
         ("*", "Node Notes"): "节点笔记",
     }
 }

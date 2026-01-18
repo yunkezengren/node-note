@@ -44,9 +44,8 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
             row_pos = body.row()
             row_pos.operator("preferences.addon_show", text=iface("Preferences"), icon='PREFERENCES').module = __package__
             row_pos.prop(prefs, "dependent_overlay", text="Overlay", toggle=True, icon='OVERLAY')
-            row_del = body.row()
             # 还很不完善
-            # body.column().prop(prefs, "use_occlusion", text="Hide when occluded")
+            row_pos.prop(prefs, "use_occlusion", text="Hide when occluded")
 
             if prefs.show_all_notes:
                 _txt = " and images" if prefs.hide_img_by_bg else ""
