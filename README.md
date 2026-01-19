@@ -29,13 +29,19 @@ Numbered badges for node identification:
 - Customizable badge colors
 - Easy navigation between numbered nodes
 
+## Known Issues/To-Do
+
+- Node timeing/named attribute usage of group  overlap with nodes
+- Make drawn text/images not overlap with nodes
+- Saving v5.0+ files in v4.5 results in missing notes when reopening in v5.0+.
+
 ---
 
-## 中文说明
+# 中文说明
 
 Blender 强大的节点图文标注工具。
 
-### 文本笔记
+## 文本笔记
 
 为任意节点添加可自定义的文字注释：
 - 字体大小和颜色
@@ -43,7 +49,7 @@ Blender 强大的节点图文标注工具。
 - 对齐方式
 - 位置偏移调整
 
-### 图像笔记
+## 图像笔记
 
 直接在节点上附加参考图片：
 - 从剪贴板粘贴图片
@@ -51,9 +57,15 @@ Blender 强大的节点图文标注工具。
 - 灵活的定位方式
 - 打包/解包支持
 
-### 序号/徽章
+## 序号/徽章
 
 用于节点识别的编号标记：
 - 交互编号模式 - 点击分配序号
 - 自定义徽章颜色
 - 快速导航到已编号节点
+
+## 已知问题/待办
+
+- 节点耗时/命名属性使用 和 笔记重叠
+- 让绘制的文本/图像和文本重叠的地方不绘制
+- 5.0以上版本的文件,用4.5打开保存后,5.0再打开笔记会丢失.
