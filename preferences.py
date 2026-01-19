@@ -50,7 +50,7 @@ class NodeNoteAddonPreferences(AddonPreferences):
     use_occlusion          : BoolProperty(name="Auto Occlusion", default=False)
     tag_mode_prepend       : BoolProperty(name="Prepend Mode", default=True, description="Add special characters before existing text")
     navigator_search       : StringProperty(name="Search", default="", options={'TEXTEDIT_UPDATE'})
-    line_separator         : StringProperty(name="Line Separator", default=";|\\", options={'TEXTEDIT_UPDATE'}, description="Line break separator in text, supports multiple (separated by |), e.g.: ;|\\ ")
+    line_separator         : StringProperty(name="Line Separator", default=";|\\", options={'TEXTEDIT_UPDATE'}, description="Line break separator in text, supports multiple (separated by |), e.g.: ;|\\")
 
     # 2. 文本设置区
     default_font_size      : IntProperty(name="Default Font Size", default=8, min=4, max=100)
@@ -95,17 +95,17 @@ class NodeNoteAddonPreferences(AddonPreferences):
     show_badge       : BoolProperty(name="Show Index Notes", default=True)
     show_list        : BoolProperty(name="Show Notes List", default=True)
 
-    show_red             : BoolProperty(name="Show Red", default=True, description="Show Red")
-    show_green           : BoolProperty(name="Show Green", default=True, description="Show Green")
-    show_blue            : BoolProperty(name="Show Blue", default=True, description="Show Blue")
-    show_orange          : BoolProperty(name="Show Orange", default=True, description="Show Orange")
-    show_purple          : BoolProperty(name="Show Purple", default=True, description="Show Purple")
+    show_red             : BoolProperty(name="Show Red", default=True, description="Show by preset color")
+    show_green           : BoolProperty(name="Show Green", default=True, description="Show by preset color")
+    show_blue            : BoolProperty(name="Show Blue", default=True, description="Show by preset color")
+    show_orange          : BoolProperty(name="Show Orange", default=True, description="Show by preset color")
+    show_purple          : BoolProperty(name="Show Purple", default=True, description="Show by preset color")
     show_other           : BoolProperty(name="Show Others", default=True, description="Show Others")
     hide_img_by_bg       : BoolProperty(name="Also Filter Images", default=True, description="Filter images when filtering text")
 
     def draw(self, context):
         layout = self.layout
-        layout.label(text="Plugin Location: Right-click Menu + N-Panel-Node-Node Notes", icon='INFO')
+        layout.label(text="Plugin Location: Right-click Menu + NPanel-Node-Node Notes", icon='INFO')
         box = layout.box()
         row = box.row()
         row.label(text="Global", icon='WORLD_DATA')

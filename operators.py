@@ -118,14 +118,14 @@ class NODE_OT_note_delete_notes(NoteDeleteOperator):
         row1.column().prop(self, "scope", expand=True)
 
         row2 = layout.split(factor=0.3)
-        row2.label(text=iface("Delete Types"))
+        row2.label(text="Delete Types")
         row3 = row2.row()
-        row3.prop(self, "del_text", toggle=True, text=iface("Text"))
-        row3.prop(self, "del_image", toggle=True, text=iface("Image"))
-        row3.prop(self, "del_index", toggle=True, text=iface("Index"))
+        row3.prop(self, "del_text", toggle=True, text="Text")
+        row3.prop(self, "del_image", toggle=True, text="Image")
+        row3.prop(self, "del_index", toggle=True, text="Index")
         if self.del_image:
             layout.separator()
-            layout.prop(self, "delete_image", text=iface("Also Remove Image"))
+            layout.prop(self, "delete_image", text="Also Remove Image")
 
     def execute(self, context):
         nodes_to_process = self.get_scoped_nodes(context)
@@ -190,6 +190,7 @@ class NODE_OT_note_show_selected_badge(NoteBaseOperator):
 class NODE_OT_note_apply_preset(NoteBaseOperator):
     bl_idname = "node.note_apply_preset"
     bl_label = "Apply Preset to Selected Nodes (Multi-Select)"
+    bl_description = "Apply Preset to Selected Nodes (Multi-Select)"
     bg_color: bpy.props.FloatVectorProperty(size=4)
 
     def execute(self, context):
@@ -201,6 +202,7 @@ class NODE_OT_note_apply_preset(NoteBaseOperator):
 class NODE_OT_note_copy_active_to_selected(NoteBaseOperator):
     bl_idname = "node.note_copy_to_selected"
     bl_label = "Sync Active Style to Selected (Multi-Select)"
+    bl_description = "Sync Active Style to Selected (Multi-Select)"
 
     def execute(self, context):
         # todo 改为从偏好设置导入
