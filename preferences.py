@@ -105,7 +105,7 @@ class NodeNoteAddonPreferences(AddonPreferences):
 
     def draw(self, context):
         layout = self.layout
-        layout.label(text="Plugin Location: Right-click Menu + NPanel-Node-Node Notes", icon='INFO')
+        layout.label(text="Plugin Location: Right-click Menu + NPanel->Node->Node Notes", icon='INFO')
         box = layout.box()
         row = box.row()
         row.label(text="Global", icon='WORLD_DATA')

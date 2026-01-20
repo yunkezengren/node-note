@@ -1,14 +1,14 @@
 # Node Note / 节点随记
-
-A powerful Blender add-on for adding text and image annotations directly to nodes.
-
 [中文说明](#中文说明)
 
 ---
 
+### A powerful Blender add-on for adding text and image notes directly to nodes.
+**Addon Location: `Right-click Menu` + `NPanel->Node->Node Notes`**
+
 ## Text Notes
 
-Add customizable text annotations to any node with options for:
+Add customizable text notes to any node with options for:
 - Font size and colors
 - Background styling
 - Alignment and positioning
@@ -39,7 +39,9 @@ Numbered badges for node identification:
 
 # 中文说明
 
-Blender 强大的节点图文标注工具。
+### Blender 强大的节点图文标注工具。
+
+**插件位置: `右键菜单`  +  `N面板->节点->节点随记`**
 
 ## 文本笔记
 
@@ -70,6 +72,8 @@ Blender 强大的节点图文标注工具。
 > - 让绘制的文本/图像和文本重叠的地方不绘制
 > - 5.0以上版本的文件,用4.5打开保存后,5.0再打开笔记会丢失.
 
-## 网站
-[無東](https://space.bilibili.com/277067069)  
-[W_Cloud](https://space.bilibili.com/1109241880)
+---
+
+## 作者/贡献者/维护者
+- [@無東](https://space.bilibili.com/277067069)  
+- [@W_Cloud](https://space.bilibili.com/1109241880)

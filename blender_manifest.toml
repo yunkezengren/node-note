@@ -10,7 +10,7 @@ blender_version_min = "5.0.0"
 license = ["SPDX:GPL-3.0-or-later"]
 website = "https://space.bilibili.com/1109241880"
 [permissions]
-files = "Import image and use font from disk"
+files = "Import image or use font from disk"
 clipboard = "Paste text/image from the clipboard and copy text to clipboard"
 [build]
 paths_exclude_pattern = [

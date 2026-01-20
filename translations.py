@@ -110,7 +110,7 @@ translations_dict = {
         ("*", "No Image"): "无图片",
         ("*", "Text:  None"): "文本:  无",
         ("*", "Hide when occluded"): "遮挡剔除",
-        ("*", "Plugin Location: Right-click Menu + NPanel-Node-Node Notes"): "插件位置: 右键菜单  +  N面板-节点-节点随记",
+        ("*", "Plugin Location: Right-click Menu + NPanel->Node->Node Notes"): "插件位置: 右键菜单  +  N面板->节点->节点随记",
         ("*", "Some property changes require Blender restart to take effect"): "部分属性更改后重启Blender后生效",
         ("*", "Text Notes Default Settings"): "文本笔记默认设置",
         ("*", "Image Notes Default Settings"): "图像笔记默认设置",
