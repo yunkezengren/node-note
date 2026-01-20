@@ -25,7 +25,7 @@ def register():
     kc = bpy.context.window_manager.keyconfigs.addon
     if kc:
         km = kc.keymaps.new(name='Node Editor', space_type='NODE_EDITOR')
-        kmi = km.keymap_items.new("node.note_quick_edit", 'D', 'CLICK', ctrl=True)
+        kmi = km.keymap_items.new("node.note_quick_edit", 'D', 'PRESS', ctrl=True)
         addon_keymaps.append((km, kmi))
     
     bpy.types.NODE_MT_context_menu.append(ui.draw_to_context_menu)

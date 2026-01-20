@@ -29,11 +29,21 @@ Numbered badges for node identification:
 - Customizable badge colors
 - Easy navigation between numbered nodes
 
+> [!TIP]
+> ## Practical Tips
+> - Many buttons in the panel can be right-clicked to set keyboard shortcuts
+> - You can copy from PPT/PS and paste them as image notes
+> - You can add notes to node group assets; notes will appear when adding the node group asset in other files
+>
 > [!NOTE]
 > ## Known Issues/To-Do
-> - Node timeing/named attribute usage of group  overlap with nodes
-> - Make drawn text/images not overlap with nodes
-> - Saving v5.0+ files in v4.5 results in missing notes when reopening in v5.0+.
+> - Node timing/named attribute usage overlaps with notes
+> - Prevent drawn text/images from overlapping with node text
+> - Saving v5.0+ files in v4.5 results in missing notes when reopening in v5.0+
+> - Better keyboard shortcut settings for the add-on
+> - Image notes for node group assets should be stored in a separate/common folder
+> - Add image deduplication/reuse functionality when importing node groups or pasting images
+> - Text/image notes maintain size in view (uncertain if practical)
 
 ---
 
@@ -66,11 +76,21 @@ Numbered badges for node identification:
 - 自定义徽章颜色
 - 快速导航到已编号节点
 
+> [!TIP]
+> ## 实用提示
+> - 面板里很多按钮可以右键设置快捷键
+> - 可以在PPT/PS等软件里复制,然后粘贴为图像笔记
+> - 可以在节点组资产里添加笔记,其他文件里添加节点组资产后也会显示笔记
+
 > [!NOTE]
 > ## 已知问题/待办
 > - 节点耗时/命名属性使用 和 笔记重叠
 > - 让绘制的文本/图像和文本重叠的地方不绘制
 > - 5.0以上版本的文件,用4.5打开保存后,5.0再打开笔记会丢失.
+> - 更好的设置插件快捷键
+> - 节点组资产的图像笔记应该存在单独/通用文件夹
+> - 导入节点组后或粘贴图片时,增加图像去重/复用功能
+> - 文本/图像笔记在视图里保持大小(不确定是否实用)
 
 ---
 
