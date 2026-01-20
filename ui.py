@@ -38,7 +38,9 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
         header, body = layout.panel("setting", default_closed=True)
         header.label(text="Global", icon='TOOL_SETTINGS')
         header.prop(prefs, "show_all_notes", text="All", icon="HIDE_OFF" if prefs.show_all_notes else "HIDE_ON", toggle=True)
-        header.prop(prefs, "show_selected_only", text="Selected", toggle=True)
+        select_row = header.row()
+        select_row.prop(prefs, "show_selected_only", text="Selected", toggle=True)
+        select_row.active = prefs.show_all_notes
         header.operator(ops.NODE_OT_note_delete_notes.bl_idname, text="", icon='TRASH')
         if body:
             row_pos = body.row()
