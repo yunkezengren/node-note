@@ -29,11 +29,11 @@ Numbered badges for node identification:
 - Customizable badge colors
 - Easy navigation between numbered nodes
 
-## Known Issues/To-Do
-
-- Node timeing/named attribute usage of group  overlap with nodes
-- Make drawn text/images not overlap with nodes
-- Saving v5.0+ files in v4.5 results in missing notes when reopening in v5.0+.
+> [!NOTE]
+> ## Known Issues/To-Do
+> - Node timeing/named attribute usage of group  overlap with nodes
+> - Make drawn text/images not overlap with nodes
+> - Saving v5.0+ files in v4.5 results in missing notes when reopening in v5.0+.
 
 ---
 
@@ -64,50 +64,11 @@ Blender 强大的节点图文标注工具。
 - 自定义徽章颜色
 - 快速导航到已编号节点
 
-## 已知问题/待办
-> [!WARNING] 已知问题/待办
-> 节点耗时/命名属性使用 和 笔记重叠
-> 让绘制的文本/图像和文本重叠的地方不绘制
-> 5.0以上版本的文件,用4.5打开保存后,5.0再打开笔记会丢失.
-
-> [!INFO]
-> 蓝色背景的信息框
-
-> [!WARNING]
-> 黄色背景的警告框
-
 > [!NOTE]
-> 紫色背景的注释框
-
-> [!TIP]
-> 绿色背景的提示框
-
-> [!IMPORTANT]
-> 橙色背景的重要提示框
-
-> [!CAUTION]
-> 红色背景的注意事项框
-
-> [!INFO]   INFO
-> 蓝色背景的信息框
-
-> [!WARNING]   WARNING
-> 黄色背景的警告框
-
-> [!NOTE]   NOTE
-> 紫色背景的注释框
-
-> [!TIP]   TIP
-> 绿色背景的提示框
-
-> [!IMPORTANT]   IMPORTANT
-> 橙色背景的重要提示框
-
-> [!CAUTION]   CAUTION
-> 红色背景的注意事项框
-
-
-
+> ## 已知问题/待办
+> - 节点耗时/命名属性使用 和 笔记重叠
+> - 让绘制的文本/图像和文本重叠的地方不绘制
+> - 5.0以上版本的文件,用4.5打开保存后,5.0再打开笔记会丢失.
 
 ## 网站
 [無東](https://space.bilibili.com/277067069)  
