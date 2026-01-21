@@ -293,6 +293,10 @@ def draw_rounded_rect_batch(x: float, y: float, width: float, height: float, col
     if base_radius < 0.5:
         add_quad(x, y, x + width, y + height)
     else:
+        # 修正半径，防止其超过宽度或高度的一半
+        radius_x = min(radius_x, width / 2)
+        radius_y = min(radius_y, height / 2)
+        
         add_quad(x, y + radius_y, x + width, y + height - radius_y)
         add_quad(x + radius_x, y, x + width - radius_x, y + radius_y)
         add_quad(x + radius_x, y + height - radius_y, x + width - radius_x, y + height)
@@ -567,11 +571,11 @@ def _set_note_position(info: TextImgInfo, scale: float) -> None:
 
 def _draw_text_note(info: TextImgInfo, scale: float, bg_color: RGBA) -> None:
     """绘制文本+背景"""
-    pad = PaddingX * scale
+    pad = PaddingX * info.txt_scale
     font_id = get_font_id()
     txt_x, txt_y = info.txt_x, info.txt_y
 
-    draw_rounded_rect_batch(txt_x, txt_y, info.txt_width, info.txt_height, bg_color, CornerRadius * scale)
+    draw_rounded_rect_batch(txt_x, txt_y, info.txt_width, info.txt_height, bg_color, CornerRadius * info.txt_scale * 6 * pref().bg_rect_round)
 
     blf.color(font_id, *info.node.note_text_color)
     blf.disable(font_id, blf.SHADOW)

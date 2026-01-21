@@ -184,6 +184,9 @@ translations_dict = {
         ("*", "Node Notes"): "节点笔记",
         ("*", "Saving v5.0+ files in v4.x results in missing notes when reopening in v5.x."): "5.0以上版本的文件,用4.x打开保存后,5.x存的笔记会丢失.",
         ("*", "Versions within 4.x are fully compatible. v5.0 can load notes saved in v4.x."): "4.x版本之间兼容没问题. 5.0版本能加载4.x版本保存的笔记.",
+        ("*", "Default Mouse Offset"): "默认鼠标偏移",
+        ("*", "Roundness"): "圆角",
+        ("*", "Roundness of note background rectangle"): "笔记背景矩形圆角",
     },
     "ja_JP": {
         ("Operator", "Swap Text and Image Position"): "テキストと画像の位置を交換",
