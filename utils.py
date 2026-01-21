@@ -17,6 +17,13 @@ def nd_abs_loc(node: Node):
         return node.location_absolute
     return node.location + nd_abs_loc(node.parent) if node.parent else node.location
 
+def node_depth(node: Node) -> int:
+    depth = 0
+    while node.parent:
+        depth += 1
+        node = node.parent
+    return depth
+
 def text_split_lines(text: str) -> list[str]:
     """使用偏好设置中的分隔符将文本转换为换行"""
     separator: str = pref().line_separator

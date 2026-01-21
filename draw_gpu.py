@@ -14,6 +14,7 @@ from .preferences import pref
 from .utils import (
     ui_scale,
     nd_abs_loc,
+    node_depth,
     get_region_zoom,
     text_split_lines,
     view_to_region_scaled,
@@ -432,6 +433,12 @@ def _set_text_note_info(info: TextImgInfo, scale: float, is_visible: bool) -> No
 
     txt_width_mode = node.note_txt_width_mode
     current_scale = ui_scale() if txt_width_mode == 'KEEP' else scale
+
+    if txt_width_mode == 'KEEP':
+        depth = node_depth(node)  # type: ignore
+        if depth > 0:
+            current_scale *= (0.75 ** depth)  # todo 如果需要,可以偏好设置自定义
+
     info.txt_scale = current_scale
 
     pad = PaddingX * current_scale
