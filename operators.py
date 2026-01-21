@@ -1,5 +1,5 @@
 import bpy
-from bpy.types import Operator, Node, Context, Image
+from bpy.types import Operator, Node, Context, Image, UILayout
 from typing import Callable
 from bpy.props import EnumProperty, BoolProperty, IntProperty, FloatVectorProperty
 from .preferences import pref, txt_width_items
@@ -70,10 +70,10 @@ class NoteScopeOperator(NoteBaseOperator):
         ],
         default='SELECTED'
     )
-    
-    def get_scoped_nodes(self, context)-> list[Node]:
+
+    def get_scoped_nodes(self, context, skip_active: bool = False)-> list[Node]:
         if self.scope == 'SELECTED':
-            return self.get_selected_nodes(context)
+            return self.get_selected_nodes(context, skip_active)
         elif self.scope == 'CURRENT':
             return context.space_data.edit_tree.nodes
         else:            # 'ALL':
@@ -81,6 +81,11 @@ class NoteScopeOperator(NoteBaseOperator):
             for tree in bpy.data.node_groups:
                 nodes.extend(tree.nodes)
             return nodes
+        
+    def draw_scope(self, layout: UILayout):
+        scope_row = layout.split(factor=0.3)
+        scope_row.label(text="Operation Scope")
+        scope_row.column().prop(self, "scope", expand=True)
 
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self, width=300)
@@ -204,8 +209,7 @@ class NODE_OT_note_apply_preset(NoteBaseOperator):
 
 class NODE_OT_note_copy_active_style(NoteScopeOperator):
     bl_idname = "node.note_copy_active_style"
-    bl_label = "Sync Active Style"
-    bl_description = "Sync active node note style"
+    bl_label = "Sync Active Node Note Style"
 
     # Text
     sync_font_size     : BoolProperty(name="Font Size", default=True)
@@ -229,29 +233,21 @@ class NODE_OT_note_copy_active_style(NoteScopeOperator):
 
     def draw(self, context):
         layout = self.layout
-        layout.prop(self, "scope")
-        layout.separator()
+        self.draw_scope(layout)
 
         row = layout.row()
         col1 = row.column(align=True)
         col1.label(text="Text")
-        col1.prop(self, "sync_font_size")
-        col1.prop(self, "sync_text_color")
-        col1.prop(self, "sync_txt_bg_color")
-        col1.prop(self, "sync_txt_bg_width")
-        col1.prop(self, "sync_txt_width_mode")
-        col1.prop(self, "sync_txt_pos")
-        col1.prop(self, "sync_txt_center")
-        col1.prop(self, "sync_txt_offset")
-
         col2 = row.column(align=True)
         col2.label(text="Image")
-        col2.prop(self, "sync_img_width")
-        col2.prop(self, "sync_img_width_mode")
-        col2.prop(self, "sync_img_pos")
-        col2.prop(self, "sync_img_center")
-        col2.prop(self, "sync_img_offset")
-        
+
+        for prop in style_props:
+            sync_name = prop.replace("note_", "sync_")
+            if "txt" in prop or "text" in prop or "font" in prop:
+                col1.prop(self, sync_name)
+            elif "img" in prop:
+                col2.prop(self, sync_name)
+
         col2.separator()
         col2.label(text="Index")
         col2.prop(self, "sync_badge_color")
@@ -260,34 +256,13 @@ class NODE_OT_note_copy_active_style(NoteScopeOperator):
         count = 0
         active = context.active_node
         if not active:
-             self.report({'WARNING'}, "Active node required")
-             return {'CANCELLED'}
+            self.report({'WARNING'}, "Active node required")
+            return {'CANCELLED'}
 
-        props_map = {
-            "note_font_size"     : self.sync_font_size,
-            "note_text_color"    : self.sync_text_color,
-            "note_txt_bg_color"  : self.sync_txt_bg_color,
-            "note_txt_bg_width"  : self.sync_txt_bg_width,
-            "note_txt_width_mode": self.sync_txt_width_mode,
-            "note_txt_pos"       : self.sync_txt_pos,
-            "note_txt_center"    : self.sync_txt_center,
-            "note_txt_offset"    : self.sync_txt_offset,
-            
-            "note_img_width"     : self.sync_img_width,
-            "note_img_width_mode": self.sync_img_width_mode,
-            "note_img_pos"       : self.sync_img_pos,
-            "note_img_center"    : self.sync_img_center,
-            "note_img_offset"    : self.sync_img_offset,
-            
-            "note_badge_color"   : self.sync_badge_color,
-        }
-
-        nodes = self.get_scoped_nodes(context)
+        nodes = self.get_scoped_nodes(context, skip_active=True)
         for node in nodes:
-            if node == active:
-                continue
-            
-            for prop, need_sync in props_map.items():
+            for prop in style_props:
+                need_sync = getattr(self, prop.replace("note_", "sync_"))
                 if not need_sync: continue
                 try:
                     # 转接点宽度模式不支持跟随节点宽度(AUTO)
@@ -295,7 +270,7 @@ class NODE_OT_note_copy_active_style(NoteScopeOperator):
                 except TypeError:
                     continue
             count += 1
-            
+
         self.report({'INFO'}, iface("Style synced to {count} nodes").format(count=count))
         context.area.tag_redraw()
         return {'FINISHED'}
@@ -367,9 +342,7 @@ class NODE_OT_note_pack_unpack_images(NoteDeleteOperator):
 
     def draw(self, context):
         layout = self.layout
-        row1 = layout.split(factor=0.3)
-        row1.label(text="Operation Scope")
-        row1.column().prop(self, "scope", expand=True)
+        self.draw_scope(layout)
         if not self.is_pack:
             row2 = layout.split(factor=0.3)
             row2.label(text="Unpack Method")
@@ -631,7 +604,7 @@ class NODE_OT_note_text_from_node_label(NoteScopeOperator):
     bl_idname = "node.note_text_from_node_label"
     bl_label = "Import Node Label to Text Note"
     bl_description = "Import node label to text note"
-    
+
     font_size         : IntProperty(name="Font Size", default=15, min=4, max=500)
     only_frame_node   : BoolProperty(name="Only Frame Nodes", default=True, description="Only process Frame nodes")
     use_node_color    : BoolProperty(name="Use Node Color", default=True, description="Inherit node custom color as background color")
@@ -643,9 +616,7 @@ class NODE_OT_note_text_from_node_label(NoteScopeOperator):
 
     def draw(self, context):
         layout = self.layout
-        row1 = layout.split(factor=0.3)
-        row1.label(text="Operation Scope")
-        row1.column().prop(self, "scope", expand=True)
+        self.draw_scope(layout)
 
         row_width = layout.split(factor=0.3)
         row_width.label(text="Width Mode")

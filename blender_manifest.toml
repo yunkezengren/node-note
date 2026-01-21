@@ -1,6 +1,6 @@
 schema_version = "1.0.0"
 id = "node_note"
-version = "1.1.5"
+version = "1.2.0"
 name = "Node Note/节点随记"
 tagline = "Powerful node notes with text and images/强大的节点图文笔记工具"
 maintainer = "無東;W_Cloud"

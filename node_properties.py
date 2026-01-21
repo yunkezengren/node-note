@@ -47,6 +47,7 @@ def init_props():
     Node.note_txt_offset     = IntVectorProperty(name="Offset", size=2, default=(0, 0), subtype='XYZ', description="Text and Image offset", update=tag_redraw)
     Node.note_img_offset     = IntVectorProperty(name="Offset", size=2, default=(0, 0), subtype='XYZ', description="Image offset", update=tag_redraw)
 
+# 不要忘记往 NotedNode 和 NODE_OT_note_copy_active_style 新增
 base_props = [
     "note_text",
     "note_image",
@@ -55,7 +56,6 @@ base_props = [
     "note_show_img",
     "note_show_badge",
 ]
-
 style_props = [
     "note_font_size",
     "note_text_color",
