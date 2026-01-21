@@ -13,11 +13,13 @@ txt_width_items: list[tuple[TextWidthMode, str, str]] = [
     ('AUTO', "Follow Node", "Width automatically follows node width"),
     ('FIT', "Fit Content", "Width automatically fits text content"),
     ('MANUAL', "Manual", "Manually set width"),
+    ('KEEP', "Screen Space", "Keep constant size in screen space"),
 ]
 img_width_items: list[tuple[ImageWidthMode, str, str]] = [
     ('AUTO', "Follow Node", "Width automatically follows node width"),
     ('ORIGINAL', "Original Width", "Display image at original width"),
     ('MANUAL', "Manual", "Manually set width"),
+    ('KEEP', "Screen Space", "Keep constant size in screen space"),
 ]
 badge_width_items: list[tuple[BadgeScaleMode, str, str]] = [
     ('RELATIVE', "Relative Scale", "Follow node editor zoom"),
@@ -175,7 +177,7 @@ class NodeNoteAddonPreferences(AddonPreferences):
         row = col.row()
 
         row.prop(self, "default_img_width_mode", text="Width")
-        if self.default_img_width_mode == 'MANUAL':
+        if self.default_img_width_mode in {'MANUAL', 'KEEP'}:
             row.prop(self, "default_img_width", text="")
         row.prop(self, "default_img_pos", text="Alignment")
         # endregion

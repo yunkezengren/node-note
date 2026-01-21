@@ -7,8 +7,8 @@ RGBA = tuple[float, float, float, float]
 Rect = tuple[float, float, float, float]
 
 AlignMode = Literal["TOP", "BOTTOM", "LEFT", "RIGHT"]
-TextWidthMode = Literal["AUTO", "FIT", "MANUAL"]
-ImageWidthMode = Literal["AUTO", "ORIGINAL", "MANUAL"]
+TextWidthMode = Literal["AUTO", "FIT", "MANUAL", "KEEP"]
+ImageWidthMode = Literal["AUTO", "ORIGINAL", "MANUAL", "KEEP"]
 BadgeScaleMode = Literal["RELATIVE", "ABSOLUTE"]
 
 class NotedNode(Node):

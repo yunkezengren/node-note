@@ -160,7 +160,7 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
 
                 width_row = img_box.row(align=True)
                 width_row.prop(node, "note_img_width_mode", text="Width")
-                if node.note_img_width_mode == 'MANUAL':
+                if node.note_img_width_mode in {'MANUAL', 'KEEP'}:
                     width_row.prop(node, "note_img_width", text="Width")
 
                 row_pos = img_box.row(align=True)

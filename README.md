@@ -7,8 +7,8 @@
 **Addon Location: `Right-click Menu` + `NPanel->Node->Node Notes`**
 
 > [!WARNING]
-> **🚫 `Saving v5.0+ files in v4.x results in missing notes when reopening in v5.x.`**
-> **✅ `Versions within 4.x are fully compatible. v5.0 can load notes saved in v4.x.`**
+> **🚫`Saving v5.0+ files in v4.x results in missing notes when reopening in v5.x.`**  
+> **✅`Versions within 4.x are fully compatible. v5.0 can load notes saved in v4.x.`**
 
 ## Text Notes
 
@@ -57,7 +57,7 @@ Numbered badges for node identification:
 **插件位置: `右键菜单`  +  `N面板->节点->节点随记`**
 
 > [!WARNING]
-> **🚫 `5.0以上版本的文件,用4.x打开保存后,5.x存的笔记会丢失.`**
+> **🚫 `5.0以上版本的文件,用4.x打开保存后,5.x存的笔记会丢失.`**  
 > **✅ `4.x版本之间兼容没问题.5.0版本能加载4.x版本保存的笔记.`**
 
 ## 文本笔记

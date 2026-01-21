@@ -95,6 +95,9 @@ class TextImgInfo:
     img_y: float = 0
     txt_should_draw: bool = False
     img_should_draw: bool = False
+    
+    txt_scale: float = 1.0
+    img_scale: float = 1.0
 
 # region 基础工具函数
 
@@ -236,7 +239,7 @@ def _get_draw_params() -> DrawParams:
 
 def _wrap_text(font_id: int, text: str, txt_width_mode: TextWidthMode, note_width: float, pad: float) -> list[str]:
     """文本换行处理"""
-    if txt_width_mode == 'FIT':
+    if txt_width_mode in {'FIT', 'KEEP'}:
         return text_split_lines(text)
     else:
         return _wrap_text_pure(font_id, text, max(1, note_width - pad*2))
@@ -423,15 +426,18 @@ def _set_text_note_info(info: TextImgInfo, scale: float, is_visible: bool) -> No
     if not (text and show_txt and is_visible):
         return
 
-    pad = PaddingX * scale
+    txt_width_mode = node.note_txt_width_mode
+    current_scale = ui_scale() if txt_width_mode == 'KEEP' else scale
+    info.txt_scale = current_scale
+
+    pad = PaddingX * current_scale
     node_width_px = info.right_x - info.left_x
     loc = info.loc
 
-    fs = max(1, int(node.note_font_size * scale))
-    txt_width_mode = node.note_txt_width_mode
-
+    fs = max(1, int(node.note_font_size * current_scale))
+    
     # 计算宽度
-    if txt_width_mode == 'FIT' and text:
+    if txt_width_mode in {'FIT', 'KEEP'} and text:
         font_id = get_font_id()
         blf.size(font_id, fs)
         max_line_w = max(blf.dimensions(font_id, line)[0] for line in text_split_lines(text))
@@ -445,7 +451,7 @@ def _set_text_note_info(info: TextImgInfo, scale: float, is_visible: bool) -> No
     # 文本换行
     font_id = get_font_id()
     blf.size(font_id, fs)
-    lines = text_split_lines(text) if txt_width_mode == 'FIT' else _wrap_text(font_id, text, txt_width_mode, note_width, pad)
+    lines = text_split_lines(text) if txt_width_mode in {'FIT', 'KEEP'} else _wrap_text(font_id, text, txt_width_mode, note_width, pad)
     text_note_height = (len(lines) * fs * 1.3) + pad * 2 if lines else 0
 
     info.txt_width = note_width
@@ -463,16 +469,21 @@ def _set_image_note_info(info: TextImgInfo, scale: float) -> None:
     if not (img and show_img):
         return
 
+    img_width_mode = node.note_img_width_mode
+    current_scale = ui_scale() if img_width_mode == 'KEEP' else scale
+    info.img_scale = current_scale
+
     node_width_px = info.right_x - info.left_x
     loc = info.loc
     ref_width = max(node_width_px, (view_to_region_scaled(loc[0] + MinAutoWidth, loc[1])[0] - info.left_x))
 
     # 计算宽度
-    img_width_mode = node.note_img_width_mode
     if img_width_mode == 'ORIGINAL':
         base_width = img.size[0] * scale
     elif img_width_mode == 'AUTO':
         base_width = ref_width
+    elif img_width_mode == 'KEEP':
+        base_width = node.note_img_width * ui_scale()
     else:
         base_width = view_to_region_scaled(loc[0] + node.note_img_width, loc[1])[0] - info.left_x
 
@@ -495,12 +506,16 @@ def _set_note_position(info: TextImgInfo, scale: float) -> None:
         if not swap:
             inner_w, inner_h, inner_off = txt_w, txt_h, node.note_txt_offset
             outer_w, outer_h, outer_off = img_w, img_h, node.note_img_offset
+            inner_scale = info.txt_scale
+            outer_scale = info.img_scale
         else:
             inner_w, inner_h, inner_off = img_w, img_h, node.note_img_offset
             outer_w, outer_h, outer_off = txt_w, txt_h, node.note_txt_offset
+            inner_scale = info.img_scale
+            outer_scale = info.txt_scale
 
-        inner_x, inner_y = _calc_note_pos(info, alignment, inner_off, inner_w, inner_h, scale)
-        offset_x_scaled, offset_y_scaled = outer_off[0] * scale, outer_off[1] * scale
+        inner_x, inner_y = _calc_note_pos(info, alignment, inner_off, inner_w, inner_h, inner_scale)
+        offset_x_scaled, offset_y_scaled = outer_off[0] * outer_scale, outer_off[1] * outer_scale
 
         if alignment == 'TOP':
             outer_x, outer_y = inner_x + offset_x_scaled, inner_y + inner_h + offset_y_scaled
@@ -524,10 +539,10 @@ def _set_note_position(info: TextImgInfo, scale: float) -> None:
         txt_x = txt_y = img_x = img_y = 0.0
         if info.txt_should_draw:
             txt_x, txt_y = _calc_note_pos(info, node.note_txt_pos, node.note_txt_offset,
-                                        info.txt_width, info.txt_height, scale)
+                                        info.txt_width, info.txt_height, info.txt_scale)
         if info.img_should_draw:
             img_x, img_y = _calc_note_pos(info, node.note_img_pos, node.note_img_offset,
-                                        info.img_width, info.img_height, scale)
+                                        info.img_width, info.img_height, info.img_scale)
         info.txt_x, info.txt_y = txt_x, txt_y
         info.img_x, info.img_y = img_x, img_y
 
