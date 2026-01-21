@@ -106,6 +106,8 @@ class NodeNoteAddonPreferences(AddonPreferences):
     def draw(self, context):
         layout = self.layout
         layout.label(text="Plugin Location: Right-click Menu + NPanel->Node->Node Notes", icon='INFO')
+        layout.label(text="Saving v5.0+ files in v4.x results in missing notes when reopening in v5.x.", icon='WARNING_LARGE')
+        layout.label(text="Versions within 4.x are fully compatible. v5.0 can load notes saved in v4.x.", icon='CHECKMARK')
         box = layout.box()
         row = box.row()
         row.label(text="Global", icon='WORLD_DATA')

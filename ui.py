@@ -303,7 +303,7 @@ def draw_search_list(layout: UILayout, context: Context, filter_noted_nodes: lis
             row_node = note_col.row()
             row_node.label(text=iface("Node:  {name}").format(name=node.name), icon='NODE')
             row_img = note_col.row()
-            row_img.label(text=iface("Image:  {name}").format(name=image.name if image else "No Image"), icon='IMAGE_DATA')
+            row_img.label(text=iface("Image:  {name}").format(name=image.name if image else iface("None")), icon='IMAGE_DATA')
 
             if image:
                 img_split = note_col.split(factor=0.03)
