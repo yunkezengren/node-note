@@ -61,7 +61,7 @@ class NodeNoteAddonPreferences(AddonPreferences):
     # 2. 文本设置区
     default_font_size      : IntProperty(name="Default Font Size", default=8, min=4, max=100)
     font_path              : StringProperty(default='', subtype='FILE_PATH', options={'TEXTEDIT_UPDATE'}, description="Font file path, leave empty to use default font")
-    bg_rect_roundness     : FloatProperty(name="Roundness", default=0.8, min=0, max=1, description="Roundness of note background rectangle")
+    bg_rect_roundness     : FloatProperty(name="Roundness", default=0.35, min=0, max=1, description="Roundness of note background rectangle")
     default_text_color     : FloatVectorProperty(name="Default Text Color", subtype='COLOR', size=4, default=(1.0, 1.0, 1.0, 1.0), min=0, max=1)
     default_txt_bg_color   : FloatVectorProperty(name="Default Background Color", subtype='COLOR', size=4, default=(0.2, 0.3, 0.5, 0.9), min=0, max=1)
 

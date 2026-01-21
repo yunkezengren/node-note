@@ -47,7 +47,6 @@ Numbered badges for node identification:
 > - Better keyboard shortcut settings for the add-on
 > - Image notes for node group assets should be stored in a separate/common folder
 > - Add image deduplication/reuse functionality when importing node groups or pasting images
-> - Text/image notes maintain size in view (uncertain if practical)
 
 ---
 
@@ -96,7 +95,6 @@ Numbered badges for node identification:
 > - 更好的设置插件快捷键
 > - 节点组资产的图像笔记应该存在单独/通用文件夹
 > - 导入节点组后或粘贴图片时,增加图像去重/复用功能
-> - 文本/图像笔记在视图里保持大小(不确定是否实用)
 
 ---
 
