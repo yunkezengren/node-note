@@ -575,7 +575,7 @@ def _draw_text_note(info: TextImgInfo, scale: float, bg_color: RGBA) -> None:
     font_id = get_font_id()
     txt_x, txt_y = info.txt_x, info.txt_y
 
-    draw_rounded_rect_batch(txt_x, txt_y, info.txt_width, info.txt_height, bg_color, CornerRadius * info.txt_scale * 6 * pref().bg_rect_round)
+    draw_rounded_rect_batch(txt_x, txt_y, info.txt_width, info.txt_height, bg_color, CornerRadius * info.txt_scale * 6 * pref().bg_rect_roundness)
 
     blf.color(font_id, *info.node.note_text_color)
     blf.disable(font_id, blf.SHADOW)

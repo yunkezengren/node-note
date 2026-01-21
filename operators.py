@@ -1,8 +1,8 @@
 import bpy
 from bpy.types import Operator, Node, Context, Image
 from typing import Callable
-from bpy.props import EnumProperty, BoolProperty
-from .preferences import pref
+from bpy.props import EnumProperty, BoolProperty, IntProperty, FloatVectorProperty
+from .preferences import pref, txt_width_items
 from .utils import import_clipboard_image, text_split_lines
 from bpy.app.translations import pgettext_iface as iface
 
@@ -75,7 +75,7 @@ class NoteDeleteOperator(NoteBaseOperator):
         if self.scope == 'SELECTED':
             return self.get_selected_nodes(context)
         elif self.scope == 'CURRENT':
-            return context.space_data.edit_tree
+            return context.space_data.edit_tree.nodes
         else:            # 'ALL':
             nodes = []
             for tree in bpy.data.node_groups:
@@ -547,6 +547,70 @@ class NODE_OT_note_copy_text_to_clipboard(NoteBaseOperator):
         self.report({'INFO'}, "Copied to clipboard")
         return {'FINISHED'}
 
+class NODE_OT_note_text_from_node_label(NoteDeleteOperator):
+    bl_idname = "node.note_text_from_node_label"
+    bl_label = "Import Node Label to Text Note"
+    bl_description = "Import node label to text note"
+    
+    font_size         : IntProperty(name="Font Size", default=15, min=4, max=500)
+    only_frame_node   : BoolProperty(name="Only Frame Nodes", default=True, description="Only process Frame nodes")
+    use_node_color    : BoolProperty(name="Use Node Color", default=True, description="Inherit node custom color as background color")
+    center_text       : BoolProperty(name="Center Text", default=True, description="Set text alignment to center")
+    skip_existing_text: BoolProperty(name="Skip not none", default=True, description="Skip nodes that already have text notes")
+    width_mode        : EnumProperty(name="Width Mode", items=txt_width_items, default='KEEP')
+    txt_bg_color      : FloatVectorProperty(name="Background Color", subtype='COLOR', size=4, default=(0.2, 0.3, 0.5, 0.9), min=0, max=1)
+    delete_label      : BoolProperty(name="Delete Label", default=False, description="Delete nodes custom label if processed/imported")
+
+    def draw(self, context):
+        layout = self.layout
+        row1 = layout.split(factor=0.3)
+        row1.label(text="Operation Scope")
+        row1.column().prop(self, "scope", expand=True)
+
+        row_width = layout.split(factor=0.3)
+        row_width.label(text="Width Mode")
+        row_width.column().prop(self, "width_mode", expand=True)
+
+        layout.separator()
+        row3 = layout.row()
+        row3.prop(self, "only_frame_node", toggle=True)
+        row3.prop(self, "center_text", toggle=True)
+        row3 = layout.row()
+        row3.prop(self, "skip_existing_text", toggle=True)
+        row3.prop(self, "use_node_color", toggle=True)
+        row3 = layout.split(factor=0.5)
+        row3.prop(self, "font_size")
+        row3.row().prop(self, "txt_bg_color")
+        layout.prop(self, "delete_label", toggle=True)
+
+    def execute(self, context):
+        nodes_to_process = self.get_scoped_nodes(context)
+        count = 0
+        for node in nodes_to_process:
+            if self.only_frame_node and node.type != 'FRAME':
+                continue
+
+            if self.skip_existing_text and node.note_text:
+                continue
+
+            if text_content := node.label :
+                node.note_text = text_content
+                node.note_show_txt = True
+                count += 1
+                if self.delete_label:
+                    node.label = ""
+
+            node.note_font_size = self.font_size
+            node.note_txt_width_mode = self.width_mode
+            if self.use_node_color and node.use_custom_color:
+                node.note_txt_bg_color = node.color
+            if self.center_text:
+                node.note_txt_center = True
+
+        self.report({'INFO'}, f"Processed {count} nodes")
+        context.area.tag_redraw()
+        return {'FINISHED'}
+
 classes = [
     NODE_OT_note_delete_selected_txt,
     NODE_OT_note_delete_selected_img,
@@ -568,6 +632,7 @@ classes = [
     NODE_OT_note_open_image_editor,
     NODE_OT_note_paste_text_from_clipboard,
     NODE_OT_note_copy_text_to_clipboard,
+    NODE_OT_note_text_from_node_label,
 ]
 
 def register():

@@ -81,7 +81,9 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
                 body_split = body.split(factor=0.01)
                 body_split.label(text="")
                 txt_box = body_split.box()
-                txt_box.prop(node, "note_text", text="")
+                txt_row = txt_box.row()
+                txt_row.prop(node, "note_text", text="")
+                txt_row.operator(ops.NODE_OT_note_text_from_node_label.bl_idname, text="", icon='AUTOMERGE_ON')
 
                 row_pos = txt_box.column()
                 row_tag = row_pos.row(align=True)
