@@ -2,7 +2,7 @@ import bpy
 from bpy.types import Panel, UILayout, Context, Menu, Image
 from .preferences import pref
 from .utils import text_split_lines
-from .typings import NotedNode
+from .nn_typing import NotedNode
 from . import operators as ops
 from bpy.app.translations import pgettext_iface as iface
 

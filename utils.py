@@ -1,6 +1,6 @@
 import math
 from .preferences import pref
-from .typings import int2, RGBA, Rect
+from .nn_typing import int2, RGBA, Rect
 import bpy
 from bpy.types import Context, Node, Image, SpaceImageEditor
 

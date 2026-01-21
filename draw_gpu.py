@@ -9,7 +9,7 @@ from mathutils import Vector as Vec2
 import math
 import numpy as np
 import os
-from .typings import NotedNode, float2, int3, RGBA, AlignMode, TextWidthMode, BadgeScaleMode
+from .nn_typing import NotedNode, float2, int3, RGBA, AlignMode, TextWidthMode, BadgeScaleMode
 from .preferences import pref
 from .utils import (
     ui_scale,

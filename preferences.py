@@ -1,7 +1,7 @@
 import bpy
 from bpy.types import AddonPreferences, Context
 from bpy.props import BoolProperty, StringProperty, FloatProperty, FloatVectorProperty, IntProperty, EnumProperty
-from .typings import AlignMode, TextWidthMode, ImageWidthMode, BadgeScaleMode
+from .nn_typing import AlignMode, TextWidthMode, ImageWidthMode, BadgeScaleMode
 
 align_items: list[tuple[AlignMode, str, str]] = [
     ('TOP', "Top", ""),
