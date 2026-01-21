@@ -603,7 +603,10 @@ class NODE_OT_note_text_from_node_label(NoteDeleteOperator):
             node.note_font_size = self.font_size
             node.note_txt_width_mode = self.width_mode
             if self.use_node_color and node.use_custom_color:
-                node.note_txt_bg_color = node.color
+                # todo 不确定是否要从偏好设置导入透明度
+                node.note_txt_bg_color = (*node.color, 0.8)
+            else:
+                node.note_txt_bg_color = self.txt_bg_color
             if self.center_text:
                 node.note_txt_center = True
 

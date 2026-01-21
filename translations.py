@@ -200,6 +200,14 @@ translations_dict = {
         ("*", "Skip nodes that already have text notes"): "跳过已有文本笔记的节点",
         ("*", "Delete Label"): "删除标签",
         ("*", "Delete nodes custom label if processed/imported"): "删除处理过的节点的标签",
+
+        ("*", "Hide Text Panel"): "折叠文本面板",
+        ("*", "Hide Image Panel"): "折叠图像面板",
+        ("*", "Hide Index Panel"): "折叠序号面板",
+        ("*", "Default hide text note panel"): "默认折叠文本笔记面板",
+        ("*", "Default hide image note panel"): "默认折叠图像笔记面板",
+        ("*", "Default hide index note panel"): "默认折叠序号笔记面板",
+        
     },
     "ja_JP": {
         ("Operator", "Swap Text and Image Position"): "テキストと画像の位置を交換",

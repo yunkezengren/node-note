@@ -54,6 +54,10 @@ class NodeNoteAddonPreferences(AddonPreferences):
     navigator_search       : StringProperty(name="Search", default="", options={'TEXTEDIT_UPDATE'})
     line_separator         : StringProperty(name="Line Separator", default=";|\\", options={'TEXTEDIT_UPDATE'}, description="Line break separator in text, supports multiple (separated by |), e.g.: ;|\\")
 
+    hide_text_panel    : BoolProperty(name="Hide Text Panel", default=True, description="Default hide text note panel")
+    hide_image_panel   : BoolProperty(name="Hide Image Panel", default=True, description="Default hide image note panel")
+    hide_badge_panel   : BoolProperty(name="Hide Index Panel", default=True, description="Default hide index note panel")
+
     # 2. 文本设置区
     default_font_size      : IntProperty(name="Default Font Size", default=8, min=4, max=100)
     font_path              : StringProperty(default='', subtype='FILE_PATH', options={'TEXTEDIT_UPDATE'}, description="Font file path, leave empty to use default font")
@@ -118,6 +122,10 @@ class NodeNoteAddonPreferences(AddonPreferences):
         split = col.split(factor=0.33)
         split0 = split.row()
         split0.label(text="Panel Shortcut Key:", icon='KEYINGSET')
+        row_hide = col.row()
+        row_hide.prop(self, "hide_text_panel")
+        row_hide.prop(self, "hide_image_panel")
+        row_hide.prop(self, "hide_badge_panel")
 
         wm = context.window_manager
         kc = wm.keyconfigs.user
