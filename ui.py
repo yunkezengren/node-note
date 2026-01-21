@@ -41,6 +41,7 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
         select_row = header.row()
         select_row.prop(prefs, "show_selected_only", text="Selected", toggle=True)
         select_row.active = prefs.show_all_notes
+        header.operator(ops.NODE_OT_note_copy_active_style.bl_idname, text="", icon='DUPLICATE')
         header.operator(ops.NODE_OT_note_delete_notes.bl_idname, text="", icon='TRASH')
         if body:
             row_pos = body.row()
@@ -61,9 +62,6 @@ def draw_panel(layout: UILayout, context: Context, show_global=True, show_text=T
                 split.prop(prefs, "show_orange", text=def_labels[3], toggle=True)
                 split.prop(prefs, "show_purple", text=def_labels[4], toggle=True)
                 split.prop(prefs, "show_other", text="Others", toggle=True)
-
-            if len(context.selected_nodes) > 1:
-                body.row().operator(ops.NODE_OT_note_copy_active_to_selected.bl_idname, text="Sync Active Style to Selected", icon='DUPLICATE')
 
     node: NotedNode = context.active_node
     if node:

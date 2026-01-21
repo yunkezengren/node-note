@@ -47,30 +47,34 @@ def init_props():
     Node.note_txt_offset     = IntVectorProperty(name="Offset", size=2, default=(0, 0), subtype='XYZ', description="Text and Image offset", update=tag_redraw)
     Node.note_img_offset     = IntVectorProperty(name="Offset", size=2, default=(0, 0), subtype='XYZ', description="Image offset", update=tag_redraw)
 
+base_props = [
+    "note_text",
+    "note_image",
+    "note_badge_index",
+    "note_show_txt",
+    "note_show_img",
+    "note_show_badge",
+]
+
+style_props = [
+    "note_font_size",
+    "note_text_color",
+    "note_txt_bg_color",
+    "note_txt_bg_width",
+    "note_img_width",
+    "note_swap_order",
+    "note_badge_color",
+    "note_txt_width_mode",
+    "note_img_width_mode",
+    "note_txt_pos",
+    "note_img_pos",
+    "note_txt_center",
+    "note_img_center",
+    "note_txt_offset",
+    "note_img_offset",
+]
+
 def delete_props():
-    props = [
-        "note_text",
-        "note_image",
-        "note_font_size",
-        "note_text_color",
-        "note_txt_bg_color",
-        "note_txt_bg_width",
-        "note_img_width",
-        "note_swap_order",
-        "note_badge_index",
-        "note_badge_color",
-        "note_show_txt",
-        "note_show_img",
-        "note_show_badge",
-        "note_txt_width_mode",
-        "note_img_width_mode",
-        "note_txt_pos",
-        "note_img_pos",
-        "note_txt_center",
-        "note_img_center",
-        "note_txt_offset",
-        "note_img_offset",
-    ]
-    for prop in props:
+    for prop in base_props + style_props:
         if hasattr(Node, prop):
             delattr(Node, prop)

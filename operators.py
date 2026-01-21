@@ -3,6 +3,7 @@ from bpy.types import Operator, Node, Context, Image
 from typing import Callable
 from bpy.props import EnumProperty, BoolProperty, IntProperty, FloatVectorProperty
 from .preferences import pref, txt_width_items
+from .node_properties import style_props
 from .utils import import_clipboard_image, text_split_lines
 from bpy.app.translations import pgettext_iface as iface
 
@@ -59,7 +60,7 @@ class NODE_OT_note_delete_selected_badge(NoteBaseOperator):
                 node.note_badge_index = 0
         return {'FINISHED'}
 
-class NoteDeleteOperator(NoteBaseOperator):
+class NoteScopeOperator(NoteBaseOperator):
     scope: EnumProperty(
         name="Scope",
         items=[
@@ -69,8 +70,7 @@ class NoteDeleteOperator(NoteBaseOperator):
         ],
         default='SELECTED'
     )
-    delete_image: BoolProperty(name="Also remove images from Blender file", default=False)
-
+    
     def get_scoped_nodes(self, context)-> list[Node]:
         if self.scope == 'SELECTED':
             return self.get_selected_nodes(context)
@@ -82,11 +82,14 @@ class NoteDeleteOperator(NoteBaseOperator):
                 nodes.extend(tree.nodes)
             return nodes
 
-    def draw(self, context):
-        self.layout.prop(self, "delete_image", text="Also Remove Image")
-
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self, width=300)
+
+class NoteDeleteOperator(NoteScopeOperator):
+    delete_image: BoolProperty(name="Also remove images from Blender file", default=False)
+
+    def draw(self, context):
+        self.layout.prop(self, "delete_image", text="Also Remove Image")
 
 class NODE_OT_note_delete_selected_img(NoteDeleteOperator):
     bl_idname = "node.note_delete_selected_img"
@@ -199,23 +202,100 @@ class NODE_OT_note_apply_preset(NoteBaseOperator):
             node.note_text_color = (1, 1, 1, 1)
         return {'FINISHED'}
 
-class NODE_OT_note_copy_active_to_selected(NoteBaseOperator):
-    bl_idname = "node.note_copy_to_selected"
-    bl_label = "Sync Active Style to Selected (Multi-Select)"
-    bl_description = "Sync Active Style to Selected (Multi-Select)"
+class NODE_OT_note_copy_active_style(NoteScopeOperator):
+    bl_idname = "node.note_copy_active_style"
+    bl_label = "Sync Active Style"
+    bl_description = "Sync active node note style"
+
+    # Text
+    sync_font_size     : BoolProperty(name="Font Size", default=True)
+    sync_text_color    : BoolProperty(name="Font Color", default=True)
+    sync_txt_bg_color  : BoolProperty(name="Background Color", default=True)
+    sync_txt_bg_width  : BoolProperty(name="Background Width", default=True)
+    sync_txt_width_mode: BoolProperty(name="Width Mode", default=True)
+    sync_txt_pos       : BoolProperty(name="Alignment Mode", default=True)
+    sync_txt_center    : BoolProperty(name="Center", default=True)
+    sync_txt_offset    : BoolProperty(name="Offset", default=True)
+
+    # Image
+    sync_img_width     : BoolProperty(name="Image Width", default=True)
+    sync_img_width_mode: BoolProperty(name="Width Mode", default=True)
+    sync_img_pos       : BoolProperty(name="Alignment Mode", default=True)
+    sync_img_center    : BoolProperty(name="Center", default=True)
+    sync_img_offset    : BoolProperty(name="Offset", default=True)
+
+    # Index
+    sync_badge_color   : BoolProperty(name="Background Color", default=True)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "scope")
+        layout.separator()
+
+        row = layout.row()
+        col1 = row.column(align=True)
+        col1.label(text="Text")
+        col1.prop(self, "sync_font_size")
+        col1.prop(self, "sync_text_color")
+        col1.prop(self, "sync_txt_bg_color")
+        col1.prop(self, "sync_txt_bg_width")
+        col1.prop(self, "sync_txt_width_mode")
+        col1.prop(self, "sync_txt_pos")
+        col1.prop(self, "sync_txt_center")
+        col1.prop(self, "sync_txt_offset")
+
+        col2 = row.column(align=True)
+        col2.label(text="Image")
+        col2.prop(self, "sync_img_width")
+        col2.prop(self, "sync_img_width_mode")
+        col2.prop(self, "sync_img_pos")
+        col2.prop(self, "sync_img_center")
+        col2.prop(self, "sync_img_offset")
+        
+        col2.separator()
+        col2.label(text="Index")
+        col2.prop(self, "sync_badge_color")
 
     def execute(self, context):
-        # todo 改为从偏好设置导入
-        strict_sync_props = [
-            "note_font_size", "note_text_color", "note_txt_bg_color", "note_badge_color", "note_txt_width_mode", "note_txt_bg_width",
-            "note_img_width_mode", "note_img_width"
-        ]
         count = 0
         active = context.active_node
-        for node in self.get_selected_nodes(context, skip_active=True):
-            for prop in strict_sync_props:
-                setattr(node, prop, getattr(active, prop))
+        if not active:
+             self.report({'WARNING'}, "Active node required")
+             return {'CANCELLED'}
+
+        props_map = {
+            "note_font_size"     : self.sync_font_size,
+            "note_text_color"    : self.sync_text_color,
+            "note_txt_bg_color"  : self.sync_txt_bg_color,
+            "note_txt_bg_width"  : self.sync_txt_bg_width,
+            "note_txt_width_mode": self.sync_txt_width_mode,
+            "note_txt_pos"       : self.sync_txt_pos,
+            "note_txt_center"    : self.sync_txt_center,
+            "note_txt_offset"    : self.sync_txt_offset,
+            
+            "note_img_width"     : self.sync_img_width,
+            "note_img_width_mode": self.sync_img_width_mode,
+            "note_img_pos"       : self.sync_img_pos,
+            "note_img_center"    : self.sync_img_center,
+            "note_img_offset"    : self.sync_img_offset,
+            
+            "note_badge_color"   : self.sync_badge_color,
+        }
+
+        nodes = self.get_scoped_nodes(context)
+        for node in nodes:
+            if node == active:
+                continue
+            
+            for prop, need_sync in props_map.items():
+                if not need_sync: continue
+                try:
+                    # 转接点宽度模式不支持跟随节点宽度(AUTO)
+                    setattr(node, prop, getattr(active, prop))
+                except TypeError:
+                    continue
             count += 1
+            
         self.report({'INFO'}, iface("Style synced to {count} nodes").format(count=count))
         context.area.tag_redraw()
         return {'FINISHED'}
@@ -547,7 +627,7 @@ class NODE_OT_note_copy_text_to_clipboard(NoteBaseOperator):
         self.report({'INFO'}, "Copied to clipboard")
         return {'FINISHED'}
 
-class NODE_OT_note_text_from_node_label(NoteDeleteOperator):
+class NODE_OT_note_text_from_node_label(NoteScopeOperator):
     bl_idname = "node.note_text_from_node_label"
     bl_label = "Import Node Label to Text Note"
     bl_description = "Import node label to text note"
@@ -603,7 +683,7 @@ class NODE_OT_note_text_from_node_label(NoteDeleteOperator):
             node.note_font_size = self.font_size
             node.note_txt_width_mode = self.width_mode
             if self.use_node_color and node.use_custom_color:
-                # todo 不确定是否要从偏好设置导入透明度
+                # todo 不确定是否要从偏好设置导入透明度, 框内的框透明度要更低吗
                 node.note_txt_bg_color = (*node.color, 0.8)
             else:
                 node.note_txt_bg_color = self.txt_bg_color
@@ -627,7 +707,7 @@ classes = [
     NODE_OT_note_reset_offset,
     NODE_OT_note_paste_image,
     NODE_OT_note_apply_preset,
-    NODE_OT_note_copy_active_to_selected,
+    NODE_OT_note_copy_active_style,
     NODE_OT_note_add_quick_tag,
     NODE_OT_note_pack_unpack_images,
     NODE_OT_note_note_quick_edit,
